@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Adventist Tamil Tool",
+    "slug": "adventist-tamil-tool",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#05070A"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#05070A"
+      },
+      "package": "com.adventisttamiltool.adventisttamiltool"
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-asset",
+      "expo-font",
+      "expo-web-browser",
+      "@react-native-community/datetimepicker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "77e67f43-dfc6-43ad-ac5d-78b4a11e4b15"
+      }
+    }
+  }
+}
