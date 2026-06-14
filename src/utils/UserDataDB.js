@@ -12,9 +12,18 @@ export const initUserDataDB = () => {
         verse INTEGER,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
+      CREATE TABLE IF NOT EXISTS highlights (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        book_id INTEGER,
+        chapter INTEGER,
+        verse INTEGER,
+        color TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `);
 
-    console.log('✅ UserData DB successfully initialized. (Favorites Only)');
+    console.log('✅ UserData DB successfully initialized with favorites and highlights tables.');
   } catch (error) {
     console.error('❌ Failed to initialize UserData DB: ', error);
   }

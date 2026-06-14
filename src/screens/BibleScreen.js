@@ -14,7 +14,7 @@ import VerseRenderer from '../components/bible/VerseRenderer';
 import BibleHeader from '../components/bible/BibleHeader';
 import BibleActionBar from '../components/bible/BibleActionBar';
 import BiblePickers from '../components/bible/BiblePickers';
-import { NoteModal, CrossRefModal } from '../components/bible/BibleModals';
+import { CrossRefModal } from '../components/bible/BibleModals';
 import BibleLeftMenu from '../components/bible/BibleLeftMenu';
 import BibleSearch from '../components/bible/BibleSearch';
 
@@ -37,14 +37,9 @@ export default function BibleScreen() {
   const [crossRefsList, setCrossRefsList] = useState([]);
 
   const [userHighlights, setUserHighlights] = useState([]);
-  const [userBookmarks, setUserBookmarks] = useState([]);
-  const [userNotes, setUserNotes] = useState([]);
+  const [userFavorites, setUserFavorites] = useState([]); // <-- Replaced Bookmarks with Favorites
 
-  const [showNoteModal, setShowNoteModal] = useState(false);
-  const [newNoteText, setNewNoteText] = useState('');
   const [showHighlightPalette, setShowHighlightPalette] = useState(false);
-  
-  // Cleaned up here!
   const [showLeftMenu, setShowLeftMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
 
@@ -69,12 +64,11 @@ export default function BibleScreen() {
     setIsLoading(true);
     requestChapter(
       activeBookId, activeChapter, bibleLanguage, activeEnglishVersion,
-      (combinedVerses, maxChapters, highlights, bookmarks, notes) => {
+      (combinedVerses, maxChapters, highlights, favorites) => {
         setVerses(combinedVerses);
         setMaxChaptersForActiveBook(maxChapters);
         setUserHighlights(highlights);
-        setUserBookmarks(bookmarks.map(x => x.verse));
-        setUserNotes(notes.map(x => x.verse));
+        setUserFavorites(favorites.map(x => x.verse)); // <-- Maps favorites accurately
         setIsLoading(false);
         setSelectedVerses([]);
         setShowHighlightPalette(false);
@@ -147,21 +141,25 @@ export default function BibleScreen() {
     try {
       const userDb = getSafeDb('UserData.db');
       setUserHighlights(userDb.getAllSync(`SELECT verse, color FROM highlights WHERE book_id = ? AND chapter = ?`, [activeBookId, activeChapter]) ?? []);
-      setUserBookmarks((userDb.getAllSync(`SELECT verse FROM bookmarks WHERE book_id = ? AND chapter = ?`, [activeBookId, activeChapter]) ?? []).map(x => x.verse));
-      setUserNotes((userDb.getAllSync(`SELECT verse FROM notes WHERE book_id = ? AND chapter = ?`, [activeBookId, activeChapter]) ?? []).map(x => x.verse));
+      setUserFavorites((userDb.getAllSync(`SELECT verse FROM favorites WHERE book_id = ? AND chapter = ?`, [activeBookId, activeChapter]) ?? []).map(x => x.verse));
     } catch (e) {}
   }
 
-  function saveBookmark() {
+  // --- THIS IS THE MAGIC FUNCTION THAT SAVES YOUR FAVORITES ---
+  function saveFavorite() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
     try {
       const db = getSafeDb('UserData.db');
-      const allBookmarked = selectedVerses.every(v => userBookmarks.includes(v.verse));
+      const allFavorited = selectedVerses.every(v => userFavorites.includes(v.verse));
+      
       for (const v of selectedVerses) {
-        db.runSync(`DELETE FROM bookmarks WHERE book_id=? AND chapter=? AND verse=?`, [activeBookId, activeChapter, v.verse]);
-        if (!allBookmarked) db.runSync(`INSERT INTO bookmarks (book_id, chapter, verse) VALUES (?, ?, ?)`, [activeBookId, activeChapter, v.verse]);
+        db.runSync(`DELETE FROM favorites WHERE book_id=? AND chapter=? AND verse=?`, [activeBookId, activeChapter, v.verse]);
+        if (!allFavorited) {
+          db.runSync(`INSERT INTO favorites (book_id, chapter, verse) VALUES (?, ?, ?)`, [activeBookId, activeChapter, v.verse]);
+        }
       }
-      setSelectedVerses([]); refreshUserDataSync();
+      setSelectedVerses([]); 
+      refreshUserDataSync();
     } catch (e) {}
   }
 
@@ -174,18 +172,6 @@ export default function BibleScreen() {
         if (color) db.runSync(`INSERT INTO highlights (book_id, chapter, verse, color) VALUES (?, ?, ?, ?)`, [activeBookId, activeChapter, v.verse, color]);
       }
       setShowHighlightPalette(false); setSelectedVerses([]); refreshUserDataSync();
-    } catch (e) {}
-  }
-
-  function saveNote() {
-    if (!newNoteText.trim()) return;
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
-    try {
-      const db = getSafeDb('UserData.db');
-      for (const v of selectedVerses) {
-        db.runSync(`INSERT INTO notes (book_id, chapter, verse, note_text) VALUES (?, ?, ?, ?)`, [activeBookId, activeChapter, v.verse, newNoteText]);
-      }
-      setNewNoteText(''); setShowNoteModal(false); setSelectedVerses([]); refreshUserDataSync();
     } catch (e) {}
   }
 
@@ -245,8 +231,9 @@ export default function BibleScreen() {
                 item={item} isDark={isDark} colors={colors} bibleLanguage={bibleLanguage}
                 bibleFontSize={bibleFontSize} bibleLineHeight={bibleLineHeight} bibleLetterSpacing={bibleLetterSpacing}
                 isTargetHighlighted={highlightedVerse === item.verse} isSelected={selectedVerses.some(v => v.verse === item.verse)}
-                userHighlight={userHighlights.find(h => h.verse === item.verse)} isBookmarked={userBookmarks.includes(item.verse)}
-                hasNote={userNotes.includes(item.verse)} highlightedWord={highlightedWord}
+                userHighlight={userHighlights.find(h => h.verse === item.verse)} 
+                isFavorite={userFavorites.includes(item.verse)} // <-- Passes isFavorite to the Renderer
+                highlightedWord={highlightedWord}
                 onToggleSelection={toggleVerseSelection}
                 onLongPress={(verse) => { if (selectedVerses.length === 0) { triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy); setSelectedVerses([verse]); } }}
               />
@@ -265,9 +252,9 @@ export default function BibleScreen() {
         )}
 
         <BibleActionBar
-          colors={colors} isDark={isDark} selectedVerses={selectedVerses} userFavorites={userBookmarks}
+          colors={colors} isDark={isDark} selectedVerses={selectedVerses} userFavorites={userFavorites}
           showHighlightPalette={showHighlightPalette} onCancel={() => { triggerHaptic(); setSelectedVerses([]); }}
-          onNote={() => { triggerHaptic(); setShowNoteModal(true); }} onFavorite={saveBookmark}
+          onFavorite={saveFavorite} // <-- Uses the clean Favorite function
           onToggleHighlightPalette={() => { triggerHaptic(); setShowHighlightPalette(!showHighlightPalette); }} onSaveHighlight={saveHighlight}
           onCrossRef={openCrossRefs} onShare={handleShare}
         />
@@ -283,7 +270,6 @@ export default function BibleScreen() {
         onVerseSelect={(v) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setActiveBookId(tempBookId); setActiveChapter(tempChapterRef.current); setTargetVerse(v); setIsPickerVisible(false); }}
       />
 
-      {/* Cleaned up Modals! */}
       <BibleLeftMenu
         visible={showLeftMenu}
         onClose={() => setShowLeftMenu(false)}
@@ -292,8 +278,6 @@ export default function BibleScreen() {
       />
       
       <BibleSearch visible={showSearch} onClose={() => setShowSearch(false)} onJumpToVerse={jumpToLocation} />
-      
-      <NoteModal visible={showNoteModal} colors={colors} isDark={isDark} appFontSize={appFontSize} noteText={newNoteText} setNoteText={setNewNoteText} onSave={saveNote} onClose={() => setShowNoteModal(false)} />
       
       <CrossRefModal visible={showCrossRefs} colors={colors} isDark={isDark} appFontSize={appFontSize} bibleLanguage={bibleLanguage} crossRefsList={crossRefsList} getBookName={getBookName} onJump={jumpToLocation} onClose={() => setShowCrossRefs(false)} />
     </View>

@@ -41,20 +41,16 @@ export function requestChapter(bookId, chapter, bibleLanguage, englishVersion, o
 
       if (myTicket !== currentTicket) return;
 
-      // FIX: Query the exact tables BibleScreen is expecting
       let highlights = [];
-      let bookmarks = [];
-      let notes = [];
+      let favorites = [];
       try {
         highlights = querySync('UserData.db', `SELECT verse, color FROM highlights WHERE book_id = ? AND chapter = ?`, [bookId, chapter]) || [];
-        bookmarks = querySync('UserData.db', `SELECT verse FROM bookmarks WHERE book_id = ? AND chapter = ?`, [bookId, chapter]) || [];
-        notes = querySync('UserData.db', `SELECT verse FROM notes WHERE book_id = ? AND chapter = ?`, [bookId, chapter]) || [];
+        favorites = querySync('UserData.db', `SELECT verse FROM favorites WHERE book_id = ? AND chapter = ?`, [bookId, chapter]) || [];
       } catch (e) {}
 
       if (myTicket !== currentTicket) return;
       
-      // FIX: Return all 5 arguments in the correct order
-      onSuccess(combined, maxCh, highlights, bookmarks, notes);
+      onSuccess(combined, maxCh, highlights, favorites);
 
     } catch (err) {
       if (myTicket === currentTicket) onError(err);
