@@ -165,7 +165,7 @@ export default function TodaysMannaScreen() {
       todayDevotion.content,
       "🌾 இன்றைய நாள் உங்களுக்கு ஆசிர்வாதமாக இருப்பதாக. 🌟",
       "🌾 தேவனுடைய கற்பனையின்படி நடக்க மறவாதீர்கள் 😇",
-      "✨✨✨To Get Daily Deovotion and more updates join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p"
+      "✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p"
     ];
     return textBlocks.join('\n\n'); // Joins everything together with neat line breaks
   };

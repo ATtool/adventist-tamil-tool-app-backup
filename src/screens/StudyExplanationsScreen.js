@@ -177,7 +177,7 @@ export default function StudyExplanationsScreen({ navigation }) {
   const checkInstallation = async () => {
     try {
       const dbInfo = await FileSystem.getInfoAsync(DB_PATH);
-      setIsDownloaded(dbInfo.exists && dbInfo.size > 1024 * 1024);
+      setIsDownloaded(dbInfo.exists && dbInfo.size > 280000000);
     } catch (e) { setIsDownloaded(false); }
   };
 
@@ -465,7 +465,29 @@ export default function StudyExplanationsScreen({ navigation }) {
 
         <View style={styles.centerContent}>
           <Ionicons name="library" size={80} color={colors.primary} style={{ marginBottom: 20 }} />
-          <Text style={[styles.downloadPrompt, { color: colors.text, fontSize: appFontSize + 4 }]}>Download Study Package</Text>
+          <Text style={[styles.downloadPrompt, { color: colors.text, fontSize: appFontSize + 4 }]}>
+            Download Study Package
+          </Text>
+          <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold', marginBottom: 10 }}>
+            வேதாகம விளக்க உரை பதிவிறக்கம்
+          </Text>
+
+          <Text style={[styles.downloadSub, { color: colors.subtext, fontSize: appFontSize, marginBottom: 5, textAlign: 'center' }]}>
+            Includes full verse-by-verse commentaries and offline maps.
+          </Text>
+          <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, textAlign: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
+            வசனங்களுக்கான விளக்க உரைகள் மற்றும் வரைபடங்கள் அடங்கியுள்ளது.
+          </Text>
+
+          <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 15, borderRadius: 10, marginBottom: 25, marginHorizontal: 20 }}>
+            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
+              ⚠️ WARNING: Do not close the app or go back while downloading!
+            </Text>
+            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>
+              எச்சரிக்கை: பதிவிறக்கம் செய்யும் போது செயலியை மூடவோ அல்லது பின்னால் செல்லவோ கூடாது!
+            </Text>
+          </View>
+
           {isDownloading ? (
             <View style={styles.progressContainer}>
               <Text style={{ color: colors.primary, marginBottom: 8, fontWeight: 'bold' }}>{downloadStatusText}</Text>
@@ -531,7 +553,16 @@ export default function StudyExplanationsScreen({ navigation }) {
 
         {/* 2. EXPANDABLE COMMENTARY CARDS */}
         {commentaries.length === 0 ? (
-          <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 40 }}>No study explanations found for this verse.</Text>
+          <View style={{ marginTop: 40, paddingHorizontal: 20 }}>
+            <Text style={{ color: colors.subtext, textAlign: 'center', fontSize: appFontSize }}>
+              No study explanations found for this verse.
+            </Text>
+            <Text style={{ color: colors.primary, textAlign: 'center', fontSize: appFontSize - 2, marginTop: 15, lineHeight: 22 }}>
+              {`If data failed to load, go to:
+Settings -> Manage Storage -> Delete Bible Verse Explanations
+and redownload the file fully.`}
+            </Text>
+          </View>
         ) : (
           commentaries.map((comm, index) => {
             const isExpanded = expandedCardId === index;

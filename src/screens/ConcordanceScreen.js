@@ -21,6 +21,18 @@ const DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1mdYSmnLkdS
 const STRONGS_TAG_REGEX = /<([HG]\d+)>/g;
 const HTML_TAG_REGEX = /<\/?(em|i|b|div|p|br)[^>]*>/gi;
 
+// Array of short English book names
+const SHORT_BOOKS = ["Gen","Exo","Lev","Num","Deut","Josh","Judg","Ruth","1Sam","2Sam","1Kgs","2Kgs","1Chron","2Chron","Ezra","Neh","Esth","Job","Ps","Prov","Eccles","Song","Isa","Jer","Lam","Ezek","Dan","Hos","Joel","Amos","Obad","Jonah","Mic","Nah","Hab","Zeph","Hag","Zech","Mal","Matt","Mark","Luke","John","Acts","Rom","1Cor","2Cor","Gal","Eph","Phil","Col","1Thess","2Thess","1Tim","2Tim","Titus","Philem","Heb","Jas","1Pet","2Pet","1John","2John","3John","Jude","Rev"];
+
+// Helper function to get the correct name based on language
+const getBookName = (bookId, language) => {
+  const id = parseInt(bookId, 10);
+  const book = booksData.find(b => b.id === id);
+  if (!book) return bookId;
+  if (language === 'tamil') return book.name_ta;
+  return SHORT_BOOKS[id - 1] || book.name_en;
+};
+
 export default function ConcordanceScreen({ navigation }) {
   const {
     colors, isDark, appFontSize, bibleLanguage,
@@ -105,7 +117,7 @@ export default function ConcordanceScreen({ navigation }) {
   const checkEngineInstallation = async () => {
     try {
       const info = await FileSystem.getInfoAsync(DB_PATH);
-      if (info.exists && info.size > 1024 * 1024) {
+      if (info.exists && info.size > 13000000) {
         const database = await SQLite.openDatabaseAsync(DB_FILENAME);
         setDb(database);
         setIsEngineDownloaded(true);
@@ -415,7 +427,12 @@ export default function ConcordanceScreen({ navigation }) {
     setTimeout(() => setHighlightedVerse(null), 1000);
   };
 
-  const getBookName = (id) => booksData.find(b => b.id === id)?.name_en || 'Unknown';
+  const SHORT_BOOKS = ["Gen","Exo","Lev","Num","Deut","Josh","Judg","Ruth","1Sam","2Sam","1Kgs","2Kgs","1Chron","2Chron","Ezra","Neh","Esth","Job","Ps","Prov","Eccles","Song","Isa","Jer","Lam","Ezek","Dan","Hos","Joel","Amos","Obad","Jonah","Mic","Nah","Hab","Zeph","Hag","Zech","Mal","Matt","Mark","Luke","John","Acts","Rom","1Cor","2Cor","Gal","Eph","Phil","Col","1Thess","2Thess","1Tim","2Tim","Titus","Philem","Heb","Jas","1Pet","2Pet","1John","2John","3John","Jude","Rev"];
+
+  const getBookName = (id) => {
+    // Forces the short English name (Gen, Exo, etc.) regardless of app language settings
+    return SHORT_BOOKS[id - 1] || 'Unknown';
+  };
 
   const availableChapters = useMemo(() => {
     const book = booksData.find(b => b.id === activeBookId);
@@ -466,9 +483,25 @@ export default function ConcordanceScreen({ navigation }) {
           <Text style={[styles.downloadPrompt, { color: colors.text, fontSize: appFontSize + 2 }]}>
             Concordance Engine
           </Text>
-          <Text style={[styles.downloadSub, { color: colors.subtext, fontSize: appFontSize - 2 }]}>
+          <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold', marginBottom: 10 }}>
+            வேதாகம கான்கார்டன்ஸ் பதிவிறக்கம்
+          </Text>
+          
+          <Text style={[styles.downloadSub, { color: colors.subtext, fontSize: appFontSize - 2, marginBottom: 5 }]}>
             Download once to unlock full Strong's dictionary, Hebrew and Greek definitions — fully offline.
           </Text>
+          <Text style={{ color: colors.subtext, fontSize: appFontSize - 4, textAlign: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
+            எபிரேய மற்றும் கிரேக்க மூல வார்த்தைகளின் அர்த்தங்கள் அடங்கியுள்ளது.
+          </Text>
+
+          <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 15, borderRadius: 10, marginBottom: 25, marginHorizontal: 20 }}>
+            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
+              ⚠️ WARNING: Do not close the app or go back while downloading!
+            </Text>
+            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>
+              எச்சரிக்கை: பதிவிறக்கம் செய்யும் போது செயலியை மூடவோ அல்லது பின்னால் செல்லவோ கூடாது!
+            </Text>
+          </View>
 
           {isDownloading ? (
             <View style={styles.progressContainer}>
@@ -793,6 +826,11 @@ export default function ConcordanceScreen({ navigation }) {
                   <View style={styles.centerContent}>
                     <Ionicons name="search-outline" size={40} color={colors.border} style={{ marginBottom: 10 }} />
                     <Text style={{ color: colors.subtext, textAlign: 'center' }}>No results found</Text>
+                    <Text style={{ color: colors.primary, textAlign: 'center', fontSize: appFontSize - 2, marginTop: 15, lineHeight: 22 }}>
+                      {`If data failed to load, go to:
+Settings -> Manage Storage -> Delete Concordance
+and redownload the file fully.`}
+                    </Text>
                   </View>
                 ) : null
               }
@@ -944,7 +982,7 @@ export default function ConcordanceScreen({ navigation }) {
                             activeOpacity={0.65}
                           >
                             <Text style={[styles.refLink, { color: colors.primary, fontSize: sheetFontSize }]}>
-                              {`${ref.b};${ref.c};${ref.v}`}{idx < arr.length - 1 ? ',  ' : ''}
+                              {`${getBookName(ref.b)} ${ref.c}:${ref.v}`}{idx < arr.length - 1 ? ',  ' : ''}
                             </Text>
                           </TouchableOpacity>
                         ))}
