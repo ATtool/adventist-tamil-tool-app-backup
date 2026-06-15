@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
-import * as Clipboard from 'expo-clipboard'; // NEW: The Clipboard Tool!
+// You can leave expo-clipboard imported if you use it later, or remove it.
+import * as Clipboard from 'expo-clipboard'; 
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
 import { useSettings } from '../context/SettingsContext';
@@ -110,6 +111,27 @@ export default function TodaysMannaScreen() {
     if (date) setSelectedDate(date);
   };
 
+  const goToPreviousDay = () => {
+    const prevDate = new Date(selectedDate);
+    prevDate.setDate(prevDate.getDate() - 1);
+    setSelectedDate(prevDate);
+  };
+
+  const goToNextDay = () => {
+    const nextDate = new Date(selectedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    setSelectedDate(nextDate);
+  };
+
+  const isToday = () => {
+    const today = new Date();
+    return (
+      selectedDate.getDate() === today.getDate() &&
+      selectedDate.getMonth() === today.getMonth() &&
+      selectedDate.getFullYear() === today.getFullYear()
+    );
+  };
+
   const toggleSpeech = () => {
     if (isPlaying) {
       Speech.stop();
@@ -132,27 +154,30 @@ export default function TodaysMannaScreen() {
 
   const displayDate = `${selectedDate.getDate()}/${selectedDate.getMonth() + 1}/${selectedDate.getFullYear()}`;
 
-  // This creates the perfect text block we use for BOTH Sharing and Copying
+  // --- CHANGED: Formatting the specific text for sharing ---
   const getFullDevotionText = () => {
     if (!todayDevotion) return "";
     const textBlocks = [
-      `[${displayDate}]`,
-      todayDevotion.title,
-      todayDevotion.verse,
+      "🌻*இன்றைய மன்னா* - From ATT", // App name only in Tamil
+      `🗓️ *நாள் :* ${displayDate}`,
+      `✨*இன்றைய தலைப்பு*✨ \n${todayDevotion.title}`,
+      `✝️*இன்றைய வேதவசனம்*✝️ \n${todayDevotion.verse}`,
       todayDevotion.content,
       "🌾 இன்றைய நாள் உங்களுக்கு ஆசிர்வாதமாக இருப்பதாக. 🌟",
       "🌾 தேவனுடைய கற்பனையின்படி நடக்க மறவாதீர்கள் 😇",
-      "- Adventist Tamil Tool team\nJoin our WhatsApp channel: https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p"
+      "✨✨✨To Get Daily Deovotion and more updates join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p"
     ];
-    return textBlocks.join('\n\n');
+    return textBlocks.join('\n\n'); // Joins everything together with neat line breaks
   };
 
-  const copyDevotion = async () => {
+  // --- CHANGED: Using React Native's Share API instead of Clipboard ---
+  const shareDevotion = async () => {
     try {
-      await Clipboard.setStringAsync(getFullDevotionText());
-      Alert.alert("வெற்றிகரமாக நகலெடுக்கப்பட்டது", "You can now paste the devotion anywhere! (WhatsApp, Facebook, etc.)");
+      await Share.share({
+        message: getFullDevotionText(),
+      });
     } catch (error) {
-      console.log("Error copying:", error);
+      console.log("Error sharing:", error);
     }
   };
 
@@ -181,8 +206,9 @@ export default function TodaysMannaScreen() {
                 <Text style={{ color: "#00F0FF", fontWeight: 'bold', fontSize: 16 }}>Aa</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity onPress={copyDevotion} style={styles.iconBtn}>
-                <Ionicons name="copy-outline" size={22} color="#00F0FF" />
+              {/* CHANGED: Replaced the copy icon with a share icon and connected the new function */}
+              <TouchableOpacity onPress={shareDevotion} style={styles.iconBtn}>
+                <Ionicons name="share-social-outline" size={22} color="#00F0FF" />
               </TouchableOpacity>
             </>
           )}
@@ -267,6 +293,25 @@ export default function TodaysMannaScreen() {
             </Text>
           </View>
 
+          <View style={styles.navButtonsContainer}>
+            <TouchableOpacity 
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+              onPress={goToPreviousDay}
+            >
+              <Ionicons name="chevron-back" size={20} color={colors.text} />
+              <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: 14 }}>முந்தைய நாள்</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isToday() ? 0.3 : 1 }]} 
+              onPress={goToNextDay}
+              disabled={isToday()}
+            >
+              <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
         </ScrollView>
       ) : null}
     </SafeAreaView>
@@ -295,5 +340,8 @@ const styles = StyleSheet.create({
   bodyText: { fontFamily: 'Tamil003', textAlign: 'justify' }, 
   
   blessingBox: { marginTop: 50, padding: 20, borderRadius: 12, borderWidth: 1, borderStyle: 'dashed', alignItems: 'center' },
-  blessingText: { fontFamily: 'Tamil003', textAlign: 'center', lineHeight: 26 }
+  blessingText: { fontFamily: 'Tamil003', textAlign: 'center', lineHeight: 26 },
+  
+  navButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 40, paddingHorizontal: 5 },
+  dayNavBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 15, borderRadius: 12, borderWidth: 1 }
 });

@@ -37,7 +37,7 @@ export default function BibleScreen() {
   const [crossRefsList, setCrossRefsList] = useState([]);
 
   const [userHighlights, setUserHighlights] = useState([]);
-  const [userFavorites, setUserFavorites] = useState([]); // <-- Replaced Bookmarks with Favorites
+  const [userFavorites, setUserFavorites] = useState([]); 
 
   const [showHighlightPalette, setShowHighlightPalette] = useState(false);
   const [showLeftMenu, setShowLeftMenu] = useState(false);
@@ -68,7 +68,7 @@ export default function BibleScreen() {
         setVerses(combinedVerses);
         setMaxChaptersForActiveBook(maxChapters);
         setUserHighlights(highlights);
-        setUserFavorites(favorites.map(x => x.verse)); // <-- Maps favorites accurately
+        setUserFavorites(favorites.map(x => x.verse)); 
         setIsLoading(false);
         setSelectedVerses([]);
         setShowHighlightPalette(false);
@@ -145,7 +145,6 @@ export default function BibleScreen() {
     } catch (e) {}
   }
 
-  // --- THIS IS THE MAGIC FUNCTION THAT SAVES YOUR FAVORITES ---
   function saveFavorite() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
     try {
@@ -175,14 +174,33 @@ export default function BibleScreen() {
     } catch (e) {}
   }
 
+  // --- CHANGED: This is the updated Share Function! ---
   async function handleShare() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     let shareText = `${getBookName(activeBookId)} ${activeChapter}\n\n`;
-    [...selectedVerses].sort((a, b) => a.verse - b.verse).forEach(v => { shareText += `[${v.verse}] ${v.text ?? ''}\n\n`; });
-    shareText += `~ Shared from Adventist Tamil Tool`;
+    
+    // Sort verses numerically and pull the correct text (text_ta and text_en)
+    [...selectedVerses].sort((a, b) => a.verse - b.verse).forEach(v => { 
+      let verseContent = '';
+      
+      if (v.text_ta) {
+        verseContent += v.text_ta;
+      }
+      
+      if (v.text_en) {
+        verseContent += (v.text_ta ? '\n' : '') + v.text_en;
+      }
+
+      shareText += `[${v.verse}] ${verseContent}\n\n`; 
+    });
+    
+    // Added the WhatsApp Channel Link
+    shareText += `Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p\n\n~ Shared from Adventist Tamil Tool`;
+    
     try { await Share.share({ message: shareText }); } catch (e) {}
     setSelectedVerses([]);
   }
+  // ---------------------------------------------------
 
   function openCrossRefs() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
@@ -232,7 +250,7 @@ export default function BibleScreen() {
                 bibleFontSize={bibleFontSize} bibleLineHeight={bibleLineHeight} bibleLetterSpacing={bibleLetterSpacing}
                 isTargetHighlighted={highlightedVerse === item.verse} isSelected={selectedVerses.some(v => v.verse === item.verse)}
                 userHighlight={userHighlights.find(h => h.verse === item.verse)} 
-                isFavorite={userFavorites.includes(item.verse)} // <-- Passes isFavorite to the Renderer
+                isFavorite={userFavorites.includes(item.verse)} 
                 highlightedWord={highlightedWord}
                 onToggleSelection={toggleVerseSelection}
                 onLongPress={(verse) => { if (selectedVerses.length === 0) { triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy); setSelectedVerses([verse]); } }}
@@ -254,7 +272,7 @@ export default function BibleScreen() {
         <BibleActionBar
           colors={colors} isDark={isDark} selectedVerses={selectedVerses} userFavorites={userFavorites}
           showHighlightPalette={showHighlightPalette} onCancel={() => { triggerHaptic(); setSelectedVerses([]); }}
-          onFavorite={saveFavorite} // <-- Uses the clean Favorite function
+          onFavorite={saveFavorite} 
           onToggleHighlightPalette={() => { triggerHaptic(); setShowHighlightPalette(!showHighlightPalette); }} onSaveHighlight={saveHighlight}
           onCrossRef={openCrossRefs} onShare={handleShare}
         />
