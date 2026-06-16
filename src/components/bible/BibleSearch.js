@@ -3,17 +3,20 @@ import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, 
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as SQLite from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
+
 import { useSettings } from '../../context/SettingsContext';
 import booksData from '../../data/books.json';
+// Import your centralized database manager instead of raw SQLite
+import { getSafeDb, getTableNameSync } from '../../utils/DatabaseManager';
 
 const { width } = Dimensions.get('window');
 
 export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
   const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion } = useSettings();
 
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -24,6 +27,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
 
   const slideAnim = useRef(new Animated.Value(width)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Load History on Mount
   useEffect(() => {
@@ -37,10 +41,19 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
 
   useEffect(() => {
     if (visible) {
-      Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+      setIsModalVisible(true);
+      Animated.parallel([
+        Animated.spring(slideAnim, { toValue: 0, friction: 9, tension: 60, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true })
+      ]).start();
     } else {
-      Animated.timing(slideAnim, { toValue: width, duration: 250, useNativeDriver: true }).start();
       Keyboard.dismiss();
+      Animated.parallel([
+        Animated.timing(slideAnim, { toValue: width, duration: 250, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true })
+      ]).start(() => {
+        setIsModalVisible(false);
+      });
     }
   }, [visible]);
 
@@ -56,11 +69,6 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
   function getBookName(id) {
     const book = booksData.find(b => b.id === id);
     return book ? (bibleLanguage === 'english' ? book.name_en : book.name_ta) : '';
-  }
-
-  async function getTableName(db) {
-    const res = await db.getAllAsync('SELECT name FROM sqlite_master WHERE type="table" AND name NOT LIKE "sqlite_%"');
-    return res.length > 0 ? res[0].name : 'verses';
   }
 
   function toggleCustomBook(bookId) {
@@ -90,7 +98,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
     AsyncStorage.setItem('@bible_search_history', JSON.stringify(updated));
   }
 
-  async function executeSearch(queryOverride = null) {
+  function executeSearch(queryOverride = null) {
     const q = typeof queryOverride === 'string' ? queryOverride : searchQuery;
     if (!q.trim()) return;
     
@@ -105,73 +113,76 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
     setRecentSearches(updatedSearches);
     AsyncStorage.setItem('@bible_search_history', JSON.stringify(updatedSearches));
 
-    try {
-      let bookFilter = '';
-      let bookIds = [];
+    // Delay the search by 50ms so the "Searching..." animation renders first!
+    setTimeout(() => {
+      try {
+        let bookFilter = '';
+        let bookIds = [];
 
-      if (searchScope === 'ot') bookIds = booksData.filter(b => b.testament === 'OT').map(b => b.id);
-      else if (searchScope === 'nt') bookIds = booksData.filter(b => b.testament === 'NT').map(b => b.id);
-      else if (searchScope === 'custom') {
-        // FIX: Added safety net to prevent SQL crash if no books are selected
-        if (selectedBooks.length === 0) {
-          Alert.alert("No Books Selected", "Please select at least one book to search within.");
-          setIsSearching(false);
-          return;
+        if (searchScope === 'ot') bookIds = booksData.filter(b => b.testament === 'OT').map(b => b.id);
+        else if (searchScope === 'nt') bookIds = booksData.filter(b => b.testament === 'NT').map(b => b.id);
+        else if (searchScope === 'custom') {
+          if (selectedBooks.length === 0) {
+            Alert.alert("No Books Selected", "Please select at least one book to search within.");
+            setIsSearching(false);
+            return;
+          }
+          bookIds = selectedBooks;
         }
-        bookIds = selectedBooks;
-      }
-      else bookIds = booksData.map(b => b.id);
+        else bookIds = booksData.map(b => b.id);
 
-      bookFilter = `book_id IN (${bookIds.join(',')})`;
-      
-      // FIX: Escape SQL wildcards so searching for '%' doesn't freeze the device!
-      const safeQuery = queryTrimmed.replace(/[%_]/g, '\$&');
-      const searchPattern = `%${safeQuery}%`;
-      
-      let combinedResults = [];
+        bookFilter = `book_id IN (${bookIds.join(',')})`;
+        
+        // Removed regex escapes that conflict with SQLite
+        const searchPattern = `%${queryTrimmed}%`; 
+        
+        let combinedResults = [];
 
-      if (bibleLanguage === 'tamil' || bibleLanguage === 'both') {
-        const taDb = await SQLite.openDatabaseAsync('TAMIL.db');
-        const taTable = await getTableName(taDb);
-        const taRes = await taDb.getAllAsync(`SELECT book_id, chapter, verse, text FROM "${taTable}" WHERE text LIKE ? AND ${bookFilter} LIMIT 200`, [searchPattern]);
-        combinedResults = [...combinedResults, ...taRes.map(r => ({ ...r, lang: 'ta' }))];
-      }
-
-      if (bibleLanguage === 'english' || bibleLanguage === 'both') {
-        const dbName = activeEnglishVersion ? `${activeEnglishVersion}.db` : 'KJV.db';
-        const enDb = await SQLite.openDatabaseAsync(dbName);
-        const enTable = await getTableName(enDb);
-        const enRes = await enDb.getAllAsync(`SELECT book_id, chapter, verse, text FROM "${enTable}" WHERE text LIKE ? AND ${bookFilter} LIMIT 200`, [searchPattern]);
-        combinedResults = [...combinedResults, ...enRes.map(r => ({ ...r, lang: 'en' }))];
-      }
-
-      const grouped = [];
-      combinedResults.forEach(r => {
-        const existing = grouped.find(g => g.book_id === r.book_id && g.chapter === r.chapter && g.verse === r.verse);
-        if (existing) {
-          if (r.lang === 'ta') existing.text_ta = r.text;
-          if (r.lang === 'en') existing.text_en = r.text;
-        } else {
-          grouped.push({
-            book_id: r.book_id, chapter: r.chapter, verse: r.verse,
-            text_ta: r.lang === 'ta' ? r.text : '',
-            text_en: r.lang === 'en' ? r.text : ''
-          });
+        // Fetch using synchronous DatabaseManager methods
+        if (bibleLanguage === 'tamil' || bibleLanguage === 'both') {
+          const taDb = getSafeDb('TAMIL.db');
+          const taTable = getTableNameSync('TAMIL.db');
+          const taRes = taDb.getAllSync(`SELECT book_id, chapter, verse, text FROM "${taTable}" WHERE text LIKE ? AND ${bookFilter} LIMIT 200`, [searchPattern]);
+          combinedResults = [...combinedResults, ...taRes.map(r => ({ ...r, lang: 'ta' }))];
         }
-      });
 
-      grouped.sort((a, b) => {
-        if (a.book_id !== b.book_id) return a.book_id - b.book_id;
-        if (a.chapter !== b.chapter) return a.chapter - b.chapter;
-        return a.verse - b.verse;
-      });
+        if (bibleLanguage === 'english' || bibleLanguage === 'both') {
+          const dbName = activeEnglishVersion ? `${activeEnglishVersion}.db` : 'KJV.db';
+          const enDb = getSafeDb(dbName);
+          const enTable = getTableNameSync(dbName);
+          const enRes = enDb.getAllSync(`SELECT book_id, chapter, verse, text FROM "${enTable}" WHERE text LIKE ? AND ${bookFilter} LIMIT 200`, [searchPattern]);
+          combinedResults = [...combinedResults, ...enRes.map(r => ({ ...r, lang: 'en' }))];
+        }
 
-      setResults(grouped);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSearching(false);
-    }
+        const grouped = [];
+        combinedResults.forEach(r => {
+          const existing = grouped.find(g => g.book_id === r.book_id && g.chapter === r.chapter && g.verse === r.verse);
+          if (existing) {
+            if (r.lang === 'ta') existing.text_ta = r.text;
+            if (r.lang === 'en') existing.text_en = r.text;
+          } else {
+            grouped.push({
+              book_id: r.book_id, chapter: r.chapter, verse: r.verse,
+              text_ta: r.lang === 'ta' ? r.text : '',
+              text_en: r.lang === 'en' ? r.text : ''
+            });
+          }
+        });
+
+        grouped.sort((a, b) => {
+          if (a.book_id !== b.book_id) return a.book_id - b.book_id;
+          if (a.chapter !== b.chapter) return a.chapter - b.chapter;
+          return a.verse - b.verse;
+        });
+
+        setResults(grouped);
+      } catch (e) {
+        console.error("Search failed:", e);
+        Alert.alert("Search Error", "An error occurred while searching.");
+      } finally {
+        setIsSearching(false);
+      }
+    }, 50);
   }
 
   function renderResultItem({ item }) {
@@ -181,7 +192,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
         onPress={() => {
           triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
           handleClose();
-          onJumpToVerse(item.book_id, item.chapter, item.verse, searchQuery.trim());
+          setTimeout(() => onJumpToVerse(item.book_id, item.chapter, item.verse, searchQuery.trim()), 300);
         }}
       >
         <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginBottom: 5 }}>
@@ -202,8 +213,14 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
   }
 
   return (
-    <Modal visible={visible} transparent animationType="none">
+    <Modal visible={isModalVisible} transparent animationType="none">
       <View style={styles.overlay}>
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+          <TouchableOpacity style={StyleSheet.absoluteFill} onPress={handleClose} activeOpacity={1}>
+             <BlurView intensity={isDark ? 50 : 20} tint="dark" style={StyleSheet.absoluteFillObject} />
+          </TouchableOpacity>
+        </Animated.View>
+
         <Animated.View style={[styles.panel, { backgroundColor: isDark ? '#05070A' : '#FCFAF5', transform: [{ translateX: slideAnim }] }]}>
           <SafeAreaView style={{ flex: 1 }}>
             
@@ -306,7 +323,6 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
               <FlatList
                 data={booksData}
                 keyExtractor={item => item.id.toString()}
-                // FIX: extraData ensures checkboxes update instantly when clicked
                 extraData={selectedBooks}
                 contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
                 renderItem={({ item }) => {
@@ -331,8 +347,8 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1 },
-  panel: { width: '100%', height: '100%' },
+  overlay: { flex: 1, flexDirection: 'row' },
+  panel: { width: '100%', height: '100%', position: 'absolute', right: 0 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 15, borderBottomWidth: 1 },
   iconBtn: { padding: 5 },
   searchBox: { flex: 1, flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderRadius: 15, marginHorizontal: 10, height: 45 },
