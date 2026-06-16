@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Switch, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, Switch, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,12 @@ import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
 import { useNavigation } from '@react-navigation/native';
+import { EGW_BOOKS_DATA } from '../data/egwBooks'; 
+
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const PROTECTED_DBS = ['KJV.db', 'TAMIL.db', 'zion.db', 'Zion.db', 'Thirumarai.db', 'cross_references.db', 'UserData.db', 'UserData.db-journal'];
 
@@ -31,8 +37,13 @@ export default function SettingsScreen() {
   const [showStorageModal, setShowStorageModal] = useState(false);
   const [downloadedBibles, setDownloadedBibles] = useState([]);
   const [downloadedDicts, setDownloadedDicts] = useState([]);
+  const [downloadedMagazines, setDownloadedMagazines] = useState([]);
+  const [downloadedEGWBooks, setDownloadedEGWBooks] = useState([]); 
   const [isConcordanceDownloaded, setIsConcordanceDownloaded] = useState(false);
   const [isStudyDownloaded, setIsStudyDownloaded] = useState(false);
+
+  // Accordion state (null means all closed, otherwise stores the active section key)
+  const [expandedSection, setExpandedSection] = useState(null);
 
   const fetchDownloadedVersions = async () => {
     try {
@@ -54,26 +65,32 @@ export default function SettingsScreen() {
         !f.toLowerCase().includes('concordance')
       );
       const dicts = files.filter(f => dictFilesArray.includes(f));
+      const magazines = files.filter(f => f.startsWith('mag_') && f.endsWith('.pdf'));
       
       setDownloadedBibles(bibles);
       setDownloadedDicts(dicts);
+      setDownloadedMagazines(magazines);
       
       const concPath = sqliteDirectory + '/' + CONCORDANCE_FILE;
       const concInfo = await FileSystem.getInfoAsync(concPath);
-      if (concInfo.exists && concInfo.size > 100 * 1024) {
-        setIsConcordanceDownloaded(true);
-      } else {
-        setIsConcordanceDownloaded(false);
-      }
+      setIsConcordanceDownloaded(concInfo.exists && concInfo.size > 100 * 1024);
 
-      // NEW: Check for Study Explanations Package
       const studyPath = sqliteDirectory + '/' + STUDY_DB_FILE;
       const studyInfo = await FileSystem.getInfoAsync(studyPath);
-      if (studyInfo.exists && studyInfo.size > 100 * 1024) {
-        setIsStudyDownloaded(true);
-      } else {
-        setIsStudyDownloaded(false);
+      setIsStudyDownloaded(studyInfo.exists && studyInfo.size > 100 * 1024);
+
+      const rootFiles = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory);
+      const egwPdfs = rootFiles.filter(f => f.endsWith('.pdf') && !f.startsWith('mag_'));
+      
+      const matchedBooks = [];
+      for (let file of egwPdfs) {
+        const bookId = file.replace('.pdf', '');
+        const bookData = EGW_BOOKS_DATA.find(b => b.id === bookId);
+        if (bookData) {
+          matchedBooks.push(bookData);
+        }
       }
+      setDownloadedEGWBooks(matchedBooks);
       
     } catch (error) {
       console.log("Error reading versions:", error);
@@ -91,16 +108,43 @@ export default function SettingsScreen() {
     setHapticsEnabled(!hapticsEnabled);
   };
 
+  const toggleSection = (section) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedSection(prev => (prev === section ? null : section));
+  };
+
   const getDisplayName = (fileName) => {
+    if (fileName.startsWith('mag_')) return fileName.replace('mag_', '').replace('.pdf', '');
     if (DICTIONARY_FILES[fileName]) return DICTIONARY_FILES[fileName];
     if (fileName.toLowerCase() === CONCORDANCE_FILE) return "Strong's Concordance";
     return fileName.replace('.db', '');
   };
 
+  const confirmDeleteEgwBook = (book) => {
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Delete Book",
+      `Are you sure you want to permanently delete "${book.title_english}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              const uri = FileSystem.documentDirectory + `${book.id}.pdf`;
+              await FileSystem.deleteAsync(uri, { idempotent: true });
+              fetchDownloadedVersions();
+            } catch (e) { console.log("Delete error:", e); }
+          } 
+        }
+      ]
+    );
+  };
+
   const confirmDelete = (fileName) => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Custom delete confirmation for the Study Package
     if (fileName === 'study_package') {
       Alert.alert(
         "Delete Package",
@@ -145,7 +189,7 @@ export default function SettingsScreen() {
       
       if (fileName.toLowerCase() === CONCORDANCE_FILE) {
         setIsConcordanceDownloaded(false);
-      } else {
+      } else if (!fileName.startsWith('mag_')) {
         const versionId = fileName.replace('.db', '');
         if (activeEnglishVersion === versionId) {
           setActiveEnglishVersion('KJV');
@@ -154,6 +198,29 @@ export default function SettingsScreen() {
       fetchDownloadedVersions();
     } catch (e) { console.log("Delete error:", e); }
   };
+
+  // Helper to render accordion headers
+  const renderAccordionHeader = (title, sectionKey, count) => {
+    const isExpanded = expandedSection === sectionKey;
+    return (
+      <TouchableOpacity 
+        activeOpacity={0.8} 
+        onPress={() => toggleSection(sectionKey)} 
+        style={[
+          styles.accordionHeader, 
+          { backgroundColor: isExpanded ? 'rgba(0, 240, 255, 0.05)' : colors.card, borderColor: isExpanded ? colors.primary : colors.border }
+        ]}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ color: isExpanded ? colors.primary : colors.text, fontSize: appFontSize, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</Text>
+          <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginLeft: 8 }}>({count})</Text>
+        </View>
+        <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} />
+      </TouchableOpacity>
+    );
+  };
+
+  const toolsCount = (isStudyDownloaded ? 1 : 0) + (isConcordanceDownloaded ? 1 : 0);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -223,76 +290,133 @@ export default function SettingsScreen() {
             
             <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
               
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '900', textTransform: 'uppercase', marginBottom: 15, letterSpacing: 1 }}>Deep Study Tools</Text>
-              
-              {/* NEW: Bible Verse Explanations Card */}
-              <View style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <Ionicons name="library" size={24} color={isStudyDownloaded ? colors.primary : colors.subtext} style={{ marginRight: 15 }} />
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Bible Verse Explanations</Text>
-                  </View>
-                </View>
-                
-                {isStudyDownloaded ? (
-                  <TouchableOpacity onPress={() => confirmDelete('study_package')} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
-                    <Ionicons name="trash" size={20} color="#FF3B30" />
-                  </TouchableOpacity>
-                ) : (
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontStyle: 'italic' }}>Not Downloaded</Text>
-                )}
-              </View>
-
-              {/* Concordance Card */}
-              <View style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <Ionicons name="layers" size={24} color={isConcordanceDownloaded ? colors.primary : colors.subtext} style={{ marginRight: 15 }} />
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Strong's Concordance</Text>
-                  </View>
-                </View>
-                
-                {isConcordanceDownloaded ? (
-                  <TouchableOpacity onPress={() => confirmDelete(CONCORDANCE_FILE)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
-                    <Ionicons name="trash" size={20} color="#FF3B30" />
-                  </TouchableOpacity>
-                ) : (
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontStyle: 'italic' }}>Not Downloaded</Text>
-                )}
-              </View>
-
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '900', textTransform: 'uppercase', marginTop: 15, marginBottom: 15, letterSpacing: 1 }}>Bible Versions</Text>
-              {downloadedBibles.length === 0 ? (
-                <Text style={{ color: colors.subtext, fontSize: appFontSize, marginBottom: 20 }}>No extra Bible versions downloaded.</Text>
-              ) : (
-                downloadedBibles.map((item) => (
-                  <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Ionicons name="book" size={24} color={colors.primary} style={{ marginRight: 15 }} />
-                      <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>{getDisplayName(item)}</Text>
+              {/* SECTION: Deep Study Tools */}
+              {renderAccordionHeader('Deep Study Tools', 'tools', toolsCount)}
+              {expandedSection === 'tools' && (
+                <View style={styles.accordionContent}>
+                  <View style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <Ionicons name="library" size={24} color={isStudyDownloaded ? colors.primary : colors.subtext} style={{ marginRight: 15 }} />
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Bible Verse Explanations</Text>
+                      </View>
                     </View>
-                    <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
-                      <Ionicons name="trash" size={20} color="#FF3B30" />
-                    </TouchableOpacity>
+                    {isStudyDownloaded ? (
+                      <TouchableOpacity onPress={() => confirmDelete('study_package')} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
+                        <Ionicons name="trash" size={20} color="#FF3B30" />
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontStyle: 'italic' }}>Not Downloaded</Text>
+                    )}
                   </View>
-                ))
+
+                  <View style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                      <Ionicons name="layers" size={24} color={isConcordanceDownloaded ? colors.primary : colors.subtext} style={{ marginRight: 15 }} />
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Strong's Concordance</Text>
+                      </View>
+                    </View>
+                    {isConcordanceDownloaded ? (
+                      <TouchableOpacity onPress={() => confirmDelete(CONCORDANCE_FILE)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
+                        <Ionicons name="trash" size={20} color="#FF3B30" />
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontStyle: 'italic' }}>Not Downloaded</Text>
+                    )}
+                  </View>
+                </View>
               )}
 
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '900', textTransform: 'uppercase', marginTop: 15, marginBottom: 15, letterSpacing: 1 }}>Dictionaries</Text>
-              {downloadedDicts.length === 0 ? (
-                <Text style={{ color: colors.subtext, fontSize: appFontSize, marginBottom: 20 }}>No dictionaries downloaded yet.</Text>
-              ) : (
-                downloadedDicts.map((item) => (
-                  <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
-                      <Ionicons name="library" size={24} color={colors.primary} style={{ marginRight: 15 }} />
-                      <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{getDisplayName(item)}</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
-                      <Ionicons name="trash" size={20} color="#FF3B30" />
-                    </TouchableOpacity>
-                  </View>
-                ))
+              {/* SECTION: EGW Books */}
+              {renderAccordionHeader('EGW Books', 'egw', downloadedEGWBooks.length)}
+              {expandedSection === 'egw' && (
+                <View style={styles.accordionContent}>
+                  {downloadedEGWBooks.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No EGW Books downloaded yet.</Text>
+                  ) : (
+                    downloadedEGWBooks.map((book) => (
+                      <View key={book.id} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
+                          <Ionicons name={book.icon || "book"} size={24} color={colors.primary} style={{ marginRight: 15 }} />
+                          <View style={{ flex: 1 }}>
+                            <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{book.title_english}</Text>
+                            <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2 }} numberOfLines={1}>{book.title_tamil}</Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity onPress={() => confirmDeleteEgwBook(book)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
+                          <Ionicons name="trash" size={20} color="#FF3B30" />
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+
+              {/* SECTION: Monthly Magazine */}
+              {renderAccordionHeader('Monthly Magazine', 'mag', downloadedMagazines.length)}
+              {expandedSection === 'mag' && (
+                <View style={styles.accordionContent}>
+                  {downloadedMagazines.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No magazines downloaded yet.</Text>
+                  ) : (
+                    downloadedMagazines.map((item) => (
+                      <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
+                          <Ionicons name="document-text" size={24} color={colors.primary} style={{ marginRight: 15 }} />
+                          <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{getDisplayName(item)}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
+                          <Ionicons name="trash" size={20} color="#FF3B30" />
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+
+              {/* SECTION: Bible Versions */}
+              {renderAccordionHeader('Bible Versions', 'bibles', downloadedBibles.length)}
+              {expandedSection === 'bibles' && (
+                <View style={styles.accordionContent}>
+                  {downloadedBibles.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No extra Bible versions downloaded.</Text>
+                  ) : (
+                    downloadedBibles.map((item) => (
+                      <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                          <Ionicons name="book" size={24} color={colors.primary} style={{ marginRight: 15 }} />
+                          <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>{getDisplayName(item)}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
+                          <Ionicons name="trash" size={20} color="#FF3B30" />
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  )}
+                </View>
+              )}
+
+              {/* SECTION: Dictionaries */}
+              {renderAccordionHeader('Dictionaries', 'dicts', downloadedDicts.length)}
+              {expandedSection === 'dicts' && (
+                <View style={styles.accordionContent}>
+                  {downloadedDicts.length === 0 ? (
+                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No dictionaries downloaded yet.</Text>
+                  ) : (
+                    downloadedDicts.map((item) => (
+                      <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
+                          <Ionicons name="library" size={24} color={colors.primary} style={{ marginRight: 15 }} />
+                          <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{getDisplayName(item)}</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
+                          <Ionicons name="trash" size={20} color="#FF3B30" />
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  )}
+                </View>
               )}
 
             </ScrollView>
@@ -315,5 +439,10 @@ const styles = StyleSheet.create({
   rowText: { marginLeft: 15, fontWeight: '500' },
   modalSheet: { width: '100%', height: '70%', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, overflow: 'hidden' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
-  versionCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderWidth: 1, borderRadius: 15, marginBottom: 10 }
+  
+  // Accordion Styles
+  accordionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderRadius: 14, borderWidth: 1, marginTop: 10, marginBottom: 5 },
+  accordionContent: { paddingBottom: 10, paddingTop: 5 },
+  emptyText: { textAlign: 'center', marginVertical: 10, fontStyle: 'italic' },
+  versionCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderWidth: 1, borderRadius: 12, marginBottom: 8 }
 });
