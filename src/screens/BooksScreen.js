@@ -1,57 +1,88 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useRef, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons'; 
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
 
 export default function BooksScreen({ navigation }) {
   const { colors } = useSettings();
 
+  // --- ANIMATION VALUES ---
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const cardAnims = useRef([...Array(1)].map(() => new Animated.Value(50))).current; 
+  const cardOpacities = useRef([...Array(1)].map(() => new Animated.Value(0))).current;
+
+  // --- PLAY ANIMATION ON TAB FOCUS ---
+  useFocusEffect(
+    useCallback(() => {
+      headerOpacity.setValue(0);
+      cardAnims.forEach(anim => anim.setValue(50));
+      cardOpacities.forEach(anim => anim.setValue(0));
+
+      const animations = cardAnims.map((anim, index) => {
+        return Animated.parallel([
+          Animated.spring(anim, { toValue: 0, friction: 8, tension: 50, useNativeDriver: true }),
+          Animated.timing(cardOpacities[index], { toValue: 1, duration: 300, useNativeDriver: true })
+        ]);
+      });
+
+      Animated.sequence([
+        Animated.timing(headerOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+        Animated.stagger(100, animations)
+      ]).start();
+
+      return () => {};
+    }, [])
+  );
+
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
         
-        {/* Header Section */}
-        <View style={styles.headerContainer}>
+        {/* Animated Header Section */}
+        <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>நூலகம்</Text>
           <Text style={[styles.headerSubtitle, { color: colors.subtext }]}>Spiritual Library</Text>
-        </View>
+        </Animated.View>
         
-        {/* Stunning EGW Books Card */}
-        <TouchableOpacity 
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('EGWBooksList')}
-          style={styles.cardWrapper}
-        >
-          <LinearGradient
-            colors={['#1A2980', '#26D0CE']} // A beautiful deep blue to glowing cyan gradient
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.gradientCard}
+        {/* Animated Stunning EGW Books Card */}
+        <Animated.View style={{ opacity: cardOpacities[0], transform: [{ translateY: cardAnims[0] }] }}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('EGWBooksList')}
+            style={styles.cardWrapper}
           >
-            <View style={styles.cardContent}>
-              {/* Left Side: Icon */}
-              <View style={styles.iconCircle}>
-                <Ionicons name="library" size={32} color="#FFFFFF" />
-              </View>
-              
-              {/* Middle: Text */}
-              <View style={styles.textContainer}>
-                <Text style={styles.cardTitleTamil}>எலன் ஜி. வைட் நூல்கள்</Text>
-                <Text style={styles.cardTitleEnglish}>Spirit of Prophecy Books</Text>
-                <Text style={styles.cardDescription}>
-                  Explore the writings and counsels for the last days.
-                </Text>
-              </View>
+            <LinearGradient
+              colors={['#1A2980', '#26D0CE']} // A beautiful deep blue to glowing cyan gradient
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.gradientCard}
+            >
+              <View style={styles.cardContent}>
+                {/* Left Side: Icon */}
+                <View style={styles.iconCircle}>
+                  <Ionicons name="library" size={32} color="#FFFFFF" />
+                </View>
+                
+                {/* Middle: Text */}
+                <View style={styles.textContainer}>
+                  <Text style={styles.cardTitleTamil}>எலன் ஜி. வைட் நூல்கள்</Text>
+                  <Text style={styles.cardTitleEnglish}>Spirit of Prophecy Books</Text>
+                  <Text style={styles.cardDescription}>
+                    Explore the writings and counsels for the last days.
+                  </Text>
+                </View>
 
-              {/* Right Side: Arrow */}
-              <View style={styles.arrowContainer}>
-                <Ionicons name="chevron-forward-circle" size={28} color="rgba(255,255,255,0.8)" />
+                {/* Right Side: Arrow */}
+                <View style={styles.arrowContainer}>
+                  <Ionicons name="chevron-forward-circle" size={28} color="rgba(255,255,255,0.8)" />
+                </View>
               </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
 
       </View>
     </SafeAreaView>
