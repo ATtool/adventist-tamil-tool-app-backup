@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -9,10 +9,27 @@ import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { useSettings } from '../context/SettingsContext'; // Adjust path if needed
+import { useSettings } from '../context/SettingsContext';
+import { useFocusEffect } from '@react-navigation/native';
 
-// BRIGHT YELLOW COLOR CONSTANT FOR LYRICS SCREEN
+const { height } = Dimensions.get('window');
 const BRIGHT_YELLOW = '#FFD700';
+
+// -------------------------------------------------------------
+// Reusable Premium Click Animation Wrapper
+// -------------------------------------------------------------
+const ScalePressable = ({ children, onPress, style, scaleTo = 0.90 }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const handlePressIn = () => Animated.spring(scale, { toValue: scaleTo, useNativeDriver: true, friction: 5 }).start();
+  const handlePressOut = () => Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress} activeOpacity={0.8} delayPressIn={50}>
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size = 26 }) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -32,28 +49,41 @@ const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size =
   );
 };
 
-// CATEGORY REMOVED FROM SONG ITEM
-const SongItem = React.memo(({ item, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize }) => (
-  <TouchableOpacity style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]} onPress={() => onPress(item)} activeOpacity={0.7}>
-    <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
-      <Text style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.song_number || item.id || '?'}</Text>
-    </View>
-    <View style={styles.titleContainer}>
-      <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil || 'Unknown'}</Text>
-    </View>
-    <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
-  </TouchableOpacity>
-));
+// CATEGORY REMOVED FROM SONG ITEM - With Staggered Entrance
+const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize }) => {
+  const translateY = listAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [30 + (index % 10) * 5, 0] 
+  });
+  return (
+    <Animated.View style={{ opacity: listAnim, transform: [{ translateY }] }}>
+      <ScalePressable onPress={() => onPress(item)}>
+        <View style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]}>
+          <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
+            <Text style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.song_number || item.id || '?'}</Text>
+          </View>
+          <View style={styles.titleContainer}>
+            <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil || 'Unknown'}</Text>
+          </View>
+          <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
+        </View>
+      </ScalePressable>
+    </Animated.View>
+  );
+});
 
-const LetterGridItem = React.memo(({ letter, onPress, colors, appFontSize }) => (
-  <TouchableOpacity 
-    style={[styles.gridItemCompact, { backgroundColor: colors.card, borderColor: colors.border }]} 
-    onPress={() => onPress(letter)} 
-    activeOpacity={0.7}
-  >
-    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize + 2 }}>{letter}</Text>
-  </TouchableOpacity>
-));
+const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, appFontSize }) => {
+  const translateY = listAnim.interpolate({ inputRange: [0, 1], outputRange: [20 + (index % 5) * 5, 0] });
+  return (
+    <Animated.View style={{ flex: 1, margin: 5, opacity: listAnim, transform: [{ translateY }] }}>
+      <ScalePressable onPress={() => onPress(letter)}>
+        <View style={[styles.gridItemCompact, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize + 2 }}>{letter}</Text>
+        </View>
+      </ScalePressable>
+    </Animated.View>
+  );
+});
 
 export default function ThirumaraiHopeScreen() {
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
@@ -72,6 +102,23 @@ export default function ThirumaraiHopeScreen() {
   const [selectedSongIndex, setSelectedSongIndex] = useState(null);
   const [showTextSettings, setShowTextSettings] = useState(false);
 
+  // Custom Modal States for Smooth Animations
+  const [settingsModalVisible, setSettingsModalVisible] = useState(false);
+
+  // Scroll to Top State
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const flatListRef = useRef(null);
+
+  // Animation Refs
+  const headerSlide = useRef(new Animated.Value(-50)).current;
+  const listAnim = useRef(new Animated.Value(0)).current;
+  const fabOpacity = useRef(new Animated.Value(0)).current;
+  const fabTranslateY = useRef(new Animated.Value(50)).current;
+
+  // Modal Custom Animation Refs
+  const settingsSlideAnim = useRef(new Animated.Value(height)).current;
+  const settingsFadeAnim = useRef(new Animated.Value(0)).current;
+
   const numericInputRef = useRef(null);
   const textInputRef = useRef(null);
   const lyricsScrollRef = useRef(null);
@@ -80,7 +127,45 @@ export default function ThirumaraiHopeScreen() {
     if (hapticsEnabled) Haptics.impactAsync(style); 
   }, [hapticsEnabled]);
 
-  // ANDROID BACK BUTTON HANDLER (Category modal check removed)
+  // Handle Tab Focus Entrance Animations
+  useFocusEffect(
+    useCallback(() => {
+      headerSlide.setValue(-50);
+      listAnim.setValue(0);
+      Animated.parallel([
+        Animated.timing(headerSlide, { toValue: 0, duration: 400, useNativeDriver: true }),
+        Animated.timing(listAnim, { toValue: 1, duration: 500, useNativeDriver: true })
+      ]).start();
+    }, [])
+  );
+
+  // Handle FAB Visibility
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fabOpacity, { toValue: showScrollTop ? 1 : 0, duration: 250, useNativeDriver: true }),
+      Animated.spring(fabTranslateY, { toValue: showScrollTop ? 0 : 50, friction: 6, useNativeDriver: true })
+    ]).start();
+  }, [showScrollTop]);
+
+  // (Custom Lyrics slide animation removed to restore native 'pageSheet' behavior)
+
+  // Smooth Text Settings Panel Controller
+  useEffect(() => {
+    if (showTextSettings) {
+      setSettingsModalVisible(true);
+      Animated.parallel([
+        Animated.spring(settingsSlideAnim, { toValue: 0, friction: 9, tension: 65, useNativeDriver: true }),
+        Animated.timing(settingsFadeAnim, { toValue: 1, duration: 200, useNativeDriver: true })
+      ]).start();
+    } else if (settingsModalVisible) {
+      Animated.parallel([
+        Animated.timing(settingsSlideAnim, { toValue: height, duration: 250, useNativeDriver: true }),
+        Animated.timing(settingsFadeAnim, { toValue: 0, duration: 250, useNativeDriver: true })
+      ]).start(() => setSettingsModalVisible(false));
+    }
+  }, [showTextSettings]);
+
+  // ANDROID BACK BUTTON HANDLER
   useEffect(() => {
     const backAction = () => {
       if (showTextSettings) { setShowTextSettings(false); return true; }
@@ -103,7 +188,6 @@ export default function ThirumaraiHopeScreen() {
 
   const loadFavorites = async () => {
     try {
-      // UNIQUE KEY FOR THIRUMARAI FAVORITES
       const stored = await AsyncStorage.getItem('@thirumarai_favs');
       if (stored) setFavorites(new Set(JSON.parse(stored)));
     } catch(e) { console.warn("Fav load error", e); }
@@ -125,17 +209,15 @@ export default function ThirumaraiHopeScreen() {
       db = await SQLite.openDatabaseAsync('Thirumarai.db');
       const result = await db.getAllAsync('SELECT * FROM SongListTable'); 
       
-      // 1. STRICT FILTER: Only keep songs that ACTUALLY belong to Nambikaiyen Geethagal
       const validSongs = (result || []).filter(s => 
         s.Song_number_by_Nambikaiyen_Geethagal != null && 
         s.Song_number_by_Nambikaiyen_Geethagal !== ''
       );
       
-      // 2. ADAPTER: Map them strictly using only that column
       const cleanedSongs = validSongs.map(s => ({ 
         ...s,
-        id: s.Song_number_by_Nambikaiyen_Geethagal, // Force ID to be this exact number
-        song_number: s.Song_number_by_Nambikaiyen_Geethagal, // Strictly use this column
+        id: s.Song_number_by_Nambikaiyen_Geethagal,
+        song_number: s.Song_number_by_Nambikaiyen_Geethagal, 
         title_tamil: s.song_title_tamil,
         title: s.song_title_tamil, 
         title_english: s.song_title_english,
@@ -147,9 +229,6 @@ export default function ThirumaraiHopeScreen() {
       console.error("DB Error in Thirumarai:", e); 
       setSongs([]); 
     } finally {
-      // ✅ CRITICAL FIX: Always close the DB connection after use.
-      // Leaving it open causes NullPointerException on Android when
-      // another screen tries to open the same Thirumarai.db file.
       if (db) await db.closeAsync().catch(() => {});
     }
   };
@@ -263,6 +342,18 @@ export default function ThirumaraiHopeScreen() {
     setTimeout(() => { if (isNumeric) numericInputRef.current?.focus(); else textInputRef.current?.focus(); }, 50);
   };
 
+  // Triggers the FAB when the user scrolls down 400 pixels
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    if (offsetY > 400 && !showScrollTop) setShowScrollTop(true);
+    if (offsetY <= 400 && showScrollTop) setShowScrollTop(false);
+  };
+
+  const scrollToTop = () => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+    flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+  };
+
   const activeSong = selectedSongIndex !== null ? filteredSongs[selectedSongIndex] : null;
 
   return (
@@ -271,8 +362,8 @@ export default function ThirumaraiHopeScreen() {
 
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
-        <View style={styles.headerWrapper}>
-          
+        {/* Animated Header */}
+        <Animated.View style={[styles.headerWrapper, { transform: [{ translateY: headerSlide }] }]}>
           <View style={[styles.searchPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={{ flex: 1 }}>
               <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Thirumarai..." placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
@@ -280,9 +371,9 @@ export default function ThirumaraiHopeScreen() {
             </View>
 
             {search.length > 0 && (
-              <TouchableOpacity onPress={() => { triggerHaptic(); setSearch(''); Keyboard.dismiss(); }} style={{ paddingHorizontal: 10 }}>
+              <ScalePressable onPress={() => { triggerHaptic(); setSearch(''); Keyboard.dismiss(); }} style={{ paddingHorizontal: 10 }}>
                 <Ionicons name="close-circle" size={20} color={colors.subtext} />
-              </TouchableOpacity>
+              </ScalePressable>
             )}
 
             <View style={[styles.inlineToggleContainer, { backgroundColor: isDark ? '#2A2D35' : '#E5E7EB' }]}>
@@ -298,45 +389,55 @@ export default function ThirumaraiHopeScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipsRow}>
             
             {hasFiltersActive && (
-              <TouchableOpacity onPress={clearAllFilters} style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
-                <Ionicons name="close" size={14} color="#FF3B30" />
-                <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Clear All</Text>
-              </TouchableOpacity>
+              <ScalePressable onPress={clearAllFilters} style={{ marginRight: 8 }}>
+                <View style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
+                  <Ionicons name="close" size={14} color="#FF3B30" />
+                  <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Clear All</Text>
+                </View>
+              </ScalePressable>
             )}
 
-            <TouchableOpacity onPress={() => { triggerHaptic(); setShowSortMenu(true); Keyboard.dismiss(); }} style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: isAlphabetMode ? colors.primary + '20' : colors.card }]}>
-              <MaterialCommunityIcons name={sortOrder === 'number' ? "sort-numeric-ascending" : "sort-alphabetical-ascending"} size={16} color={isAlphabetMode ? colors.primary : colors.text} />
-              <Text style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Sort</Text>
-            </TouchableOpacity>
+            <ScalePressable onPress={() => { triggerHaptic(); setShowSortMenu(true); Keyboard.dismiss(); }} style={{ marginRight: 8 }}>
+              <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: isAlphabetMode ? colors.primary + '20' : colors.card }]}>
+                <MaterialCommunityIcons name={sortOrder === 'number' ? "sort-numeric-ascending" : "sort-alphabetical-ascending"} size={16} color={isAlphabetMode ? colors.primary : colors.text} />
+                <Text style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Sort</Text>
+              </View>
+            </ScalePressable>
 
-            <TouchableOpacity onPress={handleToggleFavoritesList} style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: showFavoritesOnly ? 'rgba(255,0,0,0.1)' : colors.card }]}>
-              <Ionicons name={showFavoritesOnly ? "heart" : "heart-outline"} size={14} color={showFavoritesOnly ? "red" : colors.text} />
-              <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Favorites</Text>
-            </TouchableOpacity>
+            <ScalePressable onPress={handleToggleFavoritesList} style={{ marginRight: 8 }}>
+              <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: showFavoritesOnly ? 'rgba(255,0,0,0.1)' : colors.card }]}>
+                <Ionicons name={showFavoritesOnly ? "heart" : "heart-outline"} size={14} color={showFavoritesOnly ? "red" : colors.text} />
+                <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Favorites</Text>
+              </View>
+            </ScalePressable>
 
           </ScrollView>
-        </View>
+        </Animated.View>
 
         {isAlphabetMode ? (
           <FlatList 
+            ref={flatListRef}
             key="grid-view-5-cols"
             data={alphabetLetters} 
             keyExtractor={(item) => item} 
             numColumns={5}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             showsVerticalScrollIndicator={false} 
             contentContainerStyle={{ paddingHorizontal: 10, paddingBottom: 120, paddingTop: 10 }}
             ListHeaderComponent={
-              <TouchableOpacity 
-                style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary, marginHorizontal: 5 }]} 
-                onPress={() => { triggerHaptic(); selectNumberOrder(); }}
-              >
-                <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>Back to Numbers</Text>
-              </TouchableOpacity>
+              <ScalePressable onPress={() => { triggerHaptic(); selectNumberOrder(); }}>
+                <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary, marginHorizontal: 5 }]}>
+                  <Ionicons name="arrow-back" size={20} color={colors.primary} />
+                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>Back to Numbers</Text>
+                </View>
+              </ScalePressable>
             }
-            renderItem={({ item }) => (
+            renderItem={({ item, index }) => (
               <LetterGridItem 
                 letter={item} 
+                index={index}
+                listAnim={listAnim}
                 colors={colors} 
                 appFontSize={appFontSize} 
                 onPress={(letter) => { 
@@ -349,28 +450,30 @@ export default function ThirumaraiHopeScreen() {
           />
         ) : (
           <FlatList 
+            ref={flatListRef}
             key="list-view"
             data={filteredSongs} 
             keyExtractor={(item) => item.id.toString()} 
             numColumns={1}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
             showsVerticalScrollIndicator={false} 
             keyboardShouldPersistTaps="handled" 
             keyboardDismissMode="on-drag" 
             contentContainerStyle={{ paddingHorizontal: 15, paddingBottom: 120, paddingTop: 10 }}
             ListHeaderComponent={
               selectedLetter !== 'All' ? (
-                <TouchableOpacity 
-                  style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]} 
-                  onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}
-                >
-                  <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
-                </TouchableOpacity>
+                <ScalePressable onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}>
+                  <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
+                    <Ionicons name="arrow-back" size={20} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
+                  </View>
+                </ScalePressable>
               ) : null
             }
             renderItem={({ item, index }) => (
               <SongItem 
-                item={item} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} 
+                item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} 
                 onToggleFavorite={toggleFavorite} 
                 onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} 
               />
@@ -383,6 +486,14 @@ export default function ThirumaraiHopeScreen() {
             }
           />
         )}
+
+        {/* Floating Scroll to Top Button */}
+        <Animated.View style={[styles.fabContainer, { opacity: fabOpacity, transform: [{ translateY: fabTranslateY }] }]} pointerEvents={showScrollTop ? 'auto' : 'none'}>
+          <TouchableOpacity onPress={scrollToTop} style={[styles.fab, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor: colors.border }]} activeOpacity={0.8}>
+            <Ionicons name="arrow-up" size={26} color={colors.primary} />
+          </TouchableOpacity>
+        </Animated.View>
+
       </SafeAreaView>
 
       {/* SORT MODAL */}
@@ -391,15 +502,19 @@ export default function ThirumaraiHopeScreen() {
           <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
             <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Sort Options</Text>
             
-            <TouchableOpacity style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]} onPress={selectNumberOrder}>
-              <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-              <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
-            </TouchableOpacity>
+            <ScalePressable onPress={selectNumberOrder}>
+              <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
+                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
+              </View>
+            </ScalePressable>
 
-            <TouchableOpacity style={styles.sortBtn} onPress={selectAlphabetOrder}>
-              <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-              <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
-            </TouchableOpacity>
+            <ScalePressable onPress={selectAlphabetOrder}>
+              <View style={styles.sortBtn}>
+                <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
+                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
+              </View>
+            </ScalePressable>
             
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
               <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</Text>
@@ -408,7 +523,7 @@ export default function ThirumaraiHopeScreen() {
         </BlurView>
       </Modal>
 
-      {/* LYRICS READING MODAL */}
+      {/* LYRICS READING MODAL (Restored Native pageSheet) */}
       <Modal 
         visible={selectedSongIndex !== null} 
         animationType="slide" 
@@ -421,9 +536,11 @@ export default function ThirumaraiHopeScreen() {
 
           <SafeAreaView style={{ flex: 1 }}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <TouchableOpacity onPress={() => { triggerHaptic(); closeReadingScreen(); }} style={{ padding: 10 }}>
-                <Ionicons name="chevron-down" size={32} color={BRIGHT_YELLOW} />
-              </TouchableOpacity>
+              <ScalePressable onPress={() => { triggerHaptic(); closeReadingScreen(); }}>
+                <View style={{ padding: 10 }}>
+                  <Ionicons name="chevron-down" size={32} color={BRIGHT_YELLOW} />
+                </View>
+              </ScalePressable>
               
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
                  <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
@@ -432,20 +549,21 @@ export default function ThirumaraiHopeScreen() {
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => { triggerHaptic(); setShowTextSettings(true); }} style={styles.textSettingsBtn}>
-                  <Text style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleShare(activeSong)} style={{ padding: 8 }}>
-                  <Ionicons name="share-outline" size={24} color={BRIGHT_YELLOW} />
-                </TouchableOpacity>
+                <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
+                  <View style={styles.textSettingsBtn}>
+                    <Text style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</Text>
+                  </View>
+                </ScalePressable>
+                
+                <ScalePressable onPress={() => handleShare(activeSong)}>
+                  <View style={{ padding: 8 }}>
+                    <Ionicons name="share-outline" size={24} color={BRIGHT_YELLOW} />
+                  </View>
+                </ScalePressable>
               </View>
             </View>
 
-            <ScrollView 
-              ref={lyricsScrollRef}
-              contentContainerStyle={{ padding: 30, paddingBottom: 150 }}
-              keyboardDismissMode="on-drag"
-            >
+            <ScrollView ref={lyricsScrollRef} contentContainerStyle={{ padding: 30, paddingBottom: 150 }} keyboardDismissMode="on-drag">
               <Text style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
                 {activeSong?.lyrics}
               </Text>
@@ -453,63 +571,80 @@ export default function ThirumaraiHopeScreen() {
 
             {activeSong && (
               <View style={styles.floatCenterClear}>
-                <TouchableOpacity onPress={() => { triggerHaptic(); closeReadingScreen(); }} style={{ padding: 10, marginRight: 5 }}>
-                  <Ionicons name="chevron-down-circle" size={40} color={BRIGHT_YELLOW} />
-                </TouchableOpacity>
+                <ScalePressable onPress={() => { triggerHaptic(); closeReadingScreen(); }}>
+                  <View style={{ padding: 10, marginRight: 5 }}>
+                    <Ionicons name="chevron-down-circle" size={40} color={BRIGHT_YELLOW} />
+                  </View>
+                </ScalePressable>
                 <AnimatedHeart isFavorite={favorites.has(activeSong.id)} onPress={() => toggleFavorite(activeSong.id)} inactiveColor={BRIGHT_YELLOW} activeColor={BRIGHT_YELLOW} size={40} />
               </View>
             )}
 
             {selectedSongIndex > 0 && (
               <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.floatLeft, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)', borderColor: colors.border }]}>
-                <TouchableOpacity onPress={() => changeSong(-1)} style={styles.blurBtnContent}>
-                  <Ionicons name="arrow-back" size={28} color={BRIGHT_YELLOW} />
-                </TouchableOpacity>
+                <ScalePressable onPress={() => changeSong(-1)}>
+                  <View style={styles.blurBtnContent}>
+                    <Ionicons name="arrow-back" size={28} color={BRIGHT_YELLOW} />
+                  </View>
+                </ScalePressable>
               </BlurView>
             )}
 
             {selectedSongIndex < filteredSongs.length - 1 && (
               <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.floatRight, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)', borderColor: colors.border }]}>
-                <TouchableOpacity onPress={() => changeSong(1)} style={styles.blurBtnContent}>
-                  <Ionicons name="arrow-forward" size={28} color={BRIGHT_YELLOW} />
-                </TouchableOpacity>
+                <ScalePressable onPress={() => changeSong(1)}>
+                  <View style={styles.blurBtnContent}>
+                    <Ionicons name="arrow-forward" size={28} color={BRIGHT_YELLOW} />
+                  </View>
+                </ScalePressable>
               </BlurView>
             )}
           </SafeAreaView>
-        </View>
 
-        <Modal visible={showTextSettings} transparent animationType="slide">
-          <View style={styles.modalBgSettings}>
-            <View style={[styles.settingsCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-              <View style={styles.settingsHeader}>
-                <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
-                <TouchableOpacity onPress={() => { triggerHaptic(); setShowTextSettings(false); }}><Ionicons name="close" size={28} color={colors.text} /></TouchableOpacity>
-              </View>
+          {/* IN-MODAL ANIMATED TEXT SETTINGS - Fixes Native Modal Stacking Bugs */}
+          {settingsModalVisible && (
+            <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 999 }]} pointerEvents={showTextSettings ? 'auto' : 'none'}>
+              {/* Fade Overlay Background */}
+              <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.7)', opacity: settingsFadeAnim }]}>
+                <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowTextSettings(false)} />
+              </Animated.View>
               
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Title Settings</Text>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</Text>
-                <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
+              {/* Slide-Up Panel */}
+              <Animated.View style={[styles.settingsCard, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, transform: [{ translateY: settingsSlideAnim }] }]}>
+                <View style={styles.settingsHeader}>
+                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
+                  <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(false); }}>
+                    <Ionicons name="close" size={28} color={colors.text} />
+                  </ScalePressable>
+                </View>
+                
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Title Settings</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</Text>
+                  <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
 
-                <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2 }]}>Lyrics Settings</Text>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</Text>
-                <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                
-                <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</Text>
-                <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                
-                <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</Text>
-                <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                
-                <TouchableOpacity style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]} onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
-                  <Ionicons name="refresh" size={20} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
-          </View>
-        </Modal>
+                  <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2 }]}>Lyrics Settings</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</Text>
+                  <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
+                  
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</Text>
+                  <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
+                  
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</Text>
+                  <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
+                  
+                  <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
+                    <View style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]}>
+                      <Ionicons name="refresh" size={20} color={colors.primary} />
+                      <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</Text>
+                    </View>
+                  </ScalePressable>
+                </ScrollView>
+              </Animated.View>
+            </Animated.View>
+          )}
 
+        </View>
       </Modal>
     </View>
   );
@@ -533,8 +668,11 @@ const styles = StyleSheet.create({
   songTitle: { marginBottom: 2 },
   backToGridBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 16, marginBottom: 15, borderWidth: 1 },
 
-  gridItemCompact: { flex: 1, margin: 5, paddingVertical: 12, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 3 },
+  gridItemCompact: { paddingVertical: 12, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 3 },
   
+  fabContainer: { position: 'absolute', bottom: 25, alignSelf: 'center', zIndex: 10 },
+  fab: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', borderWidth: 1, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
+
   modalContainer: { flex: 1 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderBottomWidth: 1 },
   textSettingsBtn: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: 'rgba(128,128,128,0.2)', borderRadius: 12, marginRight: 5 },
@@ -544,7 +682,6 @@ const styles = StyleSheet.create({
   sortBtn: { flexDirection: 'row', alignItems: 'center', padding: 25 },
   modalHeaderTitle: { fontWeight: '900', textAlign: 'center', padding: 25, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
 
-  modalBgSettings: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'flex-end' },
   settingsCard: { width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   settingLabel: { fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },

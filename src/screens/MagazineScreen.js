@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import * as IntentLauncher from 'expo-intent-launcher'; // Imports the tool for Android PDF Viewer
+import * as IntentLauncher from 'expo-intent-launcher'; 
 import { Audio } from 'expo-av';
 import { useSettings } from '../context/SettingsContext';
 
@@ -17,6 +17,22 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 LogBox.ignoreLogs(['[expo-av]']);
 
 const MAGAZINE_GIST_URL = 'https://gist.githubusercontent.com/ATtool/9148fb9b8a3238acc50c2c5fb80d80bc/raw/magazines.json';
+
+// -------------------------------------------------------------
+// Reusable Premium Click Animation Wrapper
+// -------------------------------------------------------------
+const ScalePressable = ({ children, onPress, style, scaleTo = 0.90, disabled = false }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const handlePressIn = () => !disabled && Animated.spring(scale, { toValue: scaleTo, useNativeDriver: true, friction: 5 }).start();
+  const handlePressOut = () => !disabled && Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress} activeOpacity={0.8} delayPressIn={50} disabled={disabled}>
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export default function MagazineScreen() {
   const { colors, appFontSize, isDark } = useSettings();
@@ -31,6 +47,7 @@ export default function MagazineScreen() {
   
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const listFadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     fetchMagazines();
@@ -40,9 +57,11 @@ export default function MagazineScreen() {
     useCallback(() => {
       fadeAnim.setValue(0);
       slideAnim.setValue(30);
+      listFadeAnim.setValue(0);
       Animated.parallel([
         Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
-        Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true })
+        Animated.timing(slideAnim, { toValue: 0, duration: 800, useNativeDriver: true }),
+        Animated.timing(listFadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true })
       ]).start();
 
       async function playSound() {
@@ -163,7 +182,6 @@ export default function MagazineScreen() {
     );
   };
 
-  // ✅ NEW EGW-STYLE READ BUTTON LOGIC
   const handleOpenPdf = async (magId) => {
     const fileUri = FileSystem.documentDirectory + `SQLite/${magId}.pdf`;
     
@@ -230,10 +248,12 @@ export default function MagazineScreen() {
             Published by{"\n"}Danny’s Publications on behalf of{"\n"}God is Judge Ministries{"\n"}
             18/9B1-5, Citadel, 2nd floor, Mahatma Gandhi road,{"\n"}Municipal colony, Punnai nagar,{"\n"}Nagercoil – 629004.{"\n"}Ph : 8904072759
           </Text>
-          <TouchableOpacity style={styles.whatsappBtn} onPress={() => Linking.openURL('https://api.whatsapp.com/send/?phone=918904072759&text&type=phone_number&app_absent=0')}>
-            <Ionicons name="logo-whatsapp" size={20} color="#fff" />
-            <Text style={{ fontFamily: 'Tamil003', color: '#fff', marginLeft: 8, fontWeight: 'bold' }}>தொடர்பு கொள்ள</Text>
-          </TouchableOpacity>
+          <ScalePressable onPress={() => Linking.openURL('https://api.whatsapp.com/send/?phone=918904072759&text&type=phone_number&app_absent=0')}>
+            <View style={styles.whatsappBtn}>
+              <Ionicons name="logo-whatsapp" size={20} color="#fff" />
+              <Text style={{ fontFamily: 'Tamil003', color: '#fff', marginLeft: 8, fontWeight: 'bold' }}>தொடர்பு கொள்ள</Text>
+            </View>
+          </ScalePressable>
         </View>
       </View>
     </Animated.View>
@@ -247,17 +267,18 @@ export default function MagazineScreen() {
           <View style={[styles.treeLine, { backgroundColor: colors.border }]} />
           <View style={[styles.treeYearDot, { borderColor: isExpanded ? colors.primary : colors.subtext, backgroundColor: colors.background }]} />
         </View>
-        <TouchableOpacity 
-          activeOpacity={0.8} 
+        <ScalePressable 
           onPress={() => toggleYear(title)} 
-          style={[
+          style={{ flex: 1 }}
+        >
+          <View style={[
             styles.treeBranchBtn, 
             { backgroundColor: isExpanded ? 'rgba(0, 240, 255, 0.05)' : colors.card, borderColor: isExpanded ? colors.primary : colors.border }
-          ]}
-        >
-          <Text style={[styles.yearText, { color: isExpanded ? colors.primary : colors.text }]}>{title} ஆம் ஆண்டு</Text>
-          <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} />
-        </TouchableOpacity>
+          ]}>
+            <Text style={[styles.yearText, { color: isExpanded ? colors.primary : colors.text }]}>{title} ஆம் ஆண்டு</Text>
+            <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} />
+          </View>
+        </ScalePressable>
       </View>
     );
   };
@@ -291,18 +312,23 @@ export default function MagazineScreen() {
 
             <View style={styles.actionRow}>
               {isDownloaded ? (
-                // ✅ READ Button placed first, followed by Share and Delete
                 <View style={{ flexDirection: 'row', gap: 10, width: '100%' }}>
-                  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#4CAF50', flex: 1, justifyContent: 'center' }]} onPress={() => handleOpenPdf(item.id)}>
-                    <Ionicons name="book" size={16} color="#fff" />
-                    <Text style={[styles.btnText, { color: '#fff' }]}>Read</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 15 }]} onPress={() => handleShare(item.id)}>
-                    <Ionicons name="share-social" size={18} color={colors.text} />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(244, 67, 54, 0.15)', paddingHorizontal: 15 }]} onPress={() => handleDelete(item)}>
-                    <Ionicons name="trash" size={18} color="#F44336" />
-                  </TouchableOpacity>
+                  <ScalePressable style={{ flex: 1 }} onPress={() => handleOpenPdf(item.id)}>
+                    <View style={[styles.actionBtn, { backgroundColor: '#4CAF50', justifyContent: 'center' }]}>
+                      <Ionicons name="book" size={16} color="#fff" />
+                      <Text style={[styles.btnText, { color: '#fff' }]}>Read</Text>
+                    </View>
+                  </ScalePressable>
+                  <ScalePressable onPress={() => handleShare(item.id)}>
+                    <View style={[styles.actionBtn, { backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 15 }]}>
+                      <Ionicons name="share-social" size={18} color={colors.text} />
+                    </View>
+                  </ScalePressable>
+                  <ScalePressable onPress={() => handleDelete(item)}>
+                    <View style={[styles.actionBtn, { backgroundColor: 'rgba(244, 67, 54, 0.15)', paddingHorizontal: 15 }]}>
+                      <Ionicons name="trash" size={18} color="#F44336" />
+                    </View>
+                  </ScalePressable>
                 </View>
               ) : isDownloading ? (
                 <View style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary, flex: 1, justifyContent: 'center' }]}>
@@ -310,10 +336,12 @@ export default function MagazineScreen() {
                    <Text style={{color: colors.primary, fontSize: 12, marginLeft: 8, fontWeight: 'bold'}}>{progress}%</Text>
                 </View>
               ) : (
-                <TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary, flex: 1, justifyContent: 'center' }]} onPress={() => handleDownload(item)}>
-                  <Ionicons name="cloud-download-outline" size={18} color={colors.primary} />
-                  <Text style={[styles.btnText, { color: colors.primary }]}>Download</Text>
-                </TouchableOpacity>
+                <ScalePressable style={{ flex: 1 }} onPress={() => handleDownload(item)}>
+                  <View style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary, justifyContent: 'center' }]}>
+                    <Ionicons name="cloud-download-outline" size={18} color={colors.primary} />
+                    <Text style={[styles.btnText, { color: colors.primary }]}>Download</Text>
+                  </View>
+                </ScalePressable>
               )}
             </View>
           </View>
@@ -330,9 +358,11 @@ export default function MagazineScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ padding: 5 }}>
-          <Ionicons name="arrow-back" size={26} color={colors.text} />
-        </TouchableOpacity>
+        <ScalePressable onPress={() => navigation.navigate('Home')}>
+          <View style={{ padding: 5 }}>
+            <Ionicons name="arrow-back" size={26} color={colors.text} />
+          </View>
+        </ScalePressable>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Monthly Magazine</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -343,17 +373,19 @@ export default function MagazineScreen() {
           <Text style={{ color: colors.subtext, marginTop: 15 }}>Loading archive...</Text>
         </View>
       ) : (
-        <SectionList
-          sections={activeSections}
-          keyExtractor={(item) => item.id}
-          renderItem={renderMagItem}
-          renderSectionHeader={renderSectionHeader}
-          ListHeaderComponent={renderListHeader}
-          stickySectionHeadersEnabled={false}
-          contentContainerStyle={{ paddingBottom: 60 }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 40 }}>No magazines available yet.</Text>}
-        />
+        <Animated.View style={{ flex: 1, opacity: listFadeAnim }}>
+          <SectionList
+            sections={activeSections}
+            keyExtractor={(item) => item.id}
+            renderItem={renderMagItem}
+            renderSectionHeader={renderSectionHeader}
+            ListHeaderComponent={renderListHeader}
+            stickySectionHeadersEnabled={false}
+            contentContainerStyle={{ paddingBottom: 60 }}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={<Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 40 }}>No magazines available yet.</Text>}
+          />
+        </Animated.View>
       )}
     </SafeAreaView>
   );
@@ -376,7 +408,7 @@ const styles = StyleSheet.create({
   treeLine: { position: 'absolute', top: 0, bottom: 0, width: 2 },
   treeYearDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 3, marginTop: 28, zIndex: 1 },
   
-  treeBranchBtn: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10, padding: 15, borderRadius: 14, borderWidth: 1, marginLeft: 10 },
+  treeBranchBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10, padding: 15, borderRadius: 14, borderWidth: 1, marginLeft: 10 },
   yearText: { fontSize: 16, fontWeight: '900', letterSpacing: 1 },
 
   treeItemContainer: { flexDirection: 'row', paddingHorizontal: 15 },

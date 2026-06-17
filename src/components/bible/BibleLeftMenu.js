@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -11,29 +11,42 @@ import { querySync, executeRunSync } from '../../utils/DatabaseManager';
 
 const { width } = Dimensions.get('window');
 
+const VERSIONS = [
+  { id: 'AMP', name: 'Amplified Bible', url: 'https://drive.google.com/uc?export=download&id=1a-WZVLodq52U4jBWlySTxdwbughOKN8Q' },
+  { id: 'CSB', name: 'Christian Standard Bible', url: 'https://drive.google.com/uc?export=download&id=1CDcPeHjnigch-9Rn5wyIMfw-Fp_hhiF1' },
+  { id: 'ESV', name: 'English Standard Version', url: 'https://drive.google.com/uc?export=download&id=1T9mwzC-msvfNttjtcnKrXzOZUATmlc_8' },
+  { id: 'LSB', name: 'Legacy Standard Bible', url: 'https://drive.google.com/uc?export=download&id=1TL_OvmpEicyS0HZzF8HEDtyEwTq0WdPE' },
+  { id: 'NIV', name: 'New International Version', url: 'https://drive.google.com/uc?export=download&id=1BhFsInDK5EVEH0N-XrDXBoC8PAL4XARS' },
+  { id: 'NKJV', name: 'New King James Version', url: 'https://drive.google.com/uc?export=download&id=1rk6aVTG6mb6O7mIajcpy2j8Oam1OUGHC' },
+  { id: 'NLT', name: 'New Living Translation', url: 'https://drive.google.com/uc?export=download&id=1nIbvZYfUs66r9P-GUKgRxB9a0yiNOCdX' }
+];
+
 export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataChange }) {
   const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, setBibleLanguage, activeEnglishVersion, setActiveEnglishVersion, bibleFontSize, setBibleFontSize, bibleLineHeight, setBibleLineHeight, bibleLetterSpacing, setBibleLetterSpacing, restoreDefaultTextSettings } = useSettings();
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false); // Added for smooth exit animation
   const [activeView, setActiveView] = useState('main'); 
   const [downloadedDBs, setDownloadedDBs] = useState([]);
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [myFavorites, setMyFavorites] = useState([]);
 
-  const slideAnim = useRef(new Animated.Value(-width)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  // Animation Refs
+  const slideAnim = React.useRef(new Animated.Value(-width)).current;
+  const fadeAnim = React.useRef(new Animated.Value(0)).current; // Added for background fade
 
   useEffect(() => {
     if (visible) {
       setIsModalVisible(true);
       checkDownloadedVersions();
       fetchUserData();
+      // Smooth Entrance
       Animated.parallel([
         Animated.spring(slideAnim, { toValue: 0, friction: 9, tension: 60, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true })
       ]).start();
     } else {
+      // Smooth Exit
       Animated.parallel([
         Animated.timing(slideAnim, { toValue: -width, duration: 250, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 0, duration: 250, useNativeDriver: true })
@@ -42,7 +55,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
         setActiveView('main');
       });
     }
-  }, [visible, activeView]);
+  }, [visible]);
 
   function triggerHaptic(style = Haptics.ImpactFeedbackStyle.Light) {
     if (hapticsEnabled) Haptics.impactAsync(style);
@@ -67,7 +80,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
 
   function fetchUserData() {
     try {
-      if (activeView === 'favorites') {
+      if (activeView === 'favorites' || visible) {
         const favs = querySync('UserData.db', `SELECT * FROM favorites ORDER BY id DESC`, []) || [];
         setMyFavorites(favs);
       }
@@ -134,12 +147,14 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
   return (
     <Modal visible={isModalVisible} transparent animationType="none">
       <View style={styles.overlay}>
+        {/* Animated Background Overlay */}
         <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
           <TouchableOpacity style={StyleSheet.absoluteFill} onPress={closeMenu} activeOpacity={1}>
             <BlurView intensity={isDark ? 50 : 20} tint="dark" style={StyleSheet.absoluteFillObject} />
           </TouchableOpacity>
         </Animated.View>
 
+        {/* Animated Sliding Menu */}
         <Animated.View style={[styles.panel, { backgroundColor: isDark ? '#0A1929' : '#FCFAF5', borderRightColor: colors.border, transform: [{ translateX: slideAnim }] }]}>
           
           {activeView === 'main' && (
@@ -166,6 +181,39 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
                     {bibleLanguage === lang && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
                   </TouchableOpacity>
                 ))}
+
+                {(bibleLanguage === 'english' || bibleLanguage === 'both') && (
+                  <>
+                    <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Active English Version</Text>
+                    {['KJV', ...VERSIONS.map(ver => ver.id).filter(id => downloadedDBs.includes(`${id}.db`))].map((v) => (
+                      <TouchableOpacity key={v} style={[styles.optionCard, { backgroundColor: colors.card, borderColor: activeEnglishVersion === v ? colors.primary : colors.border }]} onPress={() => { triggerHaptic(); setActiveEnglishVersion(v); }}>
+                        <Text style={{ color: activeEnglishVersion === v ? colors.primary : colors.text, fontSize: appFontSize, fontWeight: 'bold' }}>{v}</Text>
+                        {activeEnglishVersion === v && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
+              </ScrollView>
+            </View>
+          )}
+
+          {activeView === 'downloads' && (
+            <View style={{ flex: 1 }}>{renderHeader('Downloads')}
+              <ScrollView contentContainerStyle={{ padding: 20 }}>
+                {VERSIONS.map((v) => {
+                  const isDownloaded = downloadedDBs.includes(`${v.id}.db`);
+                  const isDownloading = downloadingId === v.id;
+                  return (
+                    <View key={v.id} style={[styles.downloadCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                      <View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: appFontSize, fontWeight: 'bold' }}>{v.name}</Text><Text style={{ color: colors.subtext, fontSize: appFontSize - 2 }}>{v.id}</Text></View>
+                      {isDownloading ? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{(downloadProgress * 100).toFixed(0)}%</Text> : isDownloaded ? (
+                        <TouchableOpacity onPress={() => deleteVersion(v.id)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}><Ionicons name="trash" size={20} color="#FF3B30" /></TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity onPress={() => downloadVersion(v)} style={{ padding: 10, backgroundColor: colors.glow, borderRadius: 10 }}><Ionicons name="download" size={20} color={colors.primary} /></TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })}
               </ScrollView>
             </View>
           )}
@@ -195,7 +243,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
                 {myFavorites.length === 0 && <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 20 }}>No favorites saved yet.</Text>}
                 {myFavorites.map(f => (
                   <View key={f.id} style={[styles.userDataCard, { backgroundColor: colors.card, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }]}>
-                    <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={() => { closeMenu(); setTimeout(() => onJumpToVerse(f.book_id, f.chapter, f.verse), 300); }}>
+                    <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={() => onJumpToVerse(f.book_id, f.chapter, f.verse)}>
                       <Ionicons name="heart" size={20} color="#FF3B30" style={{ marginRight: 10 }} />
                       <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: appFontSize }}>
                         {getBookName(f.book_id)} {f.chapter}:{f.verse}
@@ -216,7 +264,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, flexDirection: 'row' },
-  panel: { width: '85%', height: '100%', borderRightWidth: 1, paddingTop: 40, position: 'absolute', left: 0 },
+  panel: { width: '85%', height: '100%', borderRightWidth: 1, paddingTop: 40 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingBottom: 20, borderBottomWidth: 1 },
   iconBtn: { padding: 5 },
   menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1 },

@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
@@ -17,6 +17,9 @@ const COUNTRIES = [
   { name: 'Singapore', flag: '🇸🇬' }, { name: 'Sri Lanka', flag: '🇱🇰' }, { name: 'United Arab Emirates', flag: '🇦🇪' },
   { name: 'United Kingdom', flag: '🇬🇧' }, { name: 'United States', flag: '🇺🇸' }
 ];
+
+// Create animated version of TouchableOpacity for the cards
+const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default function HomeScreen() {
   const navigation = useNavigation();
@@ -34,9 +37,17 @@ export default function HomeScreen() {
   const [tempName, setTempName] = useState('');
   const [tempCountry, setTempCountry] = useState({ name: 'India', flag: '🇮🇳' });
 
+  // Standard Header Animations
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
+  
+  // Menu Animations
   const menuSlideAnim = useRef(new Animated.Value(width)).current; 
+  const menuFadeAnim = useRef(new Animated.Value(0)).current;
+
+  // NEW: Scale and Fade staggered animations for the 3 cards
+  const cardScales = useRef([...Array(3)].map(() => new Animated.Value(0.8))).current;
+  const cardOpacities = useRef([...Array(3)].map(() => new Animated.Value(0))).current;
 
   useEffect(() => {
     checkUserData();
@@ -46,14 +57,43 @@ export default function HomeScreen() {
     setCurrentDateStr(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
   }, []);
 
+  // Menu Animation Trigger
   useEffect(() => {
-    Animated.timing(menuSlideAnim, {
-      toValue: isMenuOpen ? 0 : width, 
-      duration: 300,
-      useNativeDriver: true,
-      easing: Easing.out(Easing.ease)
-    }).start();
+    Animated.parallel([
+      Animated.timing(menuSlideAnim, {
+        toValue: isMenuOpen ? 0 : width, 
+        duration: 300,
+        useNativeDriver: true,
+        easing: Easing.out(Easing.ease)
+      }),
+      Animated.timing(menuFadeAnim, {
+        toValue: isMenuOpen ? 1 : 0,
+        duration: 300,
+        useNativeDriver: true
+      })
+    ]).start();
   }, [isMenuOpen]);
+
+  // Trigger the new "Scale & Pop" card animations on tab focus
+  useFocusEffect(
+    useCallback(() => {
+      if (!isChecking && !showOnboarding && userName) {
+        // Reset values
+        cardScales.forEach(anim => anim.setValue(0.8));
+        cardOpacities.forEach(anim => anim.setValue(0));
+
+        const animations = cardScales.map((anim, index) => {
+          return Animated.parallel([
+            Animated.spring(anim, { toValue: 1, friction: 6, tension: 50, useNativeDriver: true }),
+            Animated.timing(cardOpacities[index], { toValue: 1, duration: 300, useNativeDriver: true })
+          ]);
+        });
+
+        // Stagger the pops by 120ms
+        Animated.stagger(120, animations).start();
+      }
+    }, [isChecking, showOnboarding, userName])
+  );
 
   const setGreetingTime = () => {
     const hour = new Date().getHours();
@@ -133,8 +173,8 @@ export default function HomeScreen() {
 
         <Animated.ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
 
-          <TouchableOpacity 
-            style={[styles.mannaCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 20 }]} 
+          <AnimatedTouchableOpacity 
+            style={[styles.mannaCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 20, opacity: cardOpacities[0], transform: [{ scale: cardScales[0] }] }]} 
             onPress={() => navigation.navigate('TodaysManna')}
           >
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -150,23 +190,21 @@ export default function HomeScreen() {
               </View>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
-          </TouchableOpacity>
+          </AnimatedTouchableOpacity>
 
           <View style={styles.grid}>
             {/* SIZE BOOST ON ALL FOUR CARDS */}
-            <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={openSabbathSchoolLink}>
+            <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[1], transform: [{ scale: cardScales[1] }] }]} onPress={openSabbathSchoolLink}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(48, 209, 88, 0.1)' }]}><Ionicons name="library" size={32} color="#30D158" /></View>
               <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]}>Sabbath School</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>ஓய்வுநாள் பள்ளி பாடம்</Text>
-            </TouchableOpacity>
+            </AnimatedTouchableOpacity>
 
-            
-
-            <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => navigation.navigate('Magazine')}>
+            <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[2], transform: [{ scale: cardScales[2] }] }]} onPress={() => navigation.navigate('Magazine')}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(191, 90, 242, 0.1)' }]}><Ionicons name="newspaper" size={32} color="#BF5AF2" /></View>
               <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]}>Monthly Magazine</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>மாதாந்திர இதழ்</Text>
-            </TouchableOpacity>
+            </AnimatedTouchableOpacity>
           </View>
         </Animated.ScrollView>
       </SafeAreaView>
@@ -174,7 +212,9 @@ export default function HomeScreen() {
       <Modal visible={isMenuOpen} transparent animationType="none" onRequestClose={() => setIsMenuOpen(false)}>
         <View style={{ flex: 1, flexDirection: 'row' }}>
           
-          <TouchableOpacity style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={() => setIsMenuOpen(false)} />
+          <Animated.View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', opacity: menuFadeAnim }}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setIsMenuOpen(false)} />
+          </Animated.View>
           
           <Animated.View style={[styles.drawerMenu, { backgroundColor: isDark ? '#0A1929' : '#FFFFFF', transform: [{ translateX: menuSlideAnim }] }]}>
             <SafeAreaView edges={['top']} style={{ flex: 1 }}>

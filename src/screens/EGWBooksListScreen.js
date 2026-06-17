@@ -1,13 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Platform, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context'; 
 import * as FileSystem from 'expo-file-system/legacy'; 
 import * as Sharing from 'expo-sharing';
-import * as IntentLauncher from 'expo-intent-launcher'; // New Tool for Android PDF Viewer
+import * as IntentLauncher from 'expo-intent-launcher'; 
 import * as WebBrowser from 'expo-web-browser'; 
 import { Ionicons } from '@expo/vector-icons';
 import { EGW_BOOKS_DATA } from '../data/egwBooks'; 
 import { useSettings } from '../context/SettingsContext';
+
+// -------------------------------------------------------------
+// Reusable Premium Click Animation Wrapper
+// -------------------------------------------------------------
+const ScalePressable = ({ children, onPress, style, scaleTo = 0.90, disabled = false }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+  const handlePressIn = () => !disabled && Animated.spring(scale, { toValue: scaleTo, useNativeDriver: true, friction: 5 }).start();
+  const handlePressOut = () => !disabled && Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5 }).start();
+  return (
+    <Animated.View style={[{ transform: [{ scale }] }, style]}>
+      <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut} onPress={onPress} activeOpacity={0.8} delayPressIn={50} disabled={disabled}>
+        {children}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 export default function EGWBooksListScreen({ navigation }) {
   const { colors } = useSettings();
@@ -15,8 +31,18 @@ export default function EGWBooksListScreen({ navigation }) {
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState({}); 
 
+  // Entrance Animation Refs
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+
   useEffect(() => {
     checkDownloadedFiles();
+    
+    // Trigger smooth list entrance
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+      Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true })
+    ]).start();
   }, []);
 
   const checkDownloadedFiles = async () => {
@@ -67,14 +93,13 @@ export default function EGWBooksListScreen({ navigation }) {
   // 1. Double Confirmation Delete Feature
   const handleDelete = (book) => {
     Alert.alert(
-      "எச்சரிக்கை", // First Confirmation
+      "எச்சரிக்கை", 
       `'${book.title_tamil}' புத்தகத்தை நீக்க விரும்புகிறீர்களா?`,
       [
         { text: "Cancel", style: "cancel" },
         { 
           text: "Yes", 
           onPress: () => {
-            // Second Confirmation
             Alert.alert(
               "உறுதிப்படுத்தவும்", 
               "நிச்சயமாக போனில் இருந்து நீக்க வேண்டுமா?",
@@ -87,7 +112,7 @@ export default function EGWBooksListScreen({ navigation }) {
                     const fileUri = FileSystem.documentDirectory + `${book.id}.pdf`;
                     try {
                       await FileSystem.deleteAsync(fileUri, { idempotent: true });
-                      setDownloadedFiles(prev => ({ ...prev, [book.id]: false })); // Updates UI instantly
+                      setDownloadedFiles(prev => ({ ...prev, [book.id]: false })); 
                     } catch (e) {
                       Alert.alert("பிழை", "நீக்க முடியவில்லை.");
                     }
@@ -101,13 +126,12 @@ export default function EGWBooksListScreen({ navigation }) {
     );
   };
 
-  // 2. Open Directly in PDF Viewer (No more Share screen on Android!)
+  // 2. Open Directly in PDF Viewer
   const handleOpenPdf = async (bookId) => {
     const fileUri = FileSystem.documentDirectory + `${bookId}.pdf`;
     
     try {
       if (Platform.OS === 'android') {
-        // Android Specific: Get content URI and open directly in PDF Reader
         const contentUri = await FileSystem.getContentUriAsync(fileUri);
         await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
           data: contentUri,
@@ -115,7 +139,6 @@ export default function EGWBooksListScreen({ navigation }) {
           type: 'application/pdf',
         });
       } else {
-        // iOS Specific: Sharing module handles PDFs perfectly
         await Sharing.shareAsync(fileUri, { UTI: 'com.adobe.pdf', mimeType: 'application/pdf' });
       }
     } catch (error) {
@@ -143,24 +166,29 @@ export default function EGWBooksListScreen({ navigation }) {
 
         <View style={styles.actionButtons}>
           {item.website_url && (
-            <TouchableOpacity style={styles.onlineBtn} onPress={() => handleOnlineView(item.website_url)}>
-              <Ionicons name="globe-outline" size={18} color="#fff" />
-              <Text style={styles.btnText}>Online</Text>
-            </TouchableOpacity>
+            <ScalePressable onPress={() => handleOnlineView(item.website_url)}>
+              <View style={styles.onlineBtn}>
+                <Ionicons name="globe-outline" size={18} color="#fff" />
+                <Text style={styles.btnText}>Online</Text>
+              </View>
+            </ScalePressable>
           )}
 
           {item.pdf_url && (
             isDownloaded ? (
-              // Show READ button and DUSTBIN icon side-by-side
               <View style={styles.downloadedActions}>
-                <TouchableOpacity style={styles.openBtn} onPress={() => handleOpenPdf(item.id)}>
-                  <Ionicons name="book-outline" size={18} color="#fff" />
-                  <Text style={styles.btnText}>Read</Text>
-                </TouchableOpacity>
+                <ScalePressable onPress={() => handleOpenPdf(item.id)}>
+                  <View style={styles.openBtn}>
+                    <Ionicons name="book-outline" size={18} color="#fff" />
+                    <Text style={styles.btnText}>Read</Text>
+                  </View>
+                </ScalePressable>
                 
-                <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
-                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
-                </TouchableOpacity>
+                <ScalePressable onPress={() => handleDelete(item)}>
+                  <View style={styles.deleteBtn}>
+                    <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                  </View>
+                </ScalePressable>
               </View>
 
             ) : isDownloading ? (
@@ -169,9 +197,11 @@ export default function EGWBooksListScreen({ navigation }) {
                 <Text style={{color: colors.primary, fontSize: 11, marginTop: 4, fontWeight: 'bold'}}>{progress}%</Text>
               </View>
             ) : (
-              <TouchableOpacity style={[styles.downloadBtn, { borderColor: colors.primary }]} onPress={() => handleDownload(item)}>
-                <Ionicons name="download-outline" size={20} color={colors.primary} />
-              </TouchableOpacity>
+              <ScalePressable onPress={() => handleDownload(item)}>
+                <View style={[styles.downloadBtn, { borderColor: colors.primary }]}>
+                  <Ionicons name="download-outline" size={20} color={colors.primary} />
+                </View>
+              </ScalePressable>
             )
           )}
         </View>
@@ -182,29 +212,33 @@ export default function EGWBooksListScreen({ navigation }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.navigate('Books')} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={colors.primary} />
-          <Text style={[styles.backText, { color: colors.primary }]}>Back</Text>
-        </TouchableOpacity>
+        <ScalePressable onPress={() => navigation.navigate('Books')}>
+          <View style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={colors.primary} />
+            <Text style={[styles.backText, { color: colors.primary }]}>Back</Text>
+          </View>
+        </ScalePressable>
       </View>
 
-      <View style={[styles.banner, { backgroundColor: 'rgba(0, 240, 255, 0.1)' }]}>
-        <Text style={[styles.bannerText, { color: colors.text }]}>To view official EGW Estate Tamil resources online, visit:</Text>
-        <TouchableOpacity onPress={() => handleOnlineView('https://m.egwwritings.org/ta/folders/1082')}>
-          <Text style={[styles.bannerLink, { color: colors.primary }]}>m.egwwritings.org</Text>
-        </TouchableOpacity>
-      </View>
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], flex: 1 }}>
+        <View style={[styles.banner, { backgroundColor: 'rgba(0, 240, 255, 0.1)' }]}>
+          <Text style={[styles.bannerText, { color: colors.text }]}>To view official EGW Estate Tamil resources online, visit:</Text>
+          <ScalePressable onPress={() => handleOnlineView('https://m.egwwritings.org/ta/folders/1082')}>
+            <Text style={[styles.bannerLink, { color: colors.primary }]}>m.egwwritings.org</Text>
+          </ScalePressable>
+        </View>
 
-      <FlatList
-        data={EGW_BOOKS_DATA}
-        keyExtractor={(item) => item.id}
-        renderItem={renderBookItem}
-        contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}
-        removeClippedSubviews={true}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        initialNumToRender={8}
-      />
+        <FlatList
+          data={EGW_BOOKS_DATA}
+          keyExtractor={(item) => item.id}
+          renderItem={renderBookItem}
+          contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={5}
+          windowSize={5}
+          initialNumToRender={8}
+        />
+      </Animated.View>
     </SafeAreaView>
   );
 }
@@ -212,27 +246,26 @@ export default function EGWBooksListScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', padding: 16, alignItems: 'center' },
-  backButton: { flexDirection: 'row', alignItems: 'center' },
+  backButton: { flexDirection: 'row', alignItems: 'center', padding: 4 },
   backText: { fontSize: 16, marginLeft: 8, fontWeight: 'bold' },
   banner: { padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.05)' },
   bannerText: { fontSize: 13, textAlign: 'center' },
-  bannerLink: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginTop: 4 },
+  bannerLink: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginTop: 8 },
   
   bookCard: { marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 12, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start' },
   iconCircle: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center', marginRight: 12, marginTop: 2 },
   bookInfo: { flex: 1, marginBottom: 12 },
   
-  titleTamil: { fontSize: 18, fontFamily: 'Tamil003', lineHeight: 26 }, // Custom font fixed
+  titleTamil: { fontSize: 18, fontFamily: 'Tamil003', lineHeight: 26 }, 
   titleEnglish: { fontSize: 13, marginTop: 2 },
   
   actionButtons: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 8 },
-  downloadedActions: { flexDirection: 'row', gap: 10, alignItems: 'center' }, // Layout for Read + Delete
+  downloadedActions: { flexDirection: 'row', gap: 10, alignItems: 'center' }, 
   
   onlineBtn: { flexDirection: 'row', backgroundColor: '#F5A623', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   openBtn: { flexDirection: 'row', backgroundColor: '#4CAF50', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },
   
-  // Dustbin Button Styles
   deleteBtn: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, backgroundColor: 'rgba(255,59,48,0.1)', justifyContent: 'center', alignItems: 'center' },
   
   downloadBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
