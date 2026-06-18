@@ -10,14 +10,11 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 const { height } = Dimensions.get('window');
 const BRIGHT_YELLOW = '#FFD700';
 
-// -------------------------------------------------------------
-// Reusable Premium Click Animation Wrapper
-// -------------------------------------------------------------
 const ScalePressable = ({ children, onPress, style, scaleTo = 0.90 }) => {
   const scale = useRef(new Animated.Value(1)).current;
   const handlePressIn = () => Animated.spring(scale, { toValue: scaleTo, useNativeDriver: true, friction: 5 }).start();
@@ -49,7 +46,6 @@ const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size =
   );
 };
 
-// CATEGORY REMOVED FROM SONG ITEM - With Staggered Entrance
 const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize }) => {
   const translateY = listAnim.interpolate({
     inputRange: [0, 1],
@@ -86,6 +82,7 @@ const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, a
 });
 
 export default function ThirumaraiHopeScreen() {
+  const navigation = useNavigation();
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
   
   const [songs, setSongs] = useState([]);
@@ -101,21 +98,14 @@ export default function ThirumaraiHopeScreen() {
 
   const [selectedSongIndex, setSelectedSongIndex] = useState(null);
   const [showTextSettings, setShowTextSettings] = useState(false);
-
-  // Custom Modal States for Smooth Animations
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
-
-  // Scroll to Top State
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const flatListRef = useRef(null);
 
-  // Animation Refs
+  const flatListRef = useRef(null);
   const headerSlide = useRef(new Animated.Value(-50)).current;
   const listAnim = useRef(new Animated.Value(0)).current;
   const fabOpacity = useRef(new Animated.Value(0)).current;
   const fabTranslateY = useRef(new Animated.Value(50)).current;
-
-  // Modal Custom Animation Refs
   const settingsSlideAnim = useRef(new Animated.Value(height)).current;
   const settingsFadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -127,7 +117,6 @@ export default function ThirumaraiHopeScreen() {
     if (hapticsEnabled) Haptics.impactAsync(style); 
   }, [hapticsEnabled]);
 
-  // Handle Tab Focus Entrance Animations
   useFocusEffect(
     useCallback(() => {
       headerSlide.setValue(-50);
@@ -139,7 +128,6 @@ export default function ThirumaraiHopeScreen() {
     }, [])
   );
 
-  // Handle FAB Visibility
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fabOpacity, { toValue: showScrollTop ? 1 : 0, duration: 250, useNativeDriver: true }),
@@ -147,9 +135,6 @@ export default function ThirumaraiHopeScreen() {
     ]).start();
   }, [showScrollTop]);
 
-  // (Custom Lyrics slide animation removed to restore native 'pageSheet' behavior)
-
-  // Smooth Text Settings Panel Controller
   useEffect(() => {
     if (showTextSettings) {
       setSettingsModalVisible(true);
@@ -165,7 +150,6 @@ export default function ThirumaraiHopeScreen() {
     }
   }, [showTextSettings]);
 
-  // ANDROID BACK BUTTON HANDLER
   useEffect(() => {
     const backAction = () => {
       if (showTextSettings) { setShowTextSettings(false); return true; }
@@ -208,12 +192,7 @@ export default function ThirumaraiHopeScreen() {
     try {
       db = await SQLite.openDatabaseAsync('Thirumarai.db');
       const result = await db.getAllAsync('SELECT * FROM SongListTable'); 
-      
-      const validSongs = (result || []).filter(s => 
-        s.Song_number_by_Nambikaiyen_Geethagal != null && 
-        s.Song_number_by_Nambikaiyen_Geethagal !== ''
-      );
-      
+      const validSongs = (result || []).filter(s => s.Song_number_by_Nambikaiyen_Geethagal != null && s.Song_number_by_Nambikaiyen_Geethagal !== '');
       const cleanedSongs = validSongs.map(s => ({ 
         ...s,
         id: s.Song_number_by_Nambikaiyen_Geethagal,
@@ -223,10 +202,8 @@ export default function ThirumaraiHopeScreen() {
         title_english: s.song_title_english,
         lyrics: s.lyrics
       }));
-      
       setSongs(cleanedSongs);
     } catch (e) { 
-      console.error("DB Error in Thirumarai:", e); 
       setSongs([]); 
     } finally {
       if (db) await db.closeAsync().catch(() => {});
@@ -250,20 +227,16 @@ export default function ThirumaraiHopeScreen() {
     try {
       let filtered = songs.filter(song => {
         if (showFavoritesOnly && !favorites.has(song.id)) return false;
-        
         if (selectedLetter !== 'All' && song.title) {
           const match = song.title.match(/[\u0B85-\u0BB9][\u0BBE-\u0BCD]?|[A-Za-z]/);
           const baseLetter = match ? match[0].toUpperCase() : '';
           if (baseLetter !== selectedLetter) return false;
         }
-        
         if (search === '') return true;
-        
         const term = search.toLowerCase().trim();
         const songNum = song.song_number || song.id || '';
         const searchTamil = song.title_tamil?.toLowerCase() || '';
         const searchEnglish = song.title_english?.toString().toLowerCase() || '';
-        
         return (songNum.toString().includes(term)) || (searchTamil.includes(term)) || (searchEnglish.includes(term));
       });
 
@@ -342,7 +315,6 @@ export default function ThirumaraiHopeScreen() {
     setTimeout(() => { if (isNumeric) numericInputRef.current?.focus(); else textInputRef.current?.focus(); }, 50);
   };
 
-  // Triggers the FAB when the user scrolls down 400 pixels
   const handleScroll = (event) => {
     const offsetY = event.nativeEvent.contentOffset.y;
     if (offsetY > 400 && !showScrollTop) setShowScrollTop(true);
@@ -362,32 +334,38 @@ export default function ThirumaraiHopeScreen() {
 
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
-        {/* Animated Header */}
         <Animated.View style={[styles.headerWrapper, { transform: [{ translateY: headerSlide }] }]}>
-          <View style={[styles.searchPill, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <View style={{ flex: 1 }}>
-              <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Thirumarai..." placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
-              <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
-            </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+            <ScalePressable onPress={() => { triggerHaptic(); navigation.navigate('Songs'); }} style={{ marginRight: 10 }}>
+              <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+                <Ionicons name="chevron-back" size={28} color={colors.primary} />
+              </View>
+            </ScalePressable>
 
-            {search.length > 0 && (
-              <ScalePressable onPress={() => { triggerHaptic(); setSearch(''); Keyboard.dismiss(); }} style={{ paddingHorizontal: 10 }}>
-                <Ionicons name="close-circle" size={20} color={colors.subtext} />
-              </ScalePressable>
-            )}
+            <View style={[styles.searchPill, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}>
+              <View style={{ flex: 1 }}>
+                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Thirumarai..." placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
+                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
+              </View>
 
-            <View style={[styles.inlineToggleContainer, { backgroundColor: isDark ? '#2A2D35' : '#E5E7EB' }]}>
-              <TouchableOpacity style={[styles.inlineToggleBtn, !isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(false)}>
-                <Text style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>ABC</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.inlineToggleBtn, isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(true)}>
-                <Text style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>123</Text>
-              </TouchableOpacity>
+              {search.length > 0 && (
+                <ScalePressable onPress={() => { triggerHaptic(); setSearch(''); Keyboard.dismiss(); }} style={{ paddingHorizontal: 10 }}>
+                  <Ionicons name="close-circle" size={20} color={colors.subtext} />
+                </ScalePressable>
+              )}
+
+              <View style={[styles.inlineToggleContainer, { backgroundColor: isDark ? '#2A2D35' : '#E5E7EB' }]}>
+                <TouchableOpacity style={[styles.inlineToggleBtn, !isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(false)}>
+                  <Text style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>ABC</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.inlineToggleBtn, isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(true)}>
+                  <Text style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>123</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipsRow}>
-            
             {hasFiltersActive && (
               <ScalePressable onPress={clearAllFilters} style={{ marginRight: 8 }}>
                 <View style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
@@ -410,7 +388,6 @@ export default function ThirumaraiHopeScreen() {
                 <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Favorites</Text>
               </View>
             </ScalePressable>
-
           </ScrollView>
         </Animated.View>
 
@@ -434,18 +411,7 @@ export default function ThirumaraiHopeScreen() {
               </ScalePressable>
             }
             renderItem={({ item, index }) => (
-              <LetterGridItem 
-                letter={item} 
-                index={index}
-                listAnim={listAnim}
-                colors={colors} 
-                appFontSize={appFontSize} 
-                onPress={(letter) => { 
-                  triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); 
-                  setSelectedLetter(letter); 
-                  setIsAlphabetMode(false); 
-                }} 
-              />
+              <LetterGridItem letter={item} index={index} listAnim={listAnim} colors={colors} appFontSize={appFontSize} onPress={(letter) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setSelectedLetter(letter); setIsAlphabetMode(false); }} />
             )}
           />
         ) : (
@@ -472,11 +438,7 @@ export default function ThirumaraiHopeScreen() {
               ) : null
             }
             renderItem={({ item, index }) => (
-              <SongItem 
-                item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} 
-                onToggleFavorite={toggleFavorite} 
-                onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} 
-              />
+              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
             )}
             ListEmptyComponent={
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100 }}>
@@ -487,7 +449,6 @@ export default function ThirumaraiHopeScreen() {
           />
         )}
 
-        {/* Floating Scroll to Top Button */}
         <Animated.View style={[styles.fabContainer, { opacity: fabOpacity, transform: [{ translateY: fabTranslateY }] }]} pointerEvents={showScrollTop ? 'auto' : 'none'}>
           <TouchableOpacity onPress={scrollToTop} style={[styles.fab, { backgroundColor: isDark ? '#1F2937' : '#FFFFFF', borderColor: colors.border }]} activeOpacity={0.8}>
             <Ionicons name="arrow-up" size={26} color={colors.primary} />
@@ -496,26 +457,22 @@ export default function ThirumaraiHopeScreen() {
 
       </SafeAreaView>
 
-      {/* SORT MODAL */}
       <Modal visible={showSortMenu} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
             <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Sort Options</Text>
-            
             <ScalePressable onPress={selectNumberOrder}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
                 <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
               </View>
             </ScalePressable>
-
             <ScalePressable onPress={selectAlphabetOrder}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
                 <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
               </View>
             </ScalePressable>
-            
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
               <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</Text>
             </TouchableOpacity>
@@ -523,17 +480,9 @@ export default function ThirumaraiHopeScreen() {
         </BlurView>
       </Modal>
 
-      {/* LYRICS READING MODAL (Restored Native pageSheet) */}
-      <Modal 
-        visible={selectedSongIndex !== null} 
-        animationType="slide" 
-        presentationStyle="pageSheet" 
-        onRequestClose={closeReadingScreen}
-        onDismiss={closeReadingScreen}
-      >
+      <Modal visible={selectedSongIndex !== null} animationType="slide" presentationStyle="pageSheet" onRequestClose={closeReadingScreen} onDismiss={closeReadingScreen}>
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <LinearGradient colors={isDark ? ['#0A1929', colors.background] : ['#FFFFFF', colors.background]} style={StyleSheet.absoluteFillObject} />
-
           <SafeAreaView style={{ flex: 1 }}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <ScalePressable onPress={() => { triggerHaptic(); closeReadingScreen(); }}>
@@ -541,20 +490,17 @@ export default function ThirumaraiHopeScreen() {
                   <Ionicons name="chevron-down" size={32} color={BRIGHT_YELLOW} />
                 </View>
               </ScalePressable>
-              
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
                  <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                    {activeSong?.song_number || activeSong?.id} - {activeSong?.title_tamil}
                  </Text>
               </View>
-
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
                     <Text style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</Text>
                   </View>
                 </ScalePressable>
-                
                 <ScalePressable onPress={() => handleShare(activeSong)}>
                   <View style={{ padding: 8 }}>
                     <Ionicons name="share-outline" size={24} color={BRIGHT_YELLOW} />
@@ -601,15 +547,11 @@ export default function ThirumaraiHopeScreen() {
             )}
           </SafeAreaView>
 
-          {/* IN-MODAL ANIMATED TEXT SETTINGS - Fixes Native Modal Stacking Bugs */}
           {settingsModalVisible && (
             <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 999 }]} pointerEvents={showTextSettings ? 'auto' : 'none'}>
-              {/* Fade Overlay Background */}
               <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.7)', opacity: settingsFadeAnim }]}>
                 <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setShowTextSettings(false)} />
               </Animated.View>
-              
-              {/* Slide-Up Panel */}
               <Animated.View style={[styles.settingsCard, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, transform: [{ translateY: settingsSlideAnim }] }]}>
                 <View style={styles.settingsHeader}>
                   <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
@@ -617,22 +559,17 @@ export default function ThirumaraiHopeScreen() {
                     <Ionicons name="close" size={28} color={colors.text} />
                   </ScalePressable>
                 </View>
-                
                 <ScrollView showsVerticalScrollIndicator={false}>
                   <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Title Settings</Text>
                   <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</Text>
                   <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-
                   <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2 }]}>Lyrics Settings</Text>
                   <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</Text>
                   <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  
                   <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</Text>
                   <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  
                   <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</Text>
                   <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  
                   <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
                     <View style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]}>
                       <Ionicons name="refresh" size={20} color={colors.primary} />
@@ -653,43 +590,33 @@ export default function ThirumaraiHopeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   headerWrapper: { paddingHorizontal: 15, paddingBottom: 10, paddingTop: 5 },
-  
   searchPill: { flexDirection: 'row', alignItems: 'center', borderRadius: 30, borderWidth: 1, paddingLeft: 15, paddingRight: 6, height: 50, marginBottom: 12 },
   searchInput: { flex: 1, height: '100%' },
   inlineToggleContainer: { flexDirection: 'row', borderRadius: 20, padding: 3, marginLeft: 8 },
   inlineToggleBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16 },
-  
   filterChipsRow: { flexDirection: 'row', alignItems: 'center' },
   chipBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, marginRight: 8 },
-  
   songCard: { flexDirection: 'row', alignItems: 'center', padding: 10, marginBottom: 8, borderRadius: 16, borderWidth: 1 },
   numberCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12, borderWidth: 1 },
   titleContainer: { flex: 1, justifyContent: 'center' },
   songTitle: { marginBottom: 2 },
   backToGridBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 16, marginBottom: 15, borderWidth: 1 },
-
   gridItemCompact: { paddingVertical: 12, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 3 },
-  
   fabContainer: { position: 'absolute', bottom: 25, alignSelf: 'center', zIndex: 10 },
   fab: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', borderWidth: 1, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
-
-  modalContainer: { flex: 1 },
+  modalContainer: { flex: 1, position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderBottomWidth: 1 },
   textSettingsBtn: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: 'rgba(128,128,128,0.2)', borderRadius: 12, marginRight: 5 },
-  
   modalBg: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   sortModalCard: { width: '85%', borderRadius: 24, overflow: 'hidden' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', padding: 25 },
   modalHeaderTitle: { fontWeight: '900', textAlign: 'center', padding: 25, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-
   settingsCard: { width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   settingLabel: { fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },
   restoreBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 16, borderRadius: 16, marginTop: 40, marginBottom: 20 },
-
   floatLeft: { position: 'absolute', bottom: 20, left: 20, borderRadius: 25, overflow: 'hidden', borderWidth: 1 },
   floatRight: { position: 'absolute', bottom: 20, right: 20, borderRadius: 25, overflow: 'hidden', borderWidth: 1 },
   floatCenterClear: { position: 'absolute', bottom: 25, left: '20%', right: '20%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  
   blurBtnContent: { width: 55, height: 55, justifyContent: 'center', alignItems: 'center' }
 });

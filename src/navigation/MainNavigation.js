@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, Platform } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +22,7 @@ import AboutScreen from '../screens/AboutScreen';
 import MagazineScreen from '../screens/MagazineScreen';
 import DictionaryScreen from '../screens/DictionaryScreen';
 import ConcordanceScreen from '../screens/ConcordanceScreen';
-import StudyExplanationsScreen from '../screens/StudyExplanationsScreen'; // NEW!
+import StudyExplanationsScreen from '../screens/StudyExplanationsScreen'; 
 
 // --- NEW SONG SCREENS ---
 import ZionScreen from '../screens/ZionScreen';
@@ -30,91 +30,181 @@ import ThirumaraiOldScreen from '../screens/ThirumaraiOldScreen';
 import ThirumaraiHopeScreen from '../screens/ThirumaraiHopeScreen';
 import OtherSongsScreen from '../screens/OtherSongsScreen';
 
-function DummyScreen({ route }) {
+const Tab = createBottomTabNavigator();
+
+// ==============================================================
+// 🌟 CUSTOM PREMIUM TAB BAR WITH MOVING GLOW
+// ==============================================================
+function CustomTabBar({ state, descriptors, navigation, insets }) {
+  const { colors, hapticsEnabled } = useSettings();
+  const { width } = useWindowDimensions();
+  
+  const PRIME_YELLOW = '#FFD700';
+  const TAB_BG = '#0A1929'; 
+  const NEON_BLUE = colors.primary; // Uses your theme's Neon Blue for unselected tabs
+
+  // 1. Map hidden sub-screens to their main parent tab to keep the glow active!
+  const getActiveMainTab = (routeName) => {
+    const parentMap = {
+      ZionSongs: 'Songs',
+      ThirumaraiOld: 'Songs',
+      ThirumaraiHope: 'Songs',
+      OtherSongs: 'Songs',
+      Dictionary: 'Study',
+      Concordance: 'Study',
+      StudyExplanations: 'Study',
+      EGWBooksList: 'Books',
+      Settings: 'Home',
+      TodaysManna: 'Home',
+      About: 'Home',
+      Magazine: 'Home',
+    };
+    return parentMap[routeName] || routeName;
+  };
+
+  // 2. Filter out hidden screens so they don't map to the bottom bar UI
+  const visibleRoutes = state.routes.filter(r => {
+    const { options } = descriptors[r.key];
+    return options.tabBarItemStyle?.display !== 'none';
+  });
+
+  const TAB_WIDTH = width / visibleRoutes.length;
+
+  // 3. Find which main tab should be active based on our Parent Map
+  const currentRouteName = state.routes[state.index].name;
+  const activeMainTabName = getActiveMainTab(currentRouteName);
+  const activeVisibleIndex = visibleRoutes.findIndex(r => r.name === activeMainTabName);
+
+  // 4. Animation state for the moving glow line
+  const slideAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (activeVisibleIndex >= 0) {
+      Animated.spring(slideAnim, {
+        toValue: activeVisibleIndex * TAB_WIDTH,
+        useNativeDriver: true,
+        friction: 7,    
+        tension: 50     
+      }).start();
+    }
+  }, [activeVisibleIndex, TAB_WIDTH]);
+
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#05070A' }}>
-      <Text style={{ color: 'white', fontSize: 20 }}>{route.name} Coming Soon</Text>
+    <View style={{
+      flexDirection: 'row',
+      backgroundColor: TAB_BG,
+      height: Platform.OS === 'ios' ? 85 : 65 + insets.bottom,
+      paddingBottom: Platform.OS === 'ios' ? 20 : (insets.bottom > 0 ? insets.bottom : 8),
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      elevation: 15,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -5 },
+      shadowOpacity: 0.3,
+      shadowRadius: 5,
+    }}>
+      
+      {/* ✨ THE MOVING GLOW INDICATOR */}
+      <Animated.View style={{
+        position: 'absolute',
+        top: -1, 
+        left: (TAB_WIDTH / 2) - 25, 
+        width: 50,
+        height: 4,
+        backgroundColor: PRIME_YELLOW,
+        borderBottomLeftRadius: 5,
+        borderBottomRightRadius: 5,
+        shadowColor: PRIME_YELLOW,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 10,
+        elevation: 10,
+        transform: [{ translateX: slideAnim }],
+        opacity: activeVisibleIndex >= 0 ? 1 : 0, 
+      }} />
+
+      {/* RENDER THE TABS */}
+      {visibleRoutes.map((route, index) => {
+        const isFocused = activeVisibleIndex === index;
+        
+        let iconName;
+        if (route.name === 'Songs') iconName = isFocused ? 'musical-notes' : 'musical-notes-outline';
+        else if (route.name === 'Bible') iconName = isFocused ? 'book' : 'book-outline';
+        else if (route.name === 'Home') iconName = isFocused ? 'home' : 'home-outline';
+        else if (route.name === 'Study') iconName = isFocused ? 'library' : 'library-outline';
+        else if (route.name === 'Books') iconName = isFocused ? 'albums' : 'albums-outline';
+
+        return (
+          <TouchableOpacity
+            key={route.key}
+            activeOpacity={0.8}
+            onPress={() => {
+              if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name);
+              }
+            }}
+            style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 12 }}
+          >
+            <Ionicons 
+              name={iconName} 
+              size={isFocused ? 26 : 24} 
+              color={isFocused ? PRIME_YELLOW : NEON_BLUE} 
+            />
+            <Text style={{
+              color: isFocused ? PRIME_YELLOW : NEON_BLUE,
+              fontSize: 10,
+              fontWeight: isFocused ? 'bold' : '600',
+              marginTop: 5
+            }}>
+              {route.name}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
 
-const Tab = createBottomTabNavigator();
-
+// ==============================================================
+// MAIN NAVIGATION WRAPPER
+// ==============================================================
 export default function MainNavigation() {
-  const { colors, isDark, hapticsEnabled } = useSettings();
-  const insets = useSafeAreaInsets();
-
-  const triggerTabHaptic = () => {
-    if (hapticsEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
   return (
     <NavigationContainer>
        <Tab.Navigator
         initialRouteName="Home"
         backBehavior="history" 
         safeAreaInsets={{ left: 0, right: 0 }}
-        screenOptions={({ route }) => ({
-          tabBarIcon: ({ color }) => {
-            const ICON_SIZE = 24;
-            if (route.name === 'Songs') return <Ionicons name="musical-notes" size={ICON_SIZE} color={color} />;
-            if (route.name === 'Bible') return <Ionicons name="book" size={ICON_SIZE} color={color} />;
-            if (route.name === 'Home') return <Ionicons name="home" size={ICON_SIZE} color={color} />;
-            if (route.name === 'Study') return <Ionicons name="library" size={ICON_SIZE} color={color} />;
-            if (route.name === 'Books') return <Ionicons name="albums" size={ICON_SIZE} color={color} />;
-            return null;
-          },
-          tabBarStyle: {
-            backgroundColor: '#0A1929',
-            borderTopWidth: 1,
-            borderTopColor: colors.border,
-            height: Platform.OS === 'ios' ? 85 : 65 + insets.bottom,
-            paddingTop: 6,
-            paddingBottom: Platform.OS === 'ios' ? 20 : (insets.bottom > 0 ? insets.bottom : 8),
-            width: '100%',
-            elevation: 0,
-          },
-          tabBarLabelPosition: 'below-icon',
-          tabBarShowLabel: true,
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '700',
-            marginTop: 4,
-            marginBottom: 0,
-            overflow: 'visible',
-            width: '100%',
-            textAlign: 'center',
-          },
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: isDark ? '#8E94A3' : '#6B6358',
-          headerShown: false,
-        })}
+        tabBar={(props) => <CustomTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
       >
-        <Tab.Screen name="Songs" component={SongsScreen} listeners={{ tabPress: triggerTabHaptic }} />
-        <Tab.Screen name="Bible" component={BibleScreen} listeners={{ tabPress: triggerTabHaptic }} />
-        <Tab.Screen name="Home" component={HomeScreen} listeners={{ tabPress: triggerTabHaptic }} />
-        <Tab.Screen name="Study" component={StudyScreen} listeners={{ tabPress: triggerTabHaptic }} />
-        <Tab.Screen name="Books" component={BooksScreen} listeners={{ tabPress: triggerTabHaptic }} />
+        <Tab.Screen name="Songs" component={SongsScreen} />
+        <Tab.Screen name="Bible" component={BibleScreen} />
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Study" component={StudyScreen} />
+        <Tab.Screen name="Books" component={BooksScreen} />
 
         {/* --- HIDDEN SCREENS --- */}
-        <Tab.Screen name="EGWBooksList" component={EGWBooksListScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="TodaysManna" component={TodaysMannaScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="About" component={AboutScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Magazine" component={MagazineScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Dictionary" component={DictionaryScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Concordance" component={ConcordanceScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        
-        {/* NEW! The Study Explanations Screen */}
-        <Tab.Screen name="StudyExplanations" component={StudyExplanationsScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="EGWBooksList" component={EGWBooksListScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="TodaysManna" component={TodaysMannaScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="About" component={AboutScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="Magazine" component={MagazineScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="Dictionary" component={DictionaryScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="Concordance" component={ConcordanceScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="StudyExplanations" component={StudyExplanationsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
         
         {/* --- NEW SONG SCREENS --- */}
-        <Tab.Screen name="ZionSongs" component={ZionScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="OtherSongs" component={OtherSongsScreen} options={{ tabBarButton: () => null, tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="ZionSongs" component={ZionScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="OtherSongs" component={OtherSongsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
 
       </Tab.Navigator>
     </NavigationContainer>
