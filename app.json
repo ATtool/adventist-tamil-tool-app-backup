@@ -2,6 +2,7 @@
   "expo": {
     "name": "Adventist Tamil Tool",
     "slug": "adventist-tamil-tool",
+    "scheme": "adventisttamil",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -23,7 +24,13 @@
       "expo-asset",
       "expo-font",
       "expo-web-browser",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Adventist Tamil Tool to access your camera to scan QR codes for joining services."
+        }
+      ]
     ],
     "extra": {
       "eas": {

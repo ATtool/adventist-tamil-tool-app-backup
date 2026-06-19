@@ -28,7 +28,9 @@ export default function HomeScreen() {
   const [isChecking, setIsChecking] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false); 
+  const [showMeetingMenu, setShowMeetingMenu] = useState(false);
   
   const [greeting, setGreeting] = useState('');
   const [userName, setUserName] = useState('');
@@ -45,9 +47,12 @@ export default function HomeScreen() {
   const menuSlideAnim = useRef(new Animated.Value(width)).current; 
   const menuFadeAnim = useRef(new Animated.Value(0)).current;
 
-  // NEW: Scale and Fade staggered animations for the 3 cards
+  // Scale and Fade staggered animations for the 3 cards
   const cardScales = useRef([...Array(3)].map(() => new Animated.Value(0.8))).current;
   const cardOpacities = useRef([...Array(3)].map(() => new Animated.Value(0))).current;
+
+  // NEW: Continuous pulsing animation for the Floating Button
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     checkUserData();
@@ -55,6 +60,14 @@ export default function HomeScreen() {
     
     const date = new Date();
     setCurrentDateStr(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+
+    // Start the continuous pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, { toValue: 1.08, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulseAnim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
+      ])
+    ).start();
   }, []);
 
   // Menu Animation Trigger
@@ -78,7 +91,6 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       if (!isChecking && !showOnboarding && userName) {
-        // Reset values
         cardScales.forEach(anim => anim.setValue(0.8));
         cardOpacities.forEach(anim => anim.setValue(0));
 
@@ -89,7 +101,6 @@ export default function HomeScreen() {
           ]);
         });
 
-        // Stagger the pops by 120ms
         Animated.stagger(120, animations).start();
       }
     }, [isChecking, showOnboarding, userName])
@@ -150,6 +161,7 @@ export default function HomeScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
+        {/* HEADER - Reverted back to normal (No meeting icon here) */}
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <View>
@@ -165,6 +177,7 @@ export default function HomeScreen() {
                 Welcome to Adventist Tamil Tool
               </Text>
             </View>
+            
             <TouchableOpacity onPress={() => { if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsMenuOpen(true); }}>
               <Ionicons name="menu" size={32} color={colors.text} />
             </TouchableOpacity>
@@ -184,7 +197,6 @@ export default function HomeScreen() {
               <View style={{ marginLeft: 15 }}>
                 <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Today's Manna</Text>
                 <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2 }}>
-                  {/* SIZE BOOST HERE */}
                   <Text style={{ fontFamily: 'Tamil003', fontSize: appFontSize + 1 }}>இன்றைய மன்னா</Text> • {currentDateStr}
                 </Text>
               </View>
@@ -193,7 +205,6 @@ export default function HomeScreen() {
           </AnimatedTouchableOpacity>
 
           <View style={styles.grid}>
-            {/* SIZE BOOST ON ALL FOUR CARDS */}
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[1], transform: [{ scale: cardScales[1] }] }]} onPress={openSabbathSchoolLink}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(48, 209, 88, 0.1)' }]}><Ionicons name="library" size={32} color="#30D158" /></View>
               <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]}>Sabbath School</Text>
@@ -209,6 +220,71 @@ export default function HomeScreen() {
         </Animated.ScrollView>
       </SafeAreaView>
 
+      {/* NEW: Glowing Floating Action Button (FAB) for Meetings */}
+      <Animated.View style={[styles.fabWrapper, { transform: [{ scale: pulseAnim }], shadowColor: colors.primary }]}>
+        <TouchableOpacity 
+          style={[styles.fab, { backgroundColor: colors.primary }]} 
+          activeOpacity={0.8}
+          onPress={() => { 
+            if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); 
+            setShowMeetingMenu(true); 
+          }}
+        >
+          <Ionicons name="people" size={30} color={isDark ? "#000" : "#FFF"} />
+        </TouchableOpacity>
+      </Animated.View>
+
+      {/* UPDATED: Meeting Bottom Sheet with Tamil Translations */}
+      <Modal visible={showMeetingMenu} transparent animationType="slide" onRequestClose={() => setShowMeetingMenu(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Fellowship Services</Text>
+                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003', marginTop: 2 }}>ஐக்கிய ஆராதனைகள்</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowMeetingMenu(false)}>
+                <Ionicons name="close-circle" size={32} color={colors.subtext} />
+              </TouchableOpacity>
+            </View>
+            
+            <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('CreateService'); }}>
+              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(0, 240, 255, 0.1)', marginRight: 15 }]}>
+                <Ionicons name="add" size={24} color={colors.primary} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Create Service</Text>
+                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>புதிய ஆராதனை</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.border} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('JoinService'); }}>
+              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(48, 209, 88, 0.1)', marginRight: 15 }]}>
+                <Ionicons name="qr-code" size={24} color="#30D158" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Join Service</Text>
+                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>ஆராதனையில் இணைய</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.border} />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.meetingOption} onPress={() => { setShowMeetingMenu(false); navigation.navigate('SavedServices'); }}>
+              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)', marginRight: 15 }]}>
+                <Ionicons name="bookmark" size={24} color="#FF9F0A" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Saved Services</Text>
+                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>சேமிக்கப்பட்டவை</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.border} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* EXISTING: Side Menu Modal */}
       <Modal visible={isMenuOpen} transparent animationType="none" onRequestClose={() => setIsMenuOpen(false)}>
         <View style={{ flex: 1, flexDirection: 'row' }}>
           
@@ -258,9 +334,7 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* ✅ ONBOARDING MODAL — renders above the entire nav stack (including tab bar).
-          visible during first-launch check AND during the name/country setup form.
-          onRequestClose is a no-op so the Android back button cannot dismiss it. */}
+      {/* EXISTING: ONBOARDING MODAL */}
       <Modal
         visible={isChecking || showOnboarding}
         animationType="none"
@@ -268,7 +342,6 @@ export default function HomeScreen() {
         onRequestClose={() => {}}
       >
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
-          {/* Show nothing while checking (brief blank) — form appears once we know onboarding is needed */}
           {showOnboarding && (
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.onboardingContainer}>
               <View style={styles.onboardingHeader}>
@@ -298,7 +371,7 @@ export default function HomeScreen() {
             </KeyboardAvoidingView>
           )}
 
-          {/* Country Picker — nested inside the onboarding Modal (works fine on both platforms) */}
+          {/* Country Picker */}
           <Modal visible={showCountryPicker} animationType="slide" transparent={true}>
             <View style={styles.modalOverlay}>
               <View style={[styles.countrySheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -327,7 +400,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 15 },
   greeting: { fontWeight: '600', marginBottom: 4 },
   title: { fontWeight: '900', letterSpacing: 0.5 },
-  scrollContent: { padding: 15, paddingBottom: 100 },
+  scrollContent: { padding: 15, paddingBottom: 120 }, // Increased padding to ensure FAB doesn't cover content
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   card: { width: (width - 45) / 2, padding: 20, borderRadius: 24, borderWidth: 1, marginBottom: 15, alignItems: 'center' },
   iconContainer: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
@@ -359,5 +432,28 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.7)' },
   countrySheet: { width: '100%', height: '70%', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, paddingBottom: 30 },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
-  countryItem: { flexDirection: 'row', alignItems: 'center', padding: 18, borderBottomWidth: 1, paddingHorizontal: 20 }
+  countryItem: { flexDirection: 'row', alignItems: 'center', padding: 18, borderBottomWidth: 1, paddingHorizontal: 20 },
+  
+  // NEW: Styles for the Glowing Floating Button
+  fabWrapper: {
+    position: 'absolute',
+    bottom: 30, 
+    right: 25,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.7,
+    shadowRadius: 15,
+    elevation: 10,
+    zIndex: 50,
+  },
+  fab: {
+    width: 65,
+    height: 65,
+    borderRadius: 35,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // NEW: Styles for the Meeting Menu Bottom Sheet
+  meetingSheet: { width: '100%', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, paddingBottom: 30 },
+  meetingOption: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1 }
 });

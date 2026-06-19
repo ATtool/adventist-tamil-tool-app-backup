@@ -1,3 +1,6 @@
+import { Buffer } from 'buffer';
+global.Buffer = Buffer;
+
 import React, { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';

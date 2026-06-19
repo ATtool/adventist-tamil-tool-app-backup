@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
+import * as Linking from 'expo-linking'; // <--- NEW IMPORT FOR DEEP LINKING
 
 // --- MAIN TABS ---
 import HomeScreen from '../screens/HomeScreen';
@@ -30,7 +31,26 @@ import ThirumaraiOldScreen from '../screens/ThirumaraiOldScreen';
 import ThirumaraiHopeScreen from '../screens/ThirumaraiHopeScreen';
 import OtherSongsScreen from '../screens/OtherSongsScreen';
 
+// --- FELLOWSHIP / MEETING SCREENS ---
+import CreateService from '../screens/CreateService';
+import JoinService from '../screens/JoinService';
+import SavedServices from '../screens/SavedServices';
+import ViewService from '../screens/ViewService'; 
+
 const Tab = createBottomTabNavigator();
+
+// ==============================================================
+// 🌟 DEEP LINKING CONFIGURATION
+// ==============================================================
+const linking = {
+  prefixes: ['adventisttamil://', 'https://adventisttamil.app'],
+  config: {
+    screens: {
+      // Maps adventisttamil://join?data=... to the JoinService screen
+      JoinService: 'join', 
+    },
+  },
+};
 
 // ==============================================================
 // 🌟 CUSTOM PREMIUM TAB BAR WITH MOVING GLOW
@@ -41,9 +61,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
   
   const PRIME_YELLOW = '#FFD700';
   const TAB_BG = '#0A1929'; 
-  const NEON_BLUE = colors.primary; // Uses your theme's Neon Blue for unselected tabs
+  const NEON_BLUE = colors.primary; 
 
-  // 1. Map hidden sub-screens to their main parent tab to keep the glow active!
   const getActiveMainTab = (routeName) => {
     const parentMap = {
       ZionSongs: 'Songs',
@@ -58,24 +77,23 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
       TodaysManna: 'Home',
       About: 'Home',
       Magazine: 'Home',
+      CreateService: 'Home',
+      JoinService: 'Home',
+      SavedServices: 'Home',
+      ViewService: 'Home',
     };
     return parentMap[routeName] || routeName;
   };
 
-  // 2. Filter out hidden screens so they don't map to the bottom bar UI
   const visibleRoutes = state.routes.filter(r => {
     const { options } = descriptors[r.key];
     return options.tabBarItemStyle?.display !== 'none';
   });
 
   const TAB_WIDTH = width / visibleRoutes.length;
-
-  // 3. Find which main tab should be active based on our Parent Map
   const currentRouteName = state.routes[state.index].name;
   const activeMainTabName = getActiveMainTab(currentRouteName);
   const activeVisibleIndex = visibleRoutes.findIndex(r => r.name === activeMainTabName);
-
-  // 4. Animation state for the moving glow line
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -104,7 +122,6 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
       shadowRadius: 5,
     }}>
       
-      {/* ✨ THE MOVING GLOW INDICATOR */}
       <Animated.View style={{
         position: 'absolute',
         top: -1, 
@@ -123,7 +140,6 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
         opacity: activeVisibleIndex >= 0 ? 1 : 0, 
       }} />
 
-      {/* RENDER THE TABS */}
       {visibleRoutes.map((route, index) => {
         const isFocused = activeVisibleIndex === index;
         
@@ -151,17 +167,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
             }}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 12 }}
           >
-            <Ionicons 
-              name={iconName} 
-              size={isFocused ? 26 : 24} 
-              color={isFocused ? PRIME_YELLOW : NEON_BLUE} 
-            />
-            <Text style={{
-              color: isFocused ? PRIME_YELLOW : NEON_BLUE,
-              fontSize: 10,
-              fontWeight: isFocused ? 'bold' : '600',
-              marginTop: 5
-            }}>
+            <Ionicons name={iconName} size={isFocused ? 26 : 24} color={isFocused ? PRIME_YELLOW : NEON_BLUE} />
+            <Text style={{ color: isFocused ? PRIME_YELLOW : NEON_BLUE, fontSize: 10, fontWeight: isFocused ? 'bold' : '600', marginTop: 5 }}>
               {route.name}
             </Text>
           </TouchableOpacity>
@@ -176,7 +183,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
 // ==============================================================
 export default function MainNavigation() {
   return (
-    <NavigationContainer>
+    // We add the linking configuration here!
+    <NavigationContainer linking={linking}>
        <Tab.Navigator
         initialRouteName="Home"
         backBehavior="history" 
@@ -205,6 +213,12 @@ export default function MainNavigation() {
         <Tab.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
         <Tab.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
         <Tab.Screen name="OtherSongs" component={OtherSongsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+
+        {/* --- FELLOWSHIP / MEETING SCREENS --- */}
+        <Tab.Screen name="CreateService" component={CreateService} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="JoinService" component={JoinService} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="SavedServices" component={SavedServices} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="ViewService" component={ViewService} options={{ tabBarItemStyle: { display: 'none' } }} />
 
       </Tab.Navigator>
     </NavigationContainer>
