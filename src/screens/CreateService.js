@@ -27,6 +27,25 @@ const BLOCK_TYPES = [
   { type: 'Custom Note', tamil: 'குறிப்பு', icon: 'document-text', color: '#8E8E93', category: 'note' },
 ];
 
+const MARRIAGE_TEMPLATE = [
+  { type: 'Welcome', tamil: 'வரவேற்பு', icon: 'hand-left', color: '#FF9F0A', category: 'person' },
+  { type: 'Opening Song', tamil: 'ஆரம்பப் பாடல்', icon: 'musical-notes', color: '#FF2D55', category: 'song' },
+  { type: 'Scripture Reading', tamil: 'வேதபாடம்', icon: 'book', color: '#32ADE6', category: 'bible' },
+  { type: 'Opening Prayer', tamil: 'ஆரம்ப ஜெபம்', icon: 'person', color: '#FF9F0A', category: 'person' },
+  { type: 'Intro the Groom', tamil: 'மணமகன் அறிமுகம்', icon: 'man', color: '#8E8E93', category: 'person' },
+  { type: 'Intro the Bride', tamil: 'மணமகள் அறிமுகம்', icon: 'woman', color: '#8E8E93', category: 'person' },
+  { type: 'Special Song', tamil: 'சிறப்புப் பாடல்', icon: 'star', color: '#BF5AF2', category: 'song' },
+  { type: 'The Word Of God', tamil: 'தேவ செய்தி', icon: 'book', color: '#32ADE6', category: 'person' },
+  { type: 'Solemnization', tamil: 'திருமண வாக்குத்தத்தம்', icon: 'heart', color: '#FF2D55', category: 'person' },
+  { type: 'Dedication Prayer', tamil: 'பிரதிஷ்டை ஜெபம்', icon: 'person', color: '#FF9F0A', category: 'person' },
+  { type: 'Registration', tamil: 'பதிவு செய்தல்', icon: 'document-text', color: '#8E8E93', category: 'note' },
+  { type: 'Special Song', tamil: 'சிறப்புப் பாடல்', icon: 'star', color: '#BF5AF2', category: 'song' },
+  { type: 'Closing Song', tamil: 'முடிவுப் பாடல்', icon: 'musical-notes', color: '#FF2D55', category: 'song' },
+  { type: 'Prayer of Blessings', tamil: 'ஆசீர்வாத ஜெபம்', icon: 'person', color: '#FF9F0A', category: 'person' },
+  { type: 'Vote Of Thanks', tamil: 'நன்றியுரை', icon: 'chatbubbles', color: '#0A84FF', category: 'person' },
+  { type: 'Intro the Couple', tamil: 'தம்பதியினர் அறிமுகம்', icon: 'people', color: '#8E8E93', category: 'person' },
+];
+
 const SONGBOOKS = [
   { id: 'Zion', name: 'சீயோன் இனிய கீதங்கள்', db: 'zion.db' },
   { id: 'Hope', name: 'திருமறைத்திருப் பாடல்கள் ( நம்பிக்கையின் கீதங்கள் )', db: 'Thirumarai.db' },
@@ -39,7 +58,7 @@ export default function CreateService() {
 
   const [meetingName, setMeetingName] = useState('');
   const [meetingDate, setMeetingDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false); // Hidden by default
+  const [showDatePicker, setShowDatePicker] = useState(false); 
   
   const [blocks, setBlocks] = useState([]);
   const [expandedBlockId, setExpandedBlockId] = useState(null);
@@ -47,7 +66,7 @@ export default function CreateService() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [activeConfigType, setActiveConfigType] = useState(null); 
   const [pendingBlockTemplate, setPendingBlockTemplate] = useState(null);
-  const [editingBlockId, setEditingBlockId] = useState(null); // Track if editing
+  const [editingBlockId, setEditingBlockId] = useState(null); 
   
   const [livePreviewText, setLivePreviewText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -66,7 +85,6 @@ export default function CreateService() {
     if (hapticsEnabled) Haptics.impactAsync(style);
   };
 
-  // --- SAVE LOGIC ---
   const handleSaveService = async () => {
     if (!meetingName || blocks.length === 0) return;
     triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
@@ -92,14 +110,9 @@ export default function CreateService() {
     }
   };
 
-  // --- CALENDAR LOGIC ---
   const handleDateChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false); // Android modal closes immediately on OK/Cancel
-    }
-    if (selectedDate) {
-      setMeetingDate(selectedDate);
-    }
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (selectedDate) setMeetingDate(selectedDate);
   };
 
   const fetchSongPreview = async (bookId, searchText) => {
@@ -191,9 +204,35 @@ export default function CreateService() {
     Animated.timing(sheetAnim, { toValue: height, duration: 250, useNativeDriver: true }).start(() => setShowAddModal(false));
   };
 
+  const addMarriageTemplate = () => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
+    const marriageBlocks = MARRIAGE_TEMPLATE.map((item, index) => ({
+       id: Date.now().toString() + index,
+       type: item.type,
+       title: item.type,
+       icon: item.icon,
+       color: item.color,
+       category: item.category,
+       data: { 
+         ledBy: '', 
+         note: '', 
+         book: item.category === 'song' ? 'Zion' : 'ஆதியாகமம்', 
+         number: '', 
+         chapter: item.category === 'bible' ? '1' : '', 
+         verse: item.category === 'bible' ? '1' : '' 
+       }
+    }));
+    
+    // Automatically set the Service Name if it's blank
+    if (!meetingName) setMeetingName("Marriage Program");
+    
+    setBlocks([...blocks, ...marriageBlocks]);
+    closeAddModal();
+  };
+
   const initiateBlockConfig = (template) => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    setEditingBlockId(null); // Ensure not editing
+    setEditingBlockId(null); 
     setPendingBlockTemplate(template);
     setTempPersonName(''); setTempNoteText(''); setLivePreviewText('');
     setTempSongData({ book: 'Zion', number: '', title: '' });
@@ -211,9 +250,8 @@ export default function CreateService() {
     setEditingBlockId(block.id);
     setPendingBlockTemplate({ type: block.type, icon: block.icon, color: block.color, category: block.category });
     setActiveConfigType(block.category);
-    setExpandedBlockId(null); // Collapse accordion
+    setExpandedBlockId(null); 
 
-    // Populate existing data
     setTempPersonName(block.data.ledBy || '');
     setTempNoteText(block.data.note || '');
     
@@ -244,9 +282,42 @@ export default function CreateService() {
 
   const confirmAndAddBlock = () => {
     if (!pendingBlockTemplate) return;
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
 
     let finalData = {};
+    let isMissingData = false;
+
+    if (activeConfigType === 'person') {
+      finalData = { ledBy: tempPersonName };
+      if (!tempPersonName.trim()) isMissingData = true;
+    } else if (activeConfigType === 'note') {
+      finalData = { note: tempNoteText };
+      if (!tempNoteText.trim()) isMissingData = true;
+    } else if (activeConfigType === 'song') {
+      finalData = { ...tempSongData, ledBy: tempPersonName };
+      if (!tempSongData.number || livePreviewText.includes('Not found') || livePreviewText.includes('Error')) isMissingData = true;
+    } else if (activeConfigType === 'bible') {
+      finalData = { ...tempBibleData, ledBy: tempPersonName };
+      if (!tempBibleData.chapter || !tempBibleData.verse || livePreviewText.includes('Not found')) isMissingData = true;
+    } else if (activeConfigType === 'tithe') {
+      finalData = { ledBy: tempPersonName, book: tempBibleData.book, chapter: tempBibleData.chapter, verse: tempBibleData.verse, note: tempNoteText };
+    }
+
+    if (isMissingData) {
+      Alert.alert(
+        "Missing Details",
+        "Some details are empty or could not be found. Do you want to add this to the service anyway?",
+        [
+          { text: "No, Go Back", style: "cancel" },
+          { text: "Yes, Add It", onPress: () => finalizeBlockAdd(finalData) }
+        ]
+      );
+    } else {
+      finalizeBlockAdd(finalData);
+    }
+  };
+
+  const finalizeBlockAdd = (finalData) => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
     let displayTitle = pendingBlockTemplate.type;
 
     if (pendingBlockTemplate.type === 'Song Service' && !editingBlockId) {
@@ -254,19 +325,10 @@ export default function CreateService() {
       displayTitle = `Song Service ${currentCount + 1}`;
     }
 
-    if (activeConfigType === 'person') finalData = { ledBy: tempPersonName };
-    if (activeConfigType === 'note') finalData = { note: tempNoteText };
-    if (activeConfigType === 'song') finalData = { ...tempSongData, ledBy: tempPersonName };
-    if (activeConfigType === 'bible') finalData = { ...tempBibleData, ledBy: tempPersonName };
-    
-    if (activeConfigType === 'tithe') {
-      finalData = { ledBy: tempPersonName, book: tempBibleData.book, chapter: tempBibleData.chapter, verse: tempBibleData.verse, note: tempNoteText };
-    }
-
     const newBlock = {
       id: editingBlockId || Date.now().toString(),
       type: pendingBlockTemplate.type,
-      title: editingBlockId ? blocks.find(b => b.id === editingBlockId).title : displayTitle, // Keep original title if editing
+      title: editingBlockId ? blocks.find(b => b.id === editingBlockId).title : displayTitle, 
       icon: pendingBlockTemplate.icon,
       color: pendingBlockTemplate.color,
       category: activeConfigType,
@@ -324,7 +386,6 @@ export default function CreateService() {
               
               <Text style={[styles.label, { color: colors.subtext, marginTop: 15 }]}>Date / தேதி</Text>
               
-              {/* Tappable Text to open Calendar */}
               <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { borderBottomColor: 'transparent' }]}>
                 <Text style={{ color: colors.text, fontSize: 18 }}>{meetingDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
               </TouchableOpacity>
@@ -363,18 +424,26 @@ export default function CreateService() {
                       <View style={{ flex: 1, marginLeft: 15 }}>
                         <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>{block.title}</Text>
                         
-                        {/* Rendering dynamic data based on block type */}
-                        {block.category === 'person' && <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy || 'Anyone'}</Text>}
-                        {block.category === 'note' && <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }} numberOfLines={1}>{block.data.note}</Text>}
-                        {block.category === 'song' && <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>{block.data.book} #{block.data.number} {block.data.title ? `- ${block.data.title}` : ''} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}</Text>}
-                        {block.category === 'bible' && <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}</Text>}
+                        {/* Perfect Matching Formatting for Agenda View */}
+                        {block.category === 'person' && block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
+                        {block.category === 'note' && block.data?.note ? <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }} numberOfLines={1}>{block.data.note}</Text> : null}
                         
-                        {/* Rendering combined Tithe data */}
+                        {block.category === 'song' && (
+                          <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                            {block.data?.book} #{block.data?.number} {block.data?.title ? `- ${block.data.title}` : ''} {block.data?.ledBy ? `(By ${block.data.ledBy})` : ''}
+                          </Text>
+                        )}
+                        
+                        {block.category === 'bible' && (
+                          <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                            {block.data?.book} {block.data?.chapter}:{block.data?.verse} {block.data?.ledBy ? `(By ${block.data.ledBy})` : ''}
+                          </Text>
+                        )}
+                        
                         {block.category === 'tithe' && (
                           <View>
-                            {block.data.ledBy ? <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
-                            {block.data.book && block.data.chapter ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
-                            {block.data.note ? <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }} numberOfLines={1}>Note: {block.data.note}</Text> : null}
+                            {block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
+                            {block.data?.book && block.data?.chapter ? <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
                           </View>
                         )}
                       </View>
@@ -431,6 +500,22 @@ export default function CreateService() {
               <TouchableOpacity onPress={closeAddModal}><Ionicons name="close-circle" size={28} color={colors.subtext} /></TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={styles.gridContainer}>
+              
+              {/* THE MARRIAGE TEMPLATE BUTTON */}
+              <TouchableOpacity 
+                style={[styles.gridItem, { width: '100%', backgroundColor: colors.primary + '15', borderColor: colors.primary }]} 
+                onPress={addMarriageTemplate}
+              >
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                   <View style={[styles.gridIcon, { backgroundColor: colors.primary + '30', marginRight: 15 }]}><Ionicons name="heart" size={28} color={colors.primary} /></View>
+                   <View>
+                      <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold' }}>Marriage Program</Text>
+                      <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Tamil003' }}>திருமண நிகழ்ச்சி நிரல்</Text>
+                   </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* REGULAR BLOCKS */}
               {BLOCK_TYPES.map((item, index) => (
                 <TouchableOpacity key={index} style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => initiateBlockConfig(item)}>
                   <View style={[styles.gridIcon, { backgroundColor: item.color + '15' }]}><Ionicons name={item.icon} size={28} color={item.color} /></View>
@@ -556,7 +641,8 @@ export default function CreateService() {
                   </View>
                 )}
 
-                <TouchableOpacity style={[styles.saveBtn, { backgroundColor: (activeConfigType === 'song' || activeConfigType === 'bible') && (!livePreviewText || livePreviewText.includes('Not found') || livePreviewText.includes('Error')) ? colors.border : colors.primary }]} onPress={confirmAndAddBlock} disabled={(activeConfigType === 'song' || activeConfigType === 'bible') && (!livePreviewText || livePreviewText.includes('Not found') || livePreviewText.includes('Error'))}>
+                {/* ALWAYS ENABLED BUTTON! */}
+                <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={confirmAndAddBlock}>
                   <Text style={{ color: '#000', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>
                     {editingBlockId ? "Save Changes" : "Add to Service"}
                   </Text>

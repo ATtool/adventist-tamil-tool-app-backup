@@ -9,9 +9,8 @@ import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
 import QRCode from 'react-native-qrcode-svg';
 
-// Firebase Imports
 import { ref, set } from "firebase/database";
-import { db } from "../../firebaseSetup"; // Going up two folders to find the setup file!
+import { db } from "../../firebaseSetup"; 
 
 import booksData from '../data/books.json';
 
@@ -28,7 +27,6 @@ export default function ViewService() {
   const [fetchedContent, setFetchedContent] = useState({});
   const [isLoadingContent, setIsLoadingContent] = useState(false);
 
-  // Modals & Firebase State
   const [showTextSettings, setShowTextSettings] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -57,19 +55,17 @@ export default function ViewService() {
     if (hapticsEnabled) Haptics.impactAsync(style);
   };
 
-  // --- OPEN INVITE MODAL & UPLOAD TO FIREBASE ---
   const handleOpenInviteModal = async () => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     setShowInviteModal(true);
     
-    // Only upload to Firebase if we haven't already generated an ID for this session
     if (!shareId) {
       setIsGeneratingLink(true);
       try {
-        const shortId = Math.random().toString(36).substring(2, 8).toUpperCase(); // e.g. A7B9K2
+        const shortId = Math.random().toString(36).substring(2, 8).toUpperCase(); 
         const serviceRef = ref(db, 'services/' + shortId);
         
-        await set(serviceRef, service); // Uploads JSON to Firebase!
+        await set(serviceRef, service); 
         setShareId(shortId);
         
       } catch (error) {
@@ -94,7 +90,6 @@ export default function ViewService() {
     }
   };
 
-  // --- FETCH FROM SQLITE ---
   const handleExpand = async (block) => {
     triggerHaptic();
     if (expandedId === block.id) { setExpandedId(null); return; }
@@ -141,7 +136,6 @@ export default function ViewService() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
-        {/* PREMIUM HEADER */}
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
@@ -150,14 +144,12 @@ export default function ViewService() {
           <Text style={[styles.headerTitle, { color: colors.text }]}>Live Service</Text>
           
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            {/* Font Size Button */}
             <TouchableOpacity onPress={() => { triggerHaptic(); setShowTextSettings(true); }} style={{ marginRight: 12 }}>
               <View style={{ backgroundColor: colors.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
                 <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Aa</Text>
               </View>
             </TouchableOpacity>
 
-            {/* 🔥 THE BRIGHT YELLOW INVITE BUTTON 🔥 */}
             <TouchableOpacity 
               onPress={handleOpenInviteModal}
               style={{ backgroundColor: '#FFCC00', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', shadowColor: '#FFCC00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 }}
@@ -168,7 +160,6 @@ export default function ViewService() {
           </View>
         </View>
 
-        {/* AGENDA LIST */}
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.titleCard, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
             <Text style={[styles.serviceName, { color: colors.primary }]}>{service.name}</Text>
@@ -185,8 +176,35 @@ export default function ViewService() {
                     <View style={[styles.blockIconBadge, { backgroundColor: block.color + '20' }]}><Ionicons name={block.icon} size={20} color={block.color} /></View>
                     <View style={{ flex: 1, marginLeft: 15 }}>
                       <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>{block.title}</Text>
-                      {block.category === 'song' && <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>{block.data.book} #{block.data.number}</Text>}
-                      {block.category === 'bible' && <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text>}
+                      
+                      {/* Unified Formatting Logic */}
+                      {block.category === 'person' && block.data?.ledBy ? (
+                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text>
+                      ) : null}
+                      
+                      {block.category === 'song' && block.data?.book && block.data?.number ? (
+                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                          {block.data.book} #{block.data.number} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
+                        </Text>
+                      ) : null}
+                      
+                      {block.category === 'bible' && block.data?.book && block.data?.chapter ? (
+                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                          {block.data.book} {block.data.chapter}:{block.data.verse} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
+                        </Text>
+                      ) : null}
+
+                      {block.category === 'tithe' && (
+                        <View>
+                          {block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
+                          {block.data?.book && block.data?.chapter ? <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
+                        </View>
+                      )}
+                      
+                      {block.category === 'note' && block.data?.note ? (
+                         <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }} numberOfLines={1}>{block.data.note}</Text>
+                      ) : null}
+
                     </View>
                   </TouchableOpacity>
 
@@ -206,7 +224,6 @@ export default function ViewService() {
         </ScrollView>
       </SafeAreaView>
 
-      {/* INVITATION & QR MODAL */}
       <Modal visible={showInviteModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.qrModalContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -229,7 +246,6 @@ export default function ViewService() {
                   Ask others to scan this QR code or share the link below to join instantly.
                 </Text>
 
-                {/* Perfect, Tiny QR Code! */}
                 <View style={{ padding: 15, backgroundColor: '#FFFFFF', borderRadius: 16, alignSelf: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}>
                   <QRCode 
                     value={`https://adventisttamiltool.app/join?id=${shareId}`} 
@@ -247,7 +263,6 @@ export default function ViewService() {
                   <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
                 </View>
 
-                {/* Share Link Button */}
                 <TouchableOpacity onPress={handleShareLink} style={[styles.shareLinkBtn, { backgroundColor: '#FFCC00' }]}>
                   <Ionicons name="link" size={20} color="#000" style={{ marginRight: 8 }} />
                   <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>Share Joining Link</Text>
@@ -259,7 +274,6 @@ export default function ViewService() {
         </View>
       </Modal>
 
-      {/* TEXT SETTINGS MODAL */}
       {settingsModalVisible && (
         <Animated.View style={[StyleSheet.absoluteFill, { zIndex: 999 }]} pointerEvents={showTextSettings ? 'auto' : 'none'}>
           <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.7)', opacity: settingsFadeAnim }]}>
@@ -315,13 +329,11 @@ const styles = StyleSheet.create({
   blockIconBadge: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   expandedContent: { padding: 20, borderTopWidth: 1 },
   
-  // Modal Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   qrModalContainer: { width: '100%', borderRadius: 24, padding: 25, borderWidth: 1, elevation: 10, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 15 },
   qrHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 14 },
   
-  // Settings Modal Styles
   settingsCard: { position: 'absolute', bottom: 0, width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, borderWidth: 1 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   settingLabel: { fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },
