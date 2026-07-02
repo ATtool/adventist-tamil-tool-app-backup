@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ScrollView,
-  TextInput, ActivityIndicator, Alert, Platform, Animated, Dimensions
+  TextInput, ActivityIndicator, Alert, Platform, Animated, Dimensions,
+  PanResponder
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,6 +60,7 @@ export default function ConcordanceScreen({ navigation }) {
   const [isLoadingVerses, setIsLoadingVerses] = useState(false);
   const [highlightedVerse, setHighlightedVerse] = useState(null);
   const flatListRef = useRef(null);
+  const pendingJumpVerseRef = useRef(null);
 
   const [showTypography, setShowTypography] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
@@ -80,6 +82,45 @@ export default function ConcordanceScreen({ navigation }) {
   const [strongsRawRefs, setStrongsRawRefs] = useState('');
   const [strongsVerses, setStrongsVerses] = useState([]);
   const [isLoadingSheet, setIsLoadingSheet] = useState(false);
+
+  // ── Swipe-down-to-close for the Strong's bottom sheet ──
+  const sheetPanY = useRef(new Animated.Value(0)).current;
+
+  const closeBottomSheet = () => {
+    Animated.timing(sheetPanY, {
+      toValue: 900,
+      duration: 200,
+      useNativeDriver: false,
+    }).start(() => {
+      setShowBottomSheet(false);
+    });
+  };
+
+  const sheetPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_evt, gestureState) =>
+        Math.abs(gestureState.dy) > 6 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+      onPanResponderMove: (_evt, gestureState) => {
+        if (gestureState.dy > 0) sheetPanY.setValue(gestureState.dy);
+      },
+      onPanResponderRelease: (_evt, gestureState) => {
+        if (gestureState.dy > 120 || gestureState.vy > 0.9) {
+          closeBottomSheet();
+        } else {
+          Animated.spring(sheetPanY, {
+            toValue: 0,
+            useNativeDriver: false,
+            bounciness: 4,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  useEffect(() => {
+    if (showBottomSheet) sheetPanY.setValue(0);
+  }, [showBottomSheet]);
 
   useEffect(() => {
     const initApp = async () => {
@@ -414,18 +455,43 @@ export default function ConcordanceScreen({ navigation }) {
     setShowBottomSheet(false);
     setShowSearch(false);
     setPickerVisible(false);
-    setActiveBookId(bookId);
-    setActiveChapter(chapter);
 
-    setTimeout(() => {
-      setHighlightedVerse(verse);
-      if (flatListRef.current) {
-        flatListRef.current.scrollToIndex({ index: verse - 1, animated: true, viewPosition: 0.2 });
-      }
-    }, 500);
+    const sameChapter = bookId === activeBookId && chapter === activeChapter;
 
-    setTimeout(() => setHighlightedVerse(null), 1000);
+    if (sameChapter) {
+      // Already viewing this chapter — scroll + highlight right away, no need to wait for a reload.
+      requestAnimationFrame(() => {
+        setHighlightedVerse(verse);
+        if (flatListRef.current) {
+          flatListRef.current.scrollToIndex({ index: verse - 1, animated: true, viewPosition: 0.2 });
+        }
+        setTimeout(() => setHighlightedVerse(null), 1000);
+      });
+    } else {
+      // Jumping to a different chapter — the verse list has to load first.
+      // Stash the target verse; the effect below fires once loading finishes.
+      pendingJumpVerseRef.current = verse;
+      setActiveBookId(bookId);
+      setActiveChapter(chapter);
+    }
   };
+
+  // Completes a cross-reference jump into a different chapter: waits for the
+  // freshly-loaded verse list to be ready, then scrolls to and highlights the
+  // target verse — same behaviour as picking a verse from the verse picker.
+  useEffect(() => {
+    if (pendingJumpVerseRef.current != null && !isLoadingVerses && verses.length > 0) {
+      const verse = pendingJumpVerseRef.current;
+      pendingJumpVerseRef.current = null;
+      requestAnimationFrame(() => {
+        setHighlightedVerse(verse);
+        if (flatListRef.current) {
+          flatListRef.current.scrollToIndex({ index: verse - 1, animated: true, viewPosition: 0.2 });
+        }
+        setTimeout(() => setHighlightedVerse(null), 1000);
+      });
+    }
+  }, [verses, isLoadingVerses]);
 
   const SHORT_BOOKS = ["Gen","Exo","Lev","Num","Deut","Josh","Judg","Ruth","1Sam","2Sam","1Kgs","2Kgs","1Chron","2Chron","Ezra","Neh","Esth","Job","Ps","Prov","Eccles","Song","Isa","Jer","Lam","Ezek","Dan","Hos","Joel","Amos","Obad","Jonah","Mic","Nah","Hab","Zeph","Hag","Zech","Mal","Matt","Mark","Luke","John","Acts","Rom","1Cor","2Cor","Gal","Eph","Phil","Col","1Thess","2Thess","1Tim","2Tim","Titus","Philem","Heb","Jas","1Pet","2Pet","1John","2John","3John","Jude","Rev"];
 
@@ -635,7 +701,7 @@ export default function ConcordanceScreen({ navigation }) {
         colors={colors}
         isDark={isDark}
         appFontSize={appFontSize}
-        bibleLanguage={bibleLanguage}
+        bibleLanguage="english"
         onClose={() => setPickerVisible(false)}
         onBack={() => {
           if (pickerStep === 'verse') setPickerStep('chapter');
@@ -858,26 +924,39 @@ and redownload the file fully.`}
       </Modal>
 
       {/* STRONG'S BOTTOM SHEET */}
-      <Modal visible={showBottomSheet} transparent animationType="slide" onRequestClose={() => setShowBottomSheet(false)}>
-        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowBottomSheet(false)}>
-          <View
-            style={[styles.bottomSheet, { height: '92%', backgroundColor: isDark ? '#0A0E14' : '#FAFAFA', borderColor: colors.border }]}
-            onStartShouldSetResponder={() => true}
-          >
-            <View style={styles.sheetHandle} />
+      <Modal visible={showBottomSheet} transparent animationType="slide" onRequestClose={closeBottomSheet}>
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={closeBottomSheet} />
 
-            {/* Sheet top header — just close button */}
-            <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
-              <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '600' }}>
-                {strongsData ? (strongsData.isGreek ? 'New Testament · Greek' : 'Old Testament · Hebrew') : 'Strong\'s Definition'}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowBottomSheet(false)}
-                style={[styles.sheetCloseBtn, { backgroundColor: colors.card }]}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="close" size={18} color={colors.text} />
-              </TouchableOpacity>
+          <Animated.View
+            style={[
+              styles.bottomSheet,
+              styles.bottomSheetShadow,
+              {
+                height: '92%',
+                backgroundColor: isDark ? '#0A0E14' : '#FAFAFA',
+                borderColor: colors.border,
+                transform: [{ translateY: sheetPanY }],
+              },
+            ]}
+          >
+            {/* Drag zone — handle + header. Swipe down anywhere here to close. */}
+            <View {...sheetPanResponder.panHandlers}>
+              <View style={[styles.sheetHandle, { backgroundColor: colors.primary + '55' }]} />
+
+              {/* Sheet top header — just close button */}
+              <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
+                <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-condensed' }}>
+                  {strongsData ? (strongsData.isGreek ? 'New Testament · Greek' : 'Old Testament · Hebrew') : 'Strong\'s Definition'}
+                </Text>
+                <TouchableOpacity
+                  onPress={closeBottomSheet}
+                  style={[styles.sheetCloseBtn, { backgroundColor: colors.card }]}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="close" size={18} color={colors.text} />
+                </TouchableOpacity>
+              </View>
             </View>
 
             {isLoadingSheet ? (
@@ -901,20 +980,25 @@ and redownload the file fully.`}
                 {/* ── IDENTITY BLOCK ── */}
                 <View style={[styles.identityBlock, { borderBottomColor: colors.border }]}>
 
-                  {/* Strong ID — center, small */}
-                  <Text style={[styles.strongIdLabel, { color: colors.primary }]}>
-                    Strong ID : {strongsData.lemma}
-                  </Text>
+                  {/* Strong ID — small pill badge */}
+                  <View style={[styles.strongIdBadge, { backgroundColor: colors.glow, borderColor: colors.primary + '40' }]}>
+                    <Text style={[styles.strongIdLabel, { color: colors.primary }]}>
+                      {strongsData.lemma}
+                    </Text>
+                  </View>
 
                   {/* Original word — center, big */}
                   <Text style={[styles.originalWord, { color: colors.text }]}>
                     {strongsData.word}
                   </Text>
 
-                  {/* Transliteration — center, normal */}
+                  {/* Transliteration — center, italic serif */}
                   <Text style={[styles.transliterationText, { color: colors.subtext }]}>
                     {strongsData.transliteration}
                   </Text>
+
+                  {/* Small accent rule — closes off the identity block */}
+                  <View style={[styles.identityRule, { backgroundColor: colors.primary }]} />
                 </View>
 
                 {/* ── DETAIL ROWS ── */}
@@ -970,19 +1054,20 @@ and redownload the file fully.`}
                     </Text>
                   </View>
 
-                  {/* references list — as tappable hyperlinks */}
+                  {/* references list — as tappable pill chips */}
                   {strongsRawRefs ? (
                     <View style={styles.detailRow}>
                       <Text style={[styles.detailLabel, { color: colors.primary }]}>references list</Text>
-                      <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap' }}>
-                        {parseRefsString(strongsRawRefs).map((ref, idx, arr) => (
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
+                        {parseRefsString(strongsRawRefs).map((ref, idx) => (
                           <TouchableOpacity
                             key={`ref-${idx}`}
                             onPress={() => handleCrossReferenceJump(ref.b, ref.c, ref.v)}
-                            activeOpacity={0.65}
+                            activeOpacity={0.6}
+                            style={[styles.refChip, { backgroundColor: colors.card, borderColor: colors.border }]}
                           >
-                            <Text style={[styles.refLink, { color: colors.primary, fontSize: sheetFontSize }]}>
-                              {`${getBookName(ref.b)} ${ref.c}:${ref.v}`}{idx < arr.length - 1 ? ',  ' : ''}
+                            <Text style={[styles.refChipText, { color: colors.primary, fontSize: sheetFontSize - 3 }]}>
+                              {getBookName(ref.b)} {ref.c}:{ref.v}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -1000,11 +1085,14 @@ and redownload the file fully.`}
                     {strongsVerses.map((vItem, idx) => (
                       <TouchableOpacity
                         key={`ctx-${idx}`}
-                        style={[styles.contextVerseCard, { backgroundColor: colors.card, borderColor: colors.border, marginHorizontal: 16 }]}
+                        style={[
+                          styles.contextVerseCard,
+                          { backgroundColor: colors.card, borderColor: colors.border, borderLeftColor: colors.primary, marginHorizontal: 16 },
+                        ]}
                         onPress={() => handleCrossReferenceJump(vItem.book_id, vItem.chapter, vItem.verse)}
                         activeOpacity={0.75}
                       >
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 7 }}>
                           <View style={[styles.refBadge, { backgroundColor: colors.glow }]}>
                             <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
                               {getBookName(vItem.book_id)} {vItem.chapter}:{vItem.verse}
@@ -1012,7 +1100,7 @@ and redownload the file fully.`}
                           </View>
                           <Ionicons name="arrow-forward-outline" size={13} color={colors.primary} style={{ marginLeft: 6 }} />
                         </View>
-                        <Text style={{ color: colors.text, fontSize: sheetFontSize - 2, lineHeight: sheetFontSize + 6 }} numberOfLines={3}>
+                        <Text style={{ color: colors.text, fontSize: sheetFontSize - 2, lineHeight: sheetFontSize + 8 }} numberOfLines={3}>
                           {vItem.tagged_text.replace(HTML_TAG_REGEX, '').replace(/<[HG]\d+>/g, '')}
                         </Text>
                       </TouchableOpacity>
@@ -1021,8 +1109,8 @@ and redownload the file fully.`}
                 )}
               </ScrollView>
             )}
-          </View>
-        </TouchableOpacity>
+          </Animated.View>
+        </View>
       </Modal>
 
     </SafeAreaView>
@@ -1064,66 +1152,82 @@ const styles = StyleSheet.create({
   sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(128,128,128,0.35)', alignSelf: 'center', marginTop: 10, marginBottom: 2 },
   sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 14, borderBottomWidth: 1 },
   sheetCloseBtn: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-  strongIdBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1 },
+  strongIdBadge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, borderWidth: 1, marginBottom: 14 },
 
   // ── NEW: Identity block (top of sheet) ──
   identityBlock: {
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 22,
-    paddingBottom: 20,
+    paddingTop: 24,
+    paddingBottom: 22,
     borderBottomWidth: 1,
   },
   strongIdLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    textAlign: 'center',
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-condensed',
   },
   originalWord: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '700',
     fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
   },
   transliterationText: {
-    fontSize: 17,
+    fontSize: 18,
     fontStyle: 'italic',
     textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
+  },
+  identityRule: {
+    width: 32,
+    height: 3,
+    borderRadius: 2,
+    marginTop: 16,
+    opacity: 0.55,
   },
 
   // ── NEW: Detail block (label + value rows) ──
   detailBlock: {
     paddingHorizontal: 20,
-    paddingTop: 18,
+    paddingTop: 20,
     paddingBottom: 8,
   },
   detailRow: {
-    marginBottom: 14,
+    marginBottom: 20,
   },
   detailLabel: {
-    fontSize: 11,
+    fontSize: 13,
     fontWeight: '800',
-    letterSpacing: 0.8,
-    textTransform: 'lowercase',
-    marginBottom: 3,
+    letterSpacing: 1.1,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+    fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-condensed',
   },
   detailValue: {
-    lineHeight: 26,
+    lineHeight: 28,
+    letterSpacing: 0.15,
   },
-  refLink: {
-    textDecorationLine: 'underline',
-    lineHeight: 26,
-    fontWeight: '500',
+  refChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginRight: 6,
+    marginBottom: 6,
+  },
+  refChipText: {
+    fontWeight: '600',
   },
 
   // ── Verses section ──
   versesSection: { borderTopWidth: 1, paddingBottom: 20 },
 
   // Typography modal
-  sectionTitle: { fontSize: 10, fontWeight: '900', letterSpacing: 1.2, marginBottom: 10 },
+  sectionTitle: { fontSize: 12, fontWeight: '900', letterSpacing: 1.4, marginBottom: 10, fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-condensed' },
   toggleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginVertical: 6 },
   controlBtn: { width: 46, height: 46, borderRadius: 13, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
   divider: { height: 1, marginVertical: 8 },
@@ -1137,6 +1241,11 @@ const styles = StyleSheet.create({
   searchResultCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 9 },
 
   // Bottom sheet content (kept for verse cards)
-  contextVerseCard: { padding: 14, borderRadius: 14, borderWidth: 1, marginBottom: 10 },
+  contextVerseCard: { padding: 14, borderRadius: 14, borderWidth: 1, borderLeftWidth: 3, marginBottom: 10 },
   refBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+
+  bottomSheetShadow: Platform.select({
+    ios: { shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: -4 } },
+    android: { elevation: 18 },
+  }),
 });
