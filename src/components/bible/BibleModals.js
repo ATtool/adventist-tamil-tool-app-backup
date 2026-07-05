@@ -43,7 +43,7 @@ export function CrossRefModal({ visible, colors, isDark, appFontSize, bibleLangu
               renderItem={({ item }) => (
                 <TouchableOpacity style={[styles.crossRefCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => onJump(item.to_book_id, item.to_chapter, item.to_verse)}>
                   <Ionicons name="book" size={20} color={colors.primary} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }}>
+                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }}>
                     {getBookName(item.to_book_id)} {item.to_chapter}:{item.to_verse}
                   </Text>
                   <View style={{ flex: 1 }} /><Ionicons name="arrow-forward-circle" size={24} color={colors.primary} />

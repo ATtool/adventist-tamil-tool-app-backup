@@ -7,6 +7,12 @@ import { useSettings } from '../context/SettingsContext';
 
 const BRIGHT_YELLOW = '#FFD700';
 
+// --- ACCENT PALETTE FOR THE 4 SONG CATEGORY CARDS ---
+const ACCENT_ZION = '#30D158';
+const ACCENT_HOPE = '#FF9F0A';
+const ACCENT_OLD = '#00F0FF';
+const ACCENT_OTHER = '#BF5AF2';
+
 export default function SongsScreen() {
   const navigation = useNavigation();
   const { colors, appFontSize } = useSettings();
@@ -56,80 +62,84 @@ export default function SongsScreen() {
         {/* Box 1: Zion */}
         <Animated.View style={{ opacity: cardOpacities[0], transform: [{ translateY: cardAnims[0] }] }}>
           <TouchableOpacity 
-            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
+            activeOpacity={0.75}
+            style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_ZION }]} 
             onPress={() => openScreen('ZionSongs')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(48, 209, 88, 0.1)' }]}>
-              <Ionicons name="musical-notes" size={28} color="#30D158" />
+            <View style={[styles.iconContainer, { backgroundColor: ACCENT_ZION + '22' }]}>
+              <Ionicons name="musical-notes" size={22} color={ACCENT_ZION} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
                 சீயோன் இனிய கீதங்கள்
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
 
         {/* Box 2: Thirumarai Hope */}
         <Animated.View style={{ opacity: cardOpacities[1], transform: [{ translateY: cardAnims[1] }] }}>
           <TouchableOpacity 
-            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
+            activeOpacity={0.75}
+            style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_HOPE }]} 
             onPress={() => openScreen('ThirumaraiHope')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(255, 159, 10, 0.1)' }]}>
-              <Ionicons name="star" size={28} color="#FF9F0A" />
+            <View style={[styles.iconContainer, { backgroundColor: ACCENT_HOPE + '22' }]}>
+              <Ionicons name="star" size={22} color={ACCENT_HOPE} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
                 திருமறைத்திருப் பாடல்கள்
               </Text>
               {/* Bright Yellow Text */}
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize - 2 }]}>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize - 2, lineHeight: appFontSize + 2 }]}>
                 ( நம்பிக்கையின் கீதங்கள் புத்தக வரிசை )
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
 
         {/* Box 3: Thirumarai Old */}
         <Animated.View style={{ opacity: cardOpacities[2], transform: [{ translateY: cardAnims[2] }] }}>
           <TouchableOpacity 
-            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
+            activeOpacity={0.75}
+            style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_OLD }]} 
             onPress={() => openScreen('ThirumaraiOld')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 240, 255, 0.1)' }]}>
-              <Ionicons name="book" size={28} color={colors.primary} />
+            <View style={[styles.iconContainer, { backgroundColor: ACCENT_OLD + '22' }]}>
+              <Ionicons name="book" size={22} color={colors.primary} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
                 திருமறைத்திருப் பாடல்கள்
               </Text>
               {/* Bright Yellow Text */}
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize - 2 }]}>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize - 2, lineHeight: appFontSize + 2 }]}>
                 ( பழைய புத்தக வரிசை )
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
 
         {/* Box 4: Other Songs */}
         <Animated.View style={{ opacity: cardOpacities[3], transform: [{ translateY: cardAnims[3] }] }}>
           <TouchableOpacity 
-            style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} 
+            activeOpacity={0.75}
+            style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_OTHER }]} 
             onPress={() => openScreen('OtherSongs')}
           >
-            <View style={[styles.iconContainer, { backgroundColor: 'rgba(191, 90, 242, 0.1)' }]}>
-              <Ionicons name="library" size={28} color="#BF5AF2" />
+            <View style={[styles.iconContainer, { backgroundColor: ACCENT_OTHER + '22' }]}>
+              <Ionicons name="library" size={22} color={ACCENT_OTHER} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
                 இதர பாடல்கள்
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color={colors.subtext} />
+            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
 
@@ -143,9 +153,26 @@ const styles = StyleSheet.create({
   header: { padding: 20, borderBottomWidth: 1 },
   headerTitle: { fontSize: 22, fontWeight: 'bold' },
   scrollContent: { padding: 15, paddingBottom: 40 },
-  card: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, borderWidth: 1, marginBottom: 15 },
-  iconContainer: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-  textContainer: { flex: 1 },
-  tamilText: { fontFamily: 'Tamil003', marginBottom: 4 },
-  tamilSubText: { fontFamily: 'Tamil003', fontWeight: 'bold' }
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  iconContainer: { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
+  textContainer: { flex: 1, justifyContent: 'center' },
+  tamilText: { 
+    fontFamily: 'Tamil003', 
+    marginBottom: 2
+  },
+  tamilSubText: { 
+    fontFamily: 'Tamil003'
+  }
 });

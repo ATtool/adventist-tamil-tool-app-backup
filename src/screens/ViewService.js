@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions, Share, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -8,6 +8,8 @@ import * as SQLite from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
 import QRCode from 'react-native-qrcode-svg';
+import * as Sharing from 'expo-sharing';
+import ViewShot from 'react-native-view-shot';
 
 import { ref, set } from "firebase/database";
 import { db } from "../../firebaseSetup"; 
@@ -32,6 +34,8 @@ export default function ViewService() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [shareId, setShareId] = useState(null);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const inviteCardRef = useRef(null);
   
   const settingsSlideAnim = useRef(new Animated.Value(height)).current;
   const settingsFadeAnim = useRef(new Animated.Value(0)).current;
@@ -78,15 +82,29 @@ export default function ViewService() {
     }
   };
 
-  const handleShareLink = async () => {
+  // Captures the QR + ID invite card as one image and opens the native share sheet.
+  // No link is generated or shared — only the QR code image and ID number.
+  const handleShareInvite = async () => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    const inviteLink = `https://adventisttamiltool.app/join?id=${shareId}`;
-    let shareText = `*You're invited to join the service: ${service.name}*\n\nClick the link below to open the live agenda in your app:\n\n${inviteLink}`;
+    if (!shareId || isSharing) return;
 
+    setIsSharing(true);
     try {
-      await Share.share({ message: shareText });
+      const uri = await inviteCardRef.current.capture();
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: `Invite - ${service.name}`,
+        });
+      } else {
+        Alert.alert("Sharing Unavailable", "Sharing isn't available on this device.");
+      }
     } catch (error) {
-      console.warn("Error sharing:", error.message);
+      console.error("SHARE ERROR:", error);
+      Alert.alert("Error", "Could not create the invite to share.");
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -226,12 +244,12 @@ export default function ViewService() {
 
       <Modal visible={showInviteModal} transparent={true} animationType="fade">
         <View style={styles.modalOverlay}>
-          <View style={[styles.qrModalContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.qrModalContainer, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
             
             <View style={styles.qrHeader}>
-              <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Invite to Service</Text>
-              <TouchableOpacity onPress={() => setShowInviteModal(false)}>
-                <Ionicons name="close-circle" size={28} color={colors.subtext} />
+              <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>Invite to Service</Text>
+              <TouchableOpacity onPress={() => setShowInviteModal(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
             </View>
 
@@ -242,30 +260,45 @@ export default function ViewService() {
               </View>
             ) : (
               <>
-                <Text style={{ color: colors.subtext, textAlign: 'center', marginBottom: 20, fontSize: 15 }}>
-                  Ask others to scan this QR code or share the link below to join instantly.
+                <Text style={{ color: colors.subtext, textAlign: 'center', marginBottom: 18, fontSize: 14.5 }}>
+                  Share this QR code and ID so a friend can join instantly.
                 </Text>
 
-                <View style={{ padding: 15, backgroundColor: '#FFFFFF', borderRadius: 16, alignSelf: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 }}>
-                  <QRCode 
-                    value={`https://adventisttamiltool.app/join?id=${shareId}`} 
-                    size={220} 
-                    color="#000000" 
-                    backgroundColor="#FFFFFF" 
-                  />
-                </View>
-                
-                <Text style={{ color: colors.text, textAlign: 'center', marginTop: 15, fontWeight: 'bold', letterSpacing: 2, fontSize: 18 }}>
-                  ID: {shareId}
-                </Text>
+                <ViewShot ref={inviteCardRef} options={{ format: 'png', quality: 1 }}>
+                  <View style={styles.inviteCard}>
+                    <Text style={styles.inviteHeader}>You're Invited!</Text>
+                    <Text style={styles.inviteServiceName}>{service.name}</Text>
+                    <Text style={styles.inviteDate}>{formattedDate}</Text>
 
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 20 }}>
-                  <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-                </View>
+                    <View style={styles.qrWrapper}>
+                      <QRCode 
+                        value={shareId ? String(shareId) : 'x'} 
+                        size={200} 
+                        color="#000000" 
+                        backgroundColor="#FFFFFF" 
+                      />
+                    </View>
 
-                <TouchableOpacity onPress={handleShareLink} style={[styles.shareLinkBtn, { backgroundColor: '#FFCC00' }]}>
-                  <Ionicons name="link" size={20} color="#000" style={{ marginRight: 8 }} />
-                  <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>Share Joining Link</Text>
+                    <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
+                    <Text style={styles.inviteId}>{shareId}</Text>
+
+                    <Text style={styles.inviteNote}>Your friend is asking you to join the service. Scan the QR code or enter the ID above in the app to join.</Text>
+                  </View>
+                </ViewShot>
+
+                <TouchableOpacity 
+                  onPress={handleShareInvite} 
+                  style={[styles.shareLinkBtn, { backgroundColor: isSharing ? colors.border : '#FFCC00' }]}
+                  disabled={isSharing}
+                >
+                  {isSharing ? (
+                    <ActivityIndicator color="#000" />
+                  ) : (
+                    <>
+                      <Ionicons name="share-social-outline" size={20} color="#000" style={{ marginRight: 8 }} />
+                      <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>Share Invite</Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               </>
             )}
@@ -329,10 +362,21 @@ const styles = StyleSheet.create({
   blockIconBadge: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
   expandedContent: { padding: 20, borderTopWidth: 1 },
   
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  qrModalContainer: { width: '100%', borderRadius: 24, padding: 25, borderWidth: 1, elevation: 10, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 15 },
-  qrHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 14 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(4,6,12,0.82)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  qrModalContainer: { width: '100%', maxWidth: 380, borderRadius: 26, padding: 24, borderWidth: 1, elevation: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 20 },
+  qrHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(128,128,128,0.15)', justifyContent: 'center', alignItems: 'center' },
+  shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 14, marginTop: 18 },
+
+  // Capturable invite card (QR + ID + note) shared as one image
+  inviteCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 22, alignItems: 'center' },
+  inviteHeader: { fontSize: 19, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
+  inviteServiceName: { fontSize: 16, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
+  inviteDate: { fontSize: 13, color: '#666666', marginTop: 4, marginBottom: 16 },
+  qrWrapper: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 14, borderWidth: 1, borderColor: '#EEEEEE' },
+  inviteIdLabel: { fontSize: 11, fontWeight: '700', color: '#999999', letterSpacing: 1 },
+  inviteId: { fontSize: 20, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 14 },
+  inviteNote: { fontSize: 12.5, color: '#444444', textAlign: 'center', lineHeight: 18 },
   
   settingsCard: { position: 'absolute', bottom: 0, width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, borderWidth: 1 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },

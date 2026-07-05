@@ -1,11 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import ViewShot from 'react-native-view-shot';
+import QRCode from 'react-native-qrcode-svg';
 import { useSettings } from '../context/SettingsContext';
+
+const formatServiceDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+  });
+};
 
 export default function SavedServices() {
   const navigation = useNavigation();
@@ -14,6 +23,8 @@ export default function SavedServices() {
   
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [shareTarget, setShareTarget] = useState(null);
+  const viewShotRef = useRef(null);
 
   const triggerHaptic = (style = Haptics.ImpactFeedbackStyle.Light) => {
     if (hapticsEnabled) Haptics.impactAsync(style);
@@ -79,10 +90,41 @@ export default function SavedServices() {
     navigation.navigate('ViewService', { service });
   };
 
+  // --- SHARE: builds one invite image (QR + ID + note) and opens the native share sheet ---
+  const handleShare = (item) => {
+    triggerHaptic();
+    setShareTarget(item);
+  };
+
+  useEffect(() => {
+    if (!shareTarget) return;
+
+    // Wait one tick so the hidden invite card re-renders with the new service before capturing it
+    const timer = setTimeout(async () => {
+      try {
+        const uri = await viewShotRef.current.capture();
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'image/png',
+            dialogTitle: `Invite - ${shareTarget.name}`,
+          });
+        } else {
+          Alert.alert("Sharing Unavailable", "Sharing isn't available on this device.");
+        }
+      } catch (error) {
+        console.error("SHARE ERROR:", error);
+        Alert.alert("Error", "Could not create the invite to share.");
+      } finally {
+        setShareTarget(null);
+      }
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [shareTarget]);
+
   const renderServiceCard = ({ item }) => {
-    const formattedDate = new Date(item.date).toLocaleDateString('en-US', {
-      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
-    });
+    const formattedDate = formatServiceDate(item.date);
 
     return (
       <TouchableOpacity 
@@ -104,13 +146,22 @@ export default function SavedServices() {
               </Text>
             </View>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.deleteBtn} 
-            onPress={() => confirmDelete(item.id, item.name)}
-          >
-            <Ionicons name="trash-outline" size={22} color="#FF3B30" />
-          </TouchableOpacity>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity 
+              style={styles.shareBtn} 
+              onPress={() => handleShare(item)}
+            >
+              <Ionicons name="share-social-outline" size={20} color={colors.primary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.deleteBtn} 
+              onPress={() => confirmDelete(item.id, item.name)}
+            >
+              <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
@@ -158,6 +209,26 @@ export default function SavedServices() {
         )}
 
       </SafeAreaView>
+
+      {/* Hidden invite card used only to render the shareable image. Kept off-screen. */}
+      <View style={styles.offscreenWrapper} pointerEvents="none">
+        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+          <View style={styles.inviteCard}>
+            <Text style={styles.inviteHeader}>You're Invited!</Text>
+            <Text style={styles.inviteServiceName}>{shareTarget?.name || ''}</Text>
+            <Text style={styles.inviteDate}>{shareTarget ? formatServiceDate(shareTarget.date) : ''}</Text>
+
+            <View style={styles.qrWrapper}>
+              <QRCode value={shareTarget?.id ? String(shareTarget.id) : 'x'} size={190} />
+            </View>
+
+            <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
+            <Text style={styles.inviteId}>{shareTarget?.id || ''}</Text>
+
+            <Text style={styles.inviteNote}>Your friend is asking you to join the service. Scan the QR code or enter the ID above in the app to join.</Text>
+          </View>
+        </ViewShot>
+      </View>
     </View>
   );
 }
@@ -209,11 +280,16 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  shareBtn: {
+    padding: 10,
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderRadius: 10,
+    marginRight: 8,
+  },
   deleteBtn: {
     padding: 10,
     backgroundColor: 'rgba(255, 59, 48, 0.1)',
     borderRadius: 10,
-    marginLeft: 10,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -241,5 +317,62 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     lineHeight: 22,
+  },
+
+  // Off-screen invite card (captured as an image, never shown to the user directly)
+  offscreenWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: -9999,
+  },
+  inviteCard: {
+    width: 300,
+    backgroundColor: '#FFFFFF',
+    padding: 24,
+    alignItems: 'center',
+  },
+  inviteHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0A1929',
+    marginBottom: 6,
+  },
+  inviteServiceName: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#0A1929',
+    textAlign: 'center',
+  },
+  inviteDate: {
+    fontSize: 14,
+    color: '#666666',
+    marginTop: 4,
+    marginBottom: 18,
+  },
+  qrWrapper: {
+    padding: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  inviteIdLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#999999',
+    letterSpacing: 1,
+  },
+  inviteId: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#0A1929',
+    letterSpacing: 2,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  inviteNote: {
+    fontSize: 13,
+    color: '#444444',
+    textAlign: 'center',
+    lineHeight: 19,
   },
 });

@@ -1,20 +1,31 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SectionList, ActivityIndicator, Alert, Image, Animated, Linking, Platform, LogBox, LayoutAnimation, UIManager } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SectionList, ActivityIndicator, Alert, Image, Animated, Linking, Platform, LogBox, LayoutAnimation, UIManager, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as IntentLauncher from 'expo-intent-launcher'; 
-import { Audio } from 'expo-av';
+import { createAudioPlayer } from 'expo-audio';
 import { useSettings } from '../context/SettingsContext';
+
+// Short month labels for the archive timeline
+const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Slim animated progress bar shown while a magazine is downloading
+const ProgressBar = ({ progress = 0, color = '#00F0FF', trackColor = 'rgba(255,255,255,0.1)' }) => (
+  <View style={[styles.progressTrack, { backgroundColor: trackColor }]}>
+    <View style={[styles.progressFill, { width: `${Math.max(4, progress)}%`, backgroundColor: color }]} />
+  </View>
+);
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
-LogBox.ignoreLogs(['[expo-av]']);
+// (removed — no longer needed after switching to expo-audio)
 
 const MAGAZINE_GIST_URL = 'https://gist.githubusercontent.com/ATtool/9148fb9b8a3238acc50c2c5fb80d80bc/raw/magazines.json';
 
@@ -41,6 +52,7 @@ export default function MagazineScreen() {
   const [magazines, setMagazines] = useState([]);
   const [expandedYear, setExpandedYear] = useState(null); 
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [downloadedFiles, setDownloadedFiles] = useState({});
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState({});
@@ -64,11 +76,11 @@ export default function MagazineScreen() {
         Animated.timing(listFadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true })
       ]).start();
 
-      async function playSound() {
+      function playSound() {
         try {
-          const { sound } = await Audio.Sound.createAsync(require('../../assets/data/sparrow.mp3'));
-          await sound.playAsync();
-          setTimeout(() => { sound.unloadAsync(); }, 2000);
+          const player = createAudioPlayer(require('../../assets/data/sparrow.mp3'));
+          player.play();
+          setTimeout(() => { player.remove(); }, 2000);
         } catch (error) { console.log("Audio Error", error); }
       }
       playSound();
@@ -107,6 +119,13 @@ export default function MagazineScreen() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const onRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchMagazines();
+    await checkDownloadedStatus();
+    setIsRefreshing(false);
   };
 
   const checkDownloadedStatus = async () => {
@@ -231,6 +250,9 @@ export default function MagazineScreen() {
     }
   };
 
+  const totalIssueCount = magazines.reduce((sum, s) => sum + s.data.length, 0);
+  const latestMag = magazines[0]?.data?.[0] || null;
+
   const renderListHeader = () => (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <View style={[styles.brandingCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -240,6 +262,12 @@ export default function MagazineScreen() {
             <Text style={{ fontFamily: 'Tamil008', fontSize: 28, color: colors.primary }}>சிட்டுக்குருவி</Text>
             <Text style={{ color: colors.text, fontSize: 14, marginTop: 2, letterSpacing: 1 }}>( மாத இதழ் )</Text>
             <Text style={{ fontFamily: 'Tamil003', fontSize: 16, color: '#FFD700', marginTop: 6 }}>இது பரலோகம் செல்ல வழி</Text>
+            {totalIssueCount > 0 && (
+              <View style={styles.issueCountPill}>
+                <Ionicons name="library-outline" size={12} color={colors.primary} />
+                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', marginLeft: 4 }}>{totalIssueCount} issues archived</Text>
+              </View>
+            )}
           </View>
         </View>
         <View style={[styles.authorBlock, { borderTopColor: colors.border }]}>
@@ -256,11 +284,62 @@ export default function MagazineScreen() {
           </ScalePressable>
         </View>
       </View>
+
+      {latestMag && (
+        <View style={{ marginHorizontal: 15, marginBottom: 20 }}>
+          <View style={styles.latestLabelRow}>
+            <View style={styles.latestDot} />
+            <Text style={[styles.latestLabel, { color: colors.subtext }]}>LATEST ISSUE</Text>
+          </View>
+          <ScalePressable
+            scaleTo={0.97}
+            onPress={() => downloadedFiles[latestMag.id] ? handleOpenPdf(latestMag.id) : handleDownload(latestMag)}
+          >
+            <LinearGradient
+              colors={isDark ? ['#0F2A33', '#0A1520'] : ['#E4FBFF', '#F3FBFF']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+              style={[styles.featuredCard, { borderColor: colors.primary + '40' }]}
+            >
+              <View style={[styles.featuredIconBox, { shadowColor: colors.primary }]}>
+                <LinearGradient colors={[colors.primary, '#0080C0']} style={styles.featuredIconGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <Ionicons name={downloadedFiles[latestMag.id] ? "book" : "sparkles"} size={26} color="#FFF" />
+                </LinearGradient>
+              </View>
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <Text style={{ color: colors.text, fontSize: appFontSize + 3, fontFamily: 'Tamil003' }} numberOfLines={1}>{latestMag.title_tamil}</Text>
+                <Text style={{ color: colors.subtext, fontSize: appFontSize - 3, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }} numberOfLines={1}>{latestMag.title_english}</Text>
+
+                {downloadingId === latestMag.id ? (
+                  <View style={{ marginTop: 10 }}>
+                    <ProgressBar progress={downloadProgress[latestMag.id] || 0} color={colors.primary} />
+                    <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4, fontWeight: '700' }}>{downloadProgress[latestMag.id] || 0}% downloaded</Text>
+                  </View>
+                ) : (
+                  <View style={[styles.featuredCta, { backgroundColor: colors.primary }]}>
+                    <Ionicons name={downloadedFiles[latestMag.id] ? "book-outline" : "cloud-download-outline"} size={14} color={isDark ? '#000' : '#FFF'} />
+                    <Text style={{ color: isDark ? '#000' : '#FFF', fontSize: 12, fontWeight: '700', marginLeft: 6 }}>
+                      {downloadedFiles[latestMag.id] ? 'Read Now' : 'Download Now'}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </LinearGradient>
+          </ScalePressable>
+        </View>
+      )}
+
+      {magazines.length > 0 && (
+        <Text style={[styles.archiveLabel, { color: colors.subtext }]}>FULL ARCHIVE</Text>
+      )}
     </Animated.View>
   );
 
-  const renderSectionHeader = ({ section: { title } }) => {
+  const renderSectionHeader = ({ section }) => {
+    const { title } = section;
     const isExpanded = expandedYear === title;
+    const isCurrentYear = title === String(new Date().getFullYear());
+    const count = magazines.find(s => s.title === title)?.data?.length || 0;
+
     return (
       <View style={styles.treeHeaderContainer}>
         <View style={styles.treeLineContainer}>
@@ -273,10 +352,22 @@ export default function MagazineScreen() {
         >
           <View style={[
             styles.treeBranchBtn, 
-            { backgroundColor: isExpanded ? 'rgba(0, 240, 255, 0.05)' : colors.card, borderColor: isExpanded ? colors.primary : colors.border }
+            { backgroundColor: isExpanded ? 'rgba(0, 240, 255, 0.06)' : colors.card, borderColor: isExpanded ? colors.primary : colors.border }
           ]}>
-            <Text style={[styles.yearText, { color: isExpanded ? colors.primary : colors.text }]}>{title} ஆம் ஆண்டு</Text>
-            <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} />
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={[styles.yearText, { color: isExpanded ? colors.primary : colors.text }]}>{title} ஆம் ஆண்டு</Text>
+              {isCurrentYear && (
+                <View style={styles.currentYearTag}>
+                  <Text style={styles.currentYearTagText}>NOW</Text>
+                </View>
+              )}
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={[styles.yearCountBadge, { backgroundColor: isExpanded ? colors.primary + '22' : 'rgba(127,127,127,0.15)' }]}>
+                <Text style={{ color: isExpanded ? colors.primary : colors.subtext, fontSize: 11, fontWeight: '700' }}>{count}</Text>
+              </View>
+              <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} style={{ marginLeft: 8 }} />
+            </View>
           </View>
         </ScalePressable>
       </View>
@@ -288,23 +379,31 @@ export default function MagazineScreen() {
     const isDownloading = downloadingId === item.id;
     const progress = downloadProgress[item.id] || 0;
     const climate = getClimateIcon(item.date_val); 
+    const monthIndex = parseInt(item.date_val.split('-')[1], 10) - 1;
 
     return (
       <View style={styles.treeItemContainer}>
         <View style={styles.treeLineContainer}>
           <View style={[styles.treeLine, { backgroundColor: colors.border }]} />
           <View style={[styles.climateIconWrapper, { backgroundColor: colors.background }]}>
-            <Ionicons name={climate.name} size={18} color={isDownloaded ? '#4CAF50' : climate.color} />
+            <Ionicons name={climate.name} size={16} color={isDownloaded ? '#4CAF50' : climate.color} />
           </View>
+          <Text style={[styles.monthLabel, { color: colors.subtext }]}>{MONTH_ABBR[monthIndex] || ''}</Text>
         </View>
 
         <View style={styles.treeItemContent}>
-          <View style={[styles.magCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.magCard, { backgroundColor: colors.card, borderColor: isDownloaded ? '#4CAF5030' : colors.border }]}>
             <View style={styles.magHeader}>
-              <View style={[styles.iconBox, { backgroundColor: isDownloaded ? 'rgba(76, 175, 80, 0.1)' : 'rgba(0, 240, 255, 0.1)' }]}>
-                <Ionicons name={isDownloaded ? "checkmark-circle" : "document-text"} size={26} color={isDownloaded ? '#4CAF50' : colors.primary} />
+              <View style={[styles.iconBoxGlow, { shadowColor: isDownloaded ? '#4CAF50' : colors.primary }]}>
+                <LinearGradient
+                  colors={isDownloaded ? ['#66BB6A', '#2E7D32'] : [colors.primary, '#0080C0']}
+                  style={styles.iconBox}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+                >
+                  <Ionicons name={isDownloaded ? "checkmark-circle" : "document-text"} size={24} color="#FFF" />
+                </LinearGradient>
               </View>
-              <View style={{ flex: 1, marginLeft: 15 }}>
+              <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }}>{item.title_tamil}</Text>
                 <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }}>{item.title_english}</Text>
               </View>
@@ -331,9 +430,12 @@ export default function MagazineScreen() {
                   </ScalePressable>
                 </View>
               ) : isDownloading ? (
-                <View style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary, flex: 1, justifyContent: 'center' }]}>
-                   <ActivityIndicator size="small" color={colors.primary} />
-                   <Text style={{color: colors.primary, fontSize: 12, marginLeft: 8, fontWeight: 'bold'}}>{progress}%</Text>
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>Downloading…</Text>
+                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>{progress}%</Text>
+                  </View>
+                  <ProgressBar progress={progress} color={colors.primary} />
                 </View>
               ) : (
                 <ScalePressable style={{ flex: 1 }} onPress={() => handleDownload(item)}>
@@ -363,7 +465,10 @@ export default function MagazineScreen() {
             <Ionicons name="arrow-back" size={26} color={colors.text} />
           </View>
         </ScalePressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Monthly Magazine</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Monthly Magazine</Text>
+          <Text style={{ color: colors.subtext, fontSize: 11, fontFamily: 'Tamil003', marginTop: 1 }}>சிட்டுக்குருவி இதழ்கள்</Text>
+        </View>
         <View style={{ width: 36 }} />
       </View>
 
@@ -383,7 +488,16 @@ export default function MagazineScreen() {
             stickySectionHeadersEnabled={false}
             contentContainerStyle={{ paddingBottom: 60 }}
             showsVerticalScrollIndicator={false}
-            ListEmptyComponent={<Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 40 }}>No magazines available yet.</Text>}
+            refreshControl={
+              <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+            }
+            ListEmptyComponent={
+              <View style={{ alignItems: 'center', marginTop: 40, paddingHorizontal: 30 }}>
+                <Ionicons name="newspaper-outline" size={40} color={colors.subtext} />
+                <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 12 }}>No magazines available yet.</Text>
+                <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 4, fontSize: 12 }}>Pull down to refresh</Text>
+              </View>
+            }
           />
         </Animated.View>
       )}
@@ -402,7 +516,21 @@ const styles = StyleSheet.create({
   logoImg: { width: 75, height: 75, borderRadius: 37.5, marginRight: 15, borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)' },
   authorBlock: { paddingTop: 15, borderTopWidth: 1 },
   whatsappBtn: { flexDirection: 'row', backgroundColor: '#25D366', alignSelf: 'flex-start', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 25, marginTop: 15, alignItems: 'center', elevation: 3 },
-  
+  issueCountPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: 'rgba(0,240,255,0.1)' },
+
+  latestLabelRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, marginLeft: 2 },
+  latestDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FF3B30', marginRight: 6 },
+  latestLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
+  archiveLabel: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginLeft: 20, marginBottom: 6 },
+
+  featuredCard: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, borderWidth: 1, elevation: 4, shadowColor: '#000', shadowOpacity: 0.1, shadowOffset: { width: 0, height: 3 }, shadowRadius: 6 },
+  featuredIconBox: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.4, shadowRadius: 8, elevation: 5, borderRadius: 27 },
+  featuredIconGradient: { width: 54, height: 54, borderRadius: 27, justifyContent: 'center', alignItems: 'center' },
+  featuredCta: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginTop: 10, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10 },
+
+  progressTrack: { height: 6, borderRadius: 3, overflow: 'hidden', width: '100%' },
+  progressFill: { height: 6, borderRadius: 3 },
+
   treeHeaderContainer: { flexDirection: 'row', paddingHorizontal: 15 },
   treeLineContainer: { width: 30, alignItems: 'center' },
   treeLine: { position: 'absolute', top: 0, bottom: 0, width: 2 },
@@ -410,13 +538,18 @@ const styles = StyleSheet.create({
   
   treeBranchBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10, padding: 15, borderRadius: 14, borderWidth: 1, marginLeft: 10 },
   yearText: { fontSize: 16, fontWeight: '900', letterSpacing: 1 },
+  yearCountBadge: { minWidth: 24, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
+  currentYearTag: { marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: '#FF9F0A' },
+  currentYearTagText: { fontSize: 9, fontWeight: '900', color: '#101010', letterSpacing: 0.5 },
 
   treeItemContainer: { flexDirection: 'row', paddingHorizontal: 15 },
   climateIconWrapper: { marginTop: 45, zIndex: 1, paddingVertical: 4 }, 
+  monthLabel: { fontSize: 9, fontWeight: '700', marginTop: 2, textTransform: 'uppercase' },
   treeItemContent: { flex: 1, paddingLeft: 10, paddingBottom: 15 },
 
   magCard: { padding: 18, borderRadius: 16, borderWidth: 1 },
   magHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
+  iconBoxGlow: { shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.35, shadowRadius: 6, elevation: 4, borderRadius: 14 },
   iconBox: { width: 50, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
   actionRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 15, marginTop: 5 },
   actionBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderRadius: 10 },

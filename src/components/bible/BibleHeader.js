@@ -25,7 +25,7 @@ export default function BibleHeader({
         
         <View style={styles.centerPickersContainer}>
           <TouchableOpacity onPress={onBookPress} style={[styles.pickerBtn, { borderRightWidth: 1, borderRightColor: colors.border, flexDirection: 'row' }]}>
-            <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '900', fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }} numberOfLines={1}>
+            <Text style={{ color: colors.primary, fontSize: appFontSize, fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }} numberOfLines={1}>
               {bookName}
             </Text>
             <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />

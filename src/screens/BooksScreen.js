@@ -43,8 +43,8 @@ export default function BooksScreen({ navigation }) {
         
         {/* Animated Header Section */}
         <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>நூலகம்</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.subtext }]}>Spiritual Library</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]} allowFontScaling={false}>நூலகம்</Text>
+          <Text style={[styles.headerSubtitle, { color: colors.subtext }]} allowFontScaling={false}>Spiritual Library</Text>
         </Animated.View>
         
         {/* Animated Stunning EGW Books Card */}
@@ -68,9 +68,9 @@ export default function BooksScreen({ navigation }) {
                 
                 {/* Middle: Text */}
                 <View style={styles.textContainer}>
-                  <Text style={styles.cardTitleTamil}>எலன் ஜி. வைட் நூல்கள்</Text>
-                  <Text style={styles.cardTitleEnglish}>Spirit of Prophecy Books</Text>
-                  <Text style={styles.cardDescription}>
+                  <Text style={styles.cardTitleTamil} allowFontScaling={false}>எலன் ஜி. வைட் நூல்கள்</Text>
+                  <Text style={styles.cardTitleEnglish} allowFontScaling={false}>Spirit of Prophecy Books</Text>
+                  <Text style={styles.cardDescription} allowFontScaling={false}>
                     Explore the writings and counsels for the last days.
                   </Text>
                 </View>
@@ -104,6 +104,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 32,
     fontFamily: 'Tamil003', 
+    includeFontPadding: false,
   },
   headerSubtitle: {
     fontSize: 16,
@@ -111,6 +112,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     fontWeight: '600',
+    includeFontPadding: false,
   },
   cardWrapper: {
     borderRadius: 20,
@@ -122,7 +124,7 @@ const styles = StyleSheet.create({
   },
   gradientCard: {
     borderRadius: 20,
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.2)',
   },
@@ -131,9 +133,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -147,18 +149,21 @@ const styles = StyleSheet.create({
     fontFamily: 'Tamil003',
     color: '#FFFFFF',
     marginBottom: 2,
+    includeFontPadding: false,
     // Android requires strict font families without extra bold weights
   },
   cardTitleEnglish: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#E0E0E0',
+    includeFontPadding: false,
   },
   cardDescription: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 6,
     lineHeight: 16,
+    includeFontPadding: false,
   },
   arrowContainer: {
     marginLeft: 10,
