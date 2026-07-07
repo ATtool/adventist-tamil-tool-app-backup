@@ -30,6 +30,7 @@ import ZionScreen from '../screens/ZionScreen';
 import ThirumaraiOldScreen from '../screens/ThirumaraiOldScreen';
 import ThirumaraiHopeScreen from '../screens/ThirumaraiHopeScreen';
 import OtherSongsScreen from '../screens/OtherSongsScreen';
+import CustomSongsScreen from '../screens/CustomSongsScreen';
 
 // --- FELLOWSHIP / MEETING SCREENS ---
 import CreateService from '../screens/CreateService';
@@ -69,6 +70,7 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
       ThirumaraiOld: 'Songs',
       ThirumaraiHope: 'Songs',
       OtherSongs: 'Songs',
+      CustomSongs: 'Songs',
       Dictionary: 'Study',
       Concordance: 'Study',
       StudyExplanations: 'Study',
@@ -213,6 +215,7 @@ export default function MainNavigation() {
         <Tab.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
         <Tab.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
         <Tab.Screen name="OtherSongs" component={OtherSongsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        <Tab.Screen name="CustomSongs" component={CustomSongsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
 
         {/* --- FELLOWSHIP / MEETING SCREENS --- */}
         <Tab.Screen name="CreateService" component={CreateService} options={{ tabBarItemStyle: { display: 'none' } }} />
