@@ -9,14 +9,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
+import * as Notifications from 'expo-notifications';
 
 // Import app.json to get current app version safely
 import appConfig from '../../app.json'; 
 
 const { width, height } = Dimensions.get('window');
 
-// Service button size scales with screen width (414 = iPhone XR width, our "just right" reference).
-// Smaller screens get a smaller button, bigger screens get a bigger one, within safe limits.
 const FAB_SIZE = Math.round(Math.min(74, Math.max(52, width * 0.145)));
 const FAB_ICON_SIZE = Math.round(FAB_SIZE * 0.46);
 
@@ -26,6 +25,15 @@ const COUNTRIES = [
   { name: 'Singapore', flag: '🇸🇬' }, { name: 'Sri Lanka', flag: '🇱🇰' }, { name: 'United Arab Emirates', flag: '🇦🇪' },
   { name: 'United Kingdom', flag: '🇬🇧' }, { name: 'United States', flag: '🇺🇸' }
 ];
+
+// --- CRITICAL: Tell Android/iOS how to handle notifications when app is open ---
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -48,14 +56,15 @@ export default function HomeScreen() {
   const [tempCountry, setTempCountry] = useState({ name: 'India', flag: '🇮🇳' });
   const [todayVerse, setTodayVerse] = useState('');
 
-  // --- NEW UPDATES STATE ---
+  // NEW: Read status state
+  const [hasReadToday, setHasReadToday] = useState(false);
+
   const [updates, setUpdates] = useState([]);
   const [isUpdatesTamil, setIsUpdatesTamil] = useState(false);
   const [showAllUpdates, setShowAllUpdates] = useState(false);
   const [showStorePopup, setShowStorePopup] = useState(false);
   const [selectedUpdate, setSelectedUpdate] = useState(null);
   
-  // NEW: Memory states for smart UX
   const [lastSeenUpdateId, setLastSeenUpdateId] = useState(null);
   const [dismissedForcedVersion, setDismissedForcedVersion] = useState(null);
 
@@ -68,15 +77,30 @@ export default function HomeScreen() {
   const cardOpacities = useRef([...Array(3)].map(() => new Animated.Value(0))).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  // NEW: Listen for when a user taps a notification
+  const lastNotificationResponse = Notifications.useLastNotificationResponse();
+
+  useEffect(() => {
+    if (lastNotificationResponse) {
+      const screen = lastNotificationResponse.notification.request.content.data?.screen;
+      if (screen === 'TodaysManna') {
+        navigation.navigate('TodaysManna');
+      } else if (screen === 'Updates') {
+        setShowAllUpdates(true);
+      }
+    }
+  }, [lastNotificationResponse, navigation]);
+
   useEffect(() => {
     checkUserData();
     setGreetingTime();
     fetchUpdates(); 
+    checkReadStatus();
+    setupDailyNotification();
     
     const date = new Date();
     setCurrentDateStr(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
 
-    // Fetch the verse for the home screen preview (Offline-First)
     const fetchTodayVerse = async () => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -105,10 +129,8 @@ export default function HomeScreen() {
           }
         }
         
-        // REARRANGE THE VERSE: Put Reference first, remove newlines
         if (foundVerse) {
           let formattedVerse = foundVerse;
-          // We use Regex (the slashes) to completely bypass clipboard formatting bugs
           const parts = foundVerse.split(/\n/);
           
           if (parts.length > 1) {
@@ -116,7 +138,6 @@ export default function HomeScreen() {
             const verseText = parts.join(' ').trim();
             formattedVerse = `${reference} - ${verseText}`;
           }
-          
           setTodayVerse(formattedVerse);
         }
       } catch (error) { console.warn("Home Manna Fetch Error:", error); }
@@ -139,7 +160,55 @@ export default function HomeScreen() {
     ]).start();
   }, [isMenuOpen]);
 
-  // Version Checker Logic
+  // --- NEW: Check if user read today's manna ---
+  const checkReadStatus = async () => {
+    const today = new Date().toLocaleDateString('en-US');
+    const lastRead = await AsyncStorage.getItem('@last_read_manna_date');
+    setHasReadToday(lastRead === today);
+  };
+
+  // --- CRITICAL FIX: Setup 5:00 AM Daily Notification with Android VIP Channel ---
+  const setupDailyNotification = async () => {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    
+    if (finalStatus !== 'granted') return;
+
+    // This creates the VIP Channel for Android devices so it never blocks the alarm
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync('daily-manna', {
+        name: 'Daily Devotion',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: true,
+      });
+    }
+
+    // Check if we already scheduled it so we don't create duplicates
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const hasDaily = scheduled.some(n => n.content.data?.type === 'daily_manna');
+
+    if (!hasDaily) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "இன்றைய மன்னா",
+          body: "இன்றைய தேவ செய்தியை வாசிக்க நேரம் ஒதுக்குங்கள்.",
+          data: { screen: 'TodaysManna', type: 'daily_manna' },
+          sound: true,
+        },
+        trigger: {
+          hour: 5,
+          minute: 0,
+          repeats: true,
+        },
+      });
+    }
+  };
+
   const isUpdateRequired = (requiredVersion) => {
     if (!requiredVersion) return false;
     const currentVersion = appConfig.expo.version; 
@@ -156,6 +225,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Re-check read status every time they return to the home screen
+      checkReadStatus();
+      
       if (!isChecking && !showOnboarding && userName) {
         cardScales.forEach(anim => anim.setValue(0.8));
         cardOpacities.forEach(anim => anim.setValue(0));
@@ -172,7 +244,6 @@ export default function HomeScreen() {
     }, [isChecking, showOnboarding, userName])
   );
 
-  // --- UPDATES LOGIC ---
   const fetchUpdates = async () => {
     try {
       const GIST_URL = 'https://gist.githubusercontent.com/ATtool/d2282fc4e40cab92304a6a3615561a34/raw/updates.json'; 
@@ -180,14 +251,40 @@ export default function HomeScreen() {
       const data = await response.json();
       setUpdates(data); 
 
-      // 1. Fetch memory (What did they see? What did they dismiss?)
       const storedLastSeenId = await AsyncStorage.getItem('@last_seen_update_id');
+      const storedNotifiedId = await AsyncStorage.getItem('@last_notified_update_id');
       const storedDismissedVersion = await AsyncStorage.getItem('@dismissed_forced_version');
+      
       setLastSeenUpdateId(storedLastSeenId);
       setDismissedForcedVersion(storedDismissedVersion);
 
-      // 2. Check for forced updates that they HAVEN'T dismissed yet
       if (data.length > 0) {
+        const latestId = String(data[0].id);
+        
+        // NEW: Trigger a push notification if there is a new update we haven't notified them about yet
+        if (latestId !== storedNotifiedId) {
+          const updateTitle = isUpdatesTamil ? data[0].titleTa : data[0].titleEn;
+          
+          if (Platform.OS === 'android') {
+             await Notifications.setNotificationChannelAsync('updates', {
+               name: 'App Updates',
+               importance: Notifications.AndroidImportance.DEFAULT,
+               sound: true,
+             });
+          }
+
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "New Update / புதிய அறிவிப்பு",
+              body: updateTitle,
+              data: { screen: 'Updates' },
+              sound: true,
+            },
+            trigger: null, // trigger immediately
+          });
+          await AsyncStorage.setItem('@last_notified_update_id', latestId);
+        }
+
         const forcedUpdate = data.find(item => 
           item.actionType === 'store_update' && 
           item.isForced === true && 
@@ -201,13 +298,12 @@ export default function HomeScreen() {
       }
 
     } catch (error) {
-      console.warn("Failed to fetch updates (User might be offline):", error);
+      console.warn("Failed to fetch updates:", error);
     }
   };
 
   const handleUpdateAction = (update) => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
     if (update.actionType === 'navigate' && update.targetScreen) {
       setShowAllUpdates(false);
       navigation.navigate(update.targetScreen);
@@ -232,8 +328,6 @@ export default function HomeScreen() {
   const latestUpdateId = updates.length > 0 ? String(updates[0].id) : null;
   const safeLastSeenId = lastSeenUpdateId ? String(lastSeenUpdateId) : null;
   const hasNewUpdates = latestUpdateId && latestUpdateId !== safeLastSeenId;
-
-  // --- END UPDATES LOGIC ---
 
   const setGreetingTime = () => {
     const hour = new Date().getHours();
@@ -269,6 +363,10 @@ export default function HomeScreen() {
       await AsyncStorage.setItem('@user_country_flag', tempCountry.flag);
       setUserName(tempName.trim());
       setShowOnboarding(false);
+      
+      // Request notifications immediately after they finish setting up
+      setupDailyNotification();
+      
       startHomeAnimations();
     } catch (error) { console.warn(error); }
   };
@@ -289,7 +387,6 @@ export default function HomeScreen() {
   const renderUpdateItem = (item, index) => {
     const isStoreUpdate = item.actionType === 'store_update';
     const needsUpdate = isStoreUpdate ? isUpdateRequired(item.versionRequired) : false;
-
     const buttonLabelEn = (isStoreUpdate && !needsUpdate) ? "Up to Date" : item.buttonTextEn;
     const buttonLabelTa = (isStoreUpdate && !needsUpdate) ? "புதுப்பிக்கப்பட்டது" : item.buttonTextTa;
 
@@ -363,12 +460,19 @@ export default function HomeScreen() {
 
           <AnimatedTouchableOpacity 
             style={[styles.mannaCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 15, opacity: cardOpacities[0], transform: [{ scale: cardScales[0] }] }]} 
-            onPress={() => navigation.navigate('TodaysManna')}
+            onPress={async () => {
+              // Mark as read immediately when they click!
+              const today = new Date().toLocaleDateString('en-US');
+              await AsyncStorage.setItem('@last_read_manna_date', today);
+              setHasReadToday(true);
+              navigation.navigate('TodaysManna');
+            }}
           >
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: todayVerse ? 12 : 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)' }]}>
-                  <Ionicons name="sunny" size={24} color="#FF9F0A" />
+                <View style={[styles.iconContainerSmall, { backgroundColor: hasReadToday ? 'rgba(48, 209, 88, 0.1)' : 'rgba(255, 159, 10, 0.1)' }]}>
+                  {/* The magic Read / Unread icon changes here! */}
+                  <Ionicons name={hasReadToday ? "checkmark-circle" : "sunny"} size={24} color={hasReadToday ? "#30D158" : "#FF9F0A"} />
                 </View>
                 <View style={{ marginLeft: 15 }}>
                   <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</Text>
@@ -377,6 +481,10 @@ export default function HomeScreen() {
                   </Text>
                 </View>
               </View>
+              {/* Optional: Add a small pulsing dot if unread */}
+              {!hasReadToday && (
+                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9F0A', marginRight: 10 }} />
+              )}
               <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
             </View>
 
@@ -427,7 +535,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Animated.View>
 
-      {/* --- ALL UPDATES POPUP MODAL --- */}
       <Modal visible={showAllUpdates} transparent animationType="slide" onRequestClose={() => setShowAllUpdates(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border, height: '75%' }]}>
@@ -460,7 +567,6 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* --- STORE UPDATE REQUIREMENT POPUP --- */}
       <Modal visible={showStorePopup} transparent animationType="fade" onRequestClose={() => setShowStorePopup(false)}>
         <View style={[styles.modalOverlay, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.95)' }]}>
           <View style={[styles.updateAlertBox, { backgroundColor: isDark ? '#121212' : '#FFFFFF', borderColor: colors.border }]}>
