@@ -30,6 +30,7 @@ export default function EGWBooksListScreen({ navigation }) {
   const [downloadedFiles, setDownloadedFiles] = useState({});
   const [downloadingId, setDownloadingId] = useState(null);
   const [downloadProgress, setDownloadProgress] = useState({}); 
+  const [showNote, setShowNote] = useState(false);
 
   // Entrance Animation Refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -209,8 +210,8 @@ export default function EGWBooksListScreen({ navigation }) {
     );
   };
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+  const ListHeader = () => (
+    <View>
       <View style={styles.header}>
         <ScalePressable onPress={() => navigation.navigate('Books')}>
           <View style={styles.backButton}>
@@ -220,18 +221,39 @@ export default function EGWBooksListScreen({ navigation }) {
         </ScalePressable>
       </View>
 
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], flex: 1 }}>
-        <View style={[styles.banner, { backgroundColor: 'rgba(0, 240, 255, 0.1)' }]}>
-          <Text style={[styles.bannerText, { color: colors.text }]}>To view official EGW Estate Tamil resources online, visit:</Text>
-          <ScalePressable onPress={() => handleOnlineView('https://m.egwwritings.org/ta/folders/1082')}>
-            <Text style={[styles.bannerLink, { color: colors.primary }]}>m.egwwritings.org</Text>
-          </ScalePressable>
-        </View>
+      <ScalePressable onPress={() => handleOnlineView('https://m.egwwritings.org/ta/folders/1082')}>
+        <Text style={[styles.headerLink, { color: colors.primary }]}>
+          To view official EGW Estate Tamil resources online, visit: <Text style={[styles.headerLinkUnderline, { color: colors.primary }]}>m.egwwritings.org</Text>
+        </Text>
+      </ScalePressable>
 
+      <View style={styles.noteWrapper}>
+        <ScalePressable onPress={() => setShowNote(!showNote)}>
+          <View style={styles.noteBtn}>
+            <Ionicons name={showNote ? "chevron-up-outline" : "information-circle-outline"} size={16} color="#fff" />
+            <Text style={styles.noteBtnText}>Read Important Note</Text>
+          </View>
+        </ScalePressable>
+
+        {showNote && (
+          <View style={[styles.noteBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <Text style={[styles.noteText, { color: colors.text }]}>
+              The books listed on this page are not owned or created by Adventist Tamil Tool. We are simply providing links so you can read these valuable books with ease. We heartily give thanks to the creators of these books, and all credit belongs to them alone.
+            </Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }], flex: 1 }}>
         <FlatList
           data={EGW_BOOKS_DATA}
           keyExtractor={(item) => item.id}
           renderItem={renderBookItem}
+          ListHeaderComponent={ListHeader}
           contentContainerStyle={{ paddingBottom: 20, paddingTop: 10 }}
           removeClippedSubviews={true}
           maxToRenderPerBatch={5}
@@ -245,12 +267,17 @@ export default function EGWBooksListScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', padding: 16, alignItems: 'center' },
+  header: { flexDirection: 'row', padding: 16, alignItems: 'center', justifyContent: 'space-between' },
   backButton: { flexDirection: 'row', alignItems: 'center', padding: 4 },
   backText: { fontSize: 16, marginLeft: 8, fontWeight: 'bold' },
-  banner: { padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.05)' },
-  bannerText: { fontSize: 13, textAlign: 'center' },
-  bannerLink: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', marginTop: 8 },
+  headerLink: { fontSize: 12, fontWeight: '600', textAlign: 'center', paddingHorizontal: 24, marginBottom: 12 },
+  headerLinkUnderline: { fontWeight: 'bold', textDecorationLine: 'underline' },
+
+  noteWrapper: { alignItems: 'center', marginBottom: 12 },
+  noteBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5A623', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20 },
+  noteBtnText: { color: '#fff', fontSize: 13, fontWeight: 'bold', marginLeft: 6 },
+  noteBox: { marginHorizontal: 16, marginTop: 10, padding: 14, borderRadius: 12, borderWidth: 1, alignSelf: 'stretch' },
+  noteText: { fontSize: 14, lineHeight: 22, textAlign: 'left' },
   
   bookCard: { marginHorizontal: 16, marginTop: 12, padding: 16, borderRadius: 12, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', alignItems: 'flex-start' },
