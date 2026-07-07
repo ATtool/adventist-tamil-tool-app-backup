@@ -7,7 +7,10 @@ export const SettingsProvider = ({ children }) => {
   const isDark = true; 
   
   const [timeZone, setTimeZone] = useState('India (IST)');
-  const [appFontSize, setAppFontSize] = useState(16); 
+  
+  // Notice we changed this to _setAppFontSize. The underscore is a standard naming trick 
+  // to say "this is the raw, internal state setter".
+  const [appFontSize, _setAppFontSize] = useState(16); 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
   // --- SONG SETTINGS ---
@@ -25,15 +28,21 @@ export const SettingsProvider = ({ children }) => {
   const [bibleLineHeight, setBibleLineHeight] = useState(32);
   const [bibleLetterSpacing, setBibleLetterSpacing] = useState(0);
 
-  // Load saved settings on startup and AUTO-HEAL corrupted states
+  // Load saved settings on startup (Reading the "Notebook")
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const savedLang = await AsyncStorage.getItem('@bible_language');
         if (savedLang !== null) _setBibleLanguage(savedLang);
 
+        // NEW: Load the saved font size from the phone's hard drive!
+        const savedAppFontSize = await AsyncStorage.getItem('@app_font_size');
+        if (savedAppFontSize !== null) {
+          // AsyncStorage saves everything as text (strings), so we must convert it back to a number
+          _setAppFontSize(parseInt(savedAppFontSize, 10)); 
+        }
+
         const savedVersion = await AsyncStorage.getItem('@active_english_version');
-        // AUTO-HEAL: If the Concordance leaked into the English version state, force it back to KJV
         if (savedVersion) {
           if (savedVersion.toLowerCase().includes('concordance')) {
             _setActiveEnglishVersion('KJV');
@@ -47,6 +56,13 @@ export const SettingsProvider = ({ children }) => {
     loadSettings();
   }, []);
 
+  // NEW: This is the function SettingsScreen will call. 
+  // It updates the screen instantly, AND writes it down in the "Notebook".
+  const setAppFontSize = async (size) => {
+    _setAppFontSize(size);
+    await AsyncStorage.setItem('@app_font_size', size.toString());
+  };
+
   const setBibleLanguage = async (lang) => {
     _setBibleLanguage(lang);
     await AsyncStorage.setItem('@bible_language', lang);
@@ -57,8 +73,11 @@ export const SettingsProvider = ({ children }) => {
     await AsyncStorage.setItem('@active_english_version', version);
   };
 
-  const restoreDefaultTextSettings = () => {
-    setAppFontSize(16);
+  // We also make sure the reset button clears the hard drive memory back to 16
+  const restoreDefaultTextSettings = async () => {
+    _setAppFontSize(16);
+    await AsyncStorage.setItem('@app_font_size', '16');
+
     setTitleSize(20); setTitleSpacing(0);
     setLyricsSize(20); setLyricsSpacing(0); setLyricsLineHeight(30);
     setBibleFontSize(20); setBibleLineHeight(32); setBibleLetterSpacing(0);

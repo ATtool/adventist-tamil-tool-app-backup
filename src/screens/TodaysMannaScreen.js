@@ -282,17 +282,20 @@ export default function TodaysMannaScreen() {
       ) : todayDevotion ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           
-          <Text style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 2 }]}>
+          {/* Title is now readerFontSize + 5 (16 + 5 = 21) */}
+          <Text style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 7 }]}>
             {todayDevotion.title}
           </Text>
           
           <View style={[styles.verseBox, { backgroundColor: colors.card, borderColor: 'rgba(0, 240, 255, 0.2)' }]}>
-            <Text style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 1 }]}>
+            {/* Verse is now readerFontSize + 2 (16 + 2 = 18) */}
+            <Text style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 2 }]}>
               {todayDevotion.verse}
             </Text>
           </View>
 
-          <Text style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize + 2, lineHeight: (readerFontSize + 2) * 1.8 }]}>
+          {/* Content is now readerFontSize (16) */}
+          <Text style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize, lineHeight: readerFontSize * 1.8 }]}>
             {todayDevotion.content}
           </Text>
 

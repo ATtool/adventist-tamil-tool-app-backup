@@ -428,7 +428,7 @@ export default function HomeScreen() {
                   </Text>
                 )}
               </Text>
-              <Text style={[styles.title, { color: colors.text, fontSize: 15 }]} allowFontScaling={false}>
+              <Text style={[styles.title, { color: colors.text, fontSize: 13 }]} allowFontScaling={false}>
                 Welcome to Adventist Tamil Tool
               </Text>
             </View>
@@ -475,9 +475,9 @@ export default function HomeScreen() {
                   <Ionicons name={hasReadToday ? "checkmark-circle" : "sunny"} size={24} color={hasReadToday ? "#30D158" : "#FF9F0A"} />
                 </View>
                 <View style={{ marginLeft: 15 }}>
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</Text>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</Text>
                   <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2, includeFontPadding: false }} allowFontScaling={false}>
-                    <Text style={{ fontFamily: 'Tamil003', fontSize: appFontSize + 1 }}>இன்றைய மன்னா</Text> • {currentDateStr}
+                    <Text style={{ fontFamily: 'Tamil003', fontSize: 16 }}>இன்றைய மன்னா</Text> • {currentDateStr}
                   </Text>
                 </View>
               </View>
@@ -504,13 +504,13 @@ export default function HomeScreen() {
           <View style={styles.grid}>
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[1], transform: [{ scale: cardScales[1] }] }]} onPress={openSabbathSchoolLink}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(48, 209, 88, 0.1)' }]}><Ionicons name="library" size={32} color="#30D158" /></View>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]} allowFontScaling={false}>Sabbath School</Text>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Sabbath School</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>ஓய்வுநாள் பள்ளி பாடம்</Text>
             </AnimatedTouchableOpacity>
 
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[2], transform: [{ scale: cardScales[2] }] }]} onPress={() => navigation.navigate('Magazine')}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(191, 90, 242, 0.1)' }]}><Ionicons name="newspaper" size={32} color="#BF5AF2" /></View>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]} allowFontScaling={false}>Monthly Magazine</Text>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Monthly Magazine</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>மாதாந்திர இதழ்</Text>
             </AnimatedTouchableOpacity>
           </View>

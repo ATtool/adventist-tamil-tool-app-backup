@@ -63,7 +63,7 @@ export default function StudyScreen() {
               <Ionicons name="book" size={22} color={colors.primary} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]} allowFontScaling={false}>Bible Dictionary</Text>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Bible Dictionary</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வேதாகம அகராதி</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
@@ -81,7 +81,7 @@ export default function StudyScreen() {
               <Ionicons name="search" size={22} color={ACCENT_CONC} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]} allowFontScaling={false}>Concordance</Text>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Concordance</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வார்த்தை விளக்கம்</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
@@ -99,7 +99,7 @@ export default function StudyScreen() {
               <Ionicons name="library" size={22} color={ACCENT_VERSE} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2 }]} allowFontScaling={false}>Verse Explanations</Text>
+              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Verse Explanations</Text>
               <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வசன விளக்கம்</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />

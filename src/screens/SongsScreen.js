@@ -70,7 +70,7 @@ export default function SongsScreen() {
               <Ionicons name="musical-notes" size={22} color={ACCENT_ZION} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 10 }]}>
                 சீயோன் இனிய கீதங்கள்
               </Text>
             </View>
@@ -89,11 +89,11 @@ export default function SongsScreen() {
               <Ionicons name="star" size={22} color={ACCENT_HOPE} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 10 }]}>
                 திருமறைத்திருப் பாடல்கள்
               </Text>
               {/* Bright Yellow Text */}
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize - 2, lineHeight: appFontSize + 2 }]}>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize +1, lineHeight: appFontSize + 2 }]}>
                 ( நம்பிக்கையின் கீதங்கள் புத்தக வரிசை )
               </Text>
             </View>
@@ -112,11 +112,11 @@ export default function SongsScreen() {
               <Ionicons name="book" size={22} color={colors.primary} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>
                 திருமறைத்திருப் பாடல்கள்
               </Text>
               {/* Bright Yellow Text */}
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize - 2, lineHeight: appFontSize + 2 }]}>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize +1, lineHeight: appFontSize + 2 }]}>
                 ( பழைய புத்தக வரிசை )
               </Text>
             </View>
@@ -135,7 +135,7 @@ export default function SongsScreen() {
               <Ionicons name="library" size={22} color={ACCENT_OTHER} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 4, lineHeight: appFontSize + 8 }]}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>
                 இதர பாடல்கள்
               </Text>
             </View>
