@@ -91,7 +91,9 @@ export default function TodaysMannaScreen() {
 
   const fetchFreshData = async (dateString) => {
     try {
-      const response = await fetch(DEVOTION_URL, { headers: { 'Cache-Control': 'no-cache' } });
+      // We add a timestamp to the URL so the phone NEVER uses a cached/old version!
+      const cacheBusterUrl = `${DEVOTION_URL}?t=${new Date().getTime()}`;
+      const response = await fetch(cacheBusterUrl, { headers: { 'Cache-Control': 'no-cache' } });
       if (!response.ok) return null;
 
       const json = await response.json();
@@ -196,6 +198,16 @@ export default function TodaysMannaScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTools}>
+          
+          {/* ALWAYS show the sync button so users can manually refresh the Gist */}
+          <TouchableOpacity 
+            onPress={() => loadDevotion(selectedDate)} 
+            style={styles.iconBtn}
+            disabled={isLoading}
+          >
+            <Ionicons name="sync" size={22} color={isLoading ? colors.subtext : "#00F0FF"} />
+          </TouchableOpacity>
+
           {todayDevotion && (
             <>
               <TouchableOpacity onPress={toggleSpeech} style={styles.iconBtn}>
@@ -270,7 +282,7 @@ export default function TodaysMannaScreen() {
       ) : todayDevotion ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           
-          <Text style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 6 }]}>
+          <Text style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 2 }]}>
             {todayDevotion.title}
           </Text>
           
