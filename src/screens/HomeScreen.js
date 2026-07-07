@@ -46,6 +46,7 @@ export default function HomeScreen() {
   
   const [tempName, setTempName] = useState('');
   const [tempCountry, setTempCountry] = useState({ name: 'India', flag: '🇮🇳' });
+  const [todayVerse, setTodayVerse] = useState('');
 
   // --- NEW UPDATES STATE ---
   const [updates, setUpdates] = useState([]);
@@ -74,6 +75,54 @@ export default function HomeScreen() {
     
     const date = new Date();
     setCurrentDateStr(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+
+    // Fetch the verse for the home screen preview (Offline-First)
+    const fetchTodayVerse = async () => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+
+      try {
+        let foundVerse = null;
+        const savedData = await AsyncStorage.getItem('@manna_data');
+        
+        if (savedData) {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.devotions && parsedData.devotions[dateString]) {
+            foundVerse = parsedData.devotions[dateString].verse;
+          }
+        }
+        
+        if (!foundVerse) {
+          const response = await fetch('https://gist.githubusercontent.com/ATtool/e3a8241e07503969cb06448a32eb4382/raw/manna.json', { headers: { 'Cache-Control': 'no-cache' } });
+          if (response.ok) {
+            const json = await response.json();
+            await AsyncStorage.setItem('@manna_data', JSON.stringify(json));
+            if (json.devotions && json.devotions[dateString]) {
+              foundVerse = json.devotions[dateString].verse;
+            }
+          }
+        }
+        
+        // REARRANGE THE VERSE: Put Reference first, remove newlines
+        if (foundVerse) {
+          let formattedVerse = foundVerse;
+          // We use Regex (the slashes) to completely bypass clipboard formatting bugs
+          const parts = foundVerse.split(/\n/);
+          
+          if (parts.length > 1) {
+            const reference = parts.pop().replace('-', '').trim();
+            const verseText = parts.join(' ').trim();
+            formattedVerse = `${reference} - ${verseText}`;
+          }
+          
+          setTodayVerse(formattedVerse);
+        }
+      } catch (error) { console.warn("Home Manna Fetch Error:", error); }
+    };
+    
+    fetchTodayVerse();
 
     Animated.loop(
       Animated.sequence([
@@ -173,7 +222,6 @@ export default function HomeScreen() {
   const openAppStore = () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     if (Platform.OS === 'android') {
-      // NEW FIX: Strictly forces Google Play Store via https link
       Linking.openURL(`https://play.google.com/store/apps/details?id=${appConfig.expo.android.package}`);
     } else {
       Linking.openURL('itms-apps://itunes.apple.com/app/idYOUR_APPLE_APP_ID'); 
@@ -181,7 +229,6 @@ export default function HomeScreen() {
     setShowStorePopup(false);
   };
 
-  // NEW FIX: Bulletproof string conversion so Numbers and Text don't confuse the app
   const latestUpdateId = updates.length > 0 ? String(updates[0].id) : null;
   const safeLastSeenId = lastSeenUpdateId ? String(lastSeenUpdateId) : null;
   const hasNewUpdates = latestUpdateId && latestUpdateId !== safeLastSeenId;
@@ -294,7 +341,6 @@ export default function HomeScreen() {
                 onPress={async () => { 
                   if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
                   setShowAllUpdates(true); 
-                  // NEW FIX: Save to memory that they clicked the bell and saw the latest update
                   if (latestUpdateId) {
                     await AsyncStorage.setItem('@last_seen_update_id', latestUpdateId);
                     setLastSeenUpdateId(latestUpdateId);
@@ -319,18 +365,32 @@ export default function HomeScreen() {
             style={[styles.mannaCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 15, opacity: cardOpacities[0], transform: [{ scale: cardScales[0] }] }]} 
             onPress={() => navigation.navigate('TodaysManna')}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)' }]}>
-                <Ionicons name="sunny" size={24} color="#FF9F0A" />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: todayVerse ? 12 : 0 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)' }]}>
+                  <Ionicons name="sunny" size={24} color="#FF9F0A" />
+                </View>
+                <View style={{ marginLeft: 15 }}>
+                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2, includeFontPadding: false }} allowFontScaling={false}>
+                    <Text style={{ fontFamily: 'Tamil003', fontSize: appFontSize + 1 }}>இன்றைய மன்னா</Text> • {currentDateStr}
+                  </Text>
+                </View>
               </View>
-              <View style={{ marginLeft: 15 }}>
-                <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</Text>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2, includeFontPadding: false }} allowFontScaling={false}>
-                  <Text style={{ fontFamily: 'Tamil003', fontSize: appFontSize + 1 }}>இன்றைய மன்னா</Text> • {currentDateStr}
+              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+            </View>
+
+            {!!todayVerse && (
+              <View style={{ marginTop: 2, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
+                <Text 
+                  style={{ color: '#00F0FF', fontSize: appFontSize, fontFamily: 'Tamil003', lineHeight: 22, textAlign: 'center' }} 
+                  numberOfLines={3}
+                  allowFontScaling={false}
+                >
+                  {todayVerse}
                 </Text>
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+            )}
           </AnimatedTouchableOpacity>
 
           <View style={styles.grid}>
@@ -419,7 +479,6 @@ export default function HomeScreen() {
               <TouchableOpacity 
                 style={[styles.modalBtn, { backgroundColor: 'transparent', borderColor: colors.border, borderWidth: 1 }]} 
                 onPress={async () => {
-                  // NEW FIX: Save their "Later" choice so we stop annoying them for THIS version
                   if (selectedUpdate?.versionRequired) {
                     await AsyncStorage.setItem('@dismissed_forced_version', selectedUpdate.versionRequired);
                     setDismissedForcedVersion(selectedUpdate.versionRequired);
@@ -581,7 +640,7 @@ const styles = StyleSheet.create({
   updateBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   updateAlertBox: { width: '85%', padding: 25, borderRadius: 24, borderWidth: 1 },
   modalBtn: { width: '47%', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
-  mannaCard: { paddingVertical: 20, paddingHorizontal: 20, borderRadius: 20, borderWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  mannaCard: { paddingVertical: 18, paddingHorizontal: 20, borderRadius: 20, borderWidth: 1, flexDirection: 'column', justifyContent: 'center' },
   drawerMenu: { width: width * 0.75, height: '100%', shadowColor: '#000', shadowOffset: { width: -5, height: 0 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 10 },
   drawerHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#333' },
   drawerItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15 },

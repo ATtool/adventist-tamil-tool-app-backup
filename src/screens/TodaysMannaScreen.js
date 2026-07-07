@@ -275,12 +275,12 @@ export default function TodaysMannaScreen() {
           </Text>
           
           <View style={[styles.verseBox, { backgroundColor: colors.card, borderColor: 'rgba(0, 240, 255, 0.2)' }]}>
-            <Text style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize - 2 }]}>
+            <Text style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 1 }]}>
               {todayDevotion.verse}
             </Text>
           </View>
 
-          <Text style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize, lineHeight: readerFontSize * 1.8 }]}>
+          <Text style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize + 2, lineHeight: (readerFontSize + 2) * 1.8 }]}>
             {todayDevotion.content}
           </Text>
 

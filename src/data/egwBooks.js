@@ -118,7 +118,7 @@ export const EGW_BOOKS_DATA = [
     title_tamil: 'சபைகளுக்கு ஆலோசனை',
     title_english: 'Counsels for the Church',
     icon: 'home-outline',
-    pdf_url: null,
+    pdf_url: 'https://drive.google.com/uc?id=1xUYbK0RZwyBDSWX8bbg_wDn3SNokwf6S',
     website_url: 'https://m.egwwritings.org/ta/book/12000.2#0',
   },
   {
