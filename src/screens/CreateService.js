@@ -11,6 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import booksData from '../data/books.json';
+import { getCustomSongs } from '../utils/UserDataDB';
 
 const { height } = Dimensions.get('window');
 
@@ -49,7 +50,8 @@ const MARRIAGE_TEMPLATE = [
 const SONGBOOKS = [
   { id: 'Zion', name: 'சீயோன் இனிய கீதங்கள்', db: 'zion.db' },
   { id: 'Hope', name: 'திருமறைத்திருப் பாடல்கள் ( நம்பிக்கையின் கீதங்கள் )', db: 'Thirumarai.db' },
-  { id: 'Old', name: 'திருமறைத்திருப் பாடல்கள் ( பழைய புத்தக வரிசை )', db: 'Thirumarai.db' }
+  { id: 'Old', name: 'திருமறைத்திருப் பாடல்கள் ( பழைய புத்தக வரிசை )', db: 'Thirumarai.db' },
+  { id: 'Custom', name: 'எனது பாடல்கள் ( Custom Songs )', db: 'custom' }
 ];
 
 export default function CreateService() {
@@ -120,8 +122,35 @@ export default function CreateService() {
       setLivePreviewText(''); 
       return; 
     }
-    
+
     setIsSearching(true);
+
+    if (bookId === 'Custom') {
+      try {
+        const customSongs = getCustomSongs();
+        const term = searchText.toLowerCase().trim();
+        const song = customSongs.find(s => 
+          s.id.toString() === term || 
+          (s.title_tamil && s.title_tamil.toLowerCase().includes(term)) || 
+          (s.title_thanglish && s.title_thanglish.toLowerCase().includes(term))
+        );
+
+        if (song) {
+          setTempSongData(prev => ({ ...prev, title: song.title_tamil || 'Unknown Title' }));
+          setLivePreviewText(`[ Custom #${song.id} - ${song.title_tamil || 'Unknown'} ]
+
+${song.lyrics}`);
+        } else {
+          setLivePreviewText('No custom song found matching this search.');
+        }
+      } catch(e) {
+        setLivePreviewText('Error fetching custom song data.');
+      } finally {
+        setIsSearching(false);
+      }
+      return; // Stop here! Don't let it go to the SQLite code below.
+    }
+
     let db = null;
 
     try {

@@ -15,6 +15,7 @@ import { ref, set } from "firebase/database";
 import { db } from "../../firebaseSetup"; 
 
 import booksData from '../data/books.json';
+import { getCustomSongs } from '../utils/UserDataDB';
 
 const { height, width } = Dimensions.get('window');
 
@@ -119,16 +120,23 @@ export default function ViewService() {
     
     try {
       if (block.category === 'song' && block.data.book && block.data.number) {
-        let dbName = block.data.book === 'Zion' ? 'zion.db' : 'Thirumarai.db';
-        const sqliteDb = await SQLite.openDatabaseAsync(dbName);
-        let query = '';
-        if (block.data.book === 'Zion') query = `SELECT lyrics FROM songs WHERE song_number = ? LIMIT 1`;
-        else if (block.data.book === 'Hope') query = `SELECT lyrics FROM SongListTable WHERE Song_number_by_Nambikaiyen_Geethagal = ? LIMIT 1`;
-        else if (block.data.book === 'Old') query = `SELECT lyrics FROM SongListTable WHERE song_number = ? LIMIT 1`;
-        
-        const result = await sqliteDb.getAllAsync(query, [block.data.number]);
-        if (result && result.length > 0) content = result[0].lyrics; else content = "Lyrics not found.";
-        await sqliteDb.closeAsync().catch(() => {});
+        if (block.data.book === 'Custom') {
+          // Tell the app to look in local device memory, not the SQL databases
+          const customSongs = getCustomSongs();
+          const song = customSongs.find(s => s.id.toString() === block.data.number.toString());
+          content = song ? song.lyrics : "Custom song lyrics not found.";
+        } else {
+          let dbName = block.data.book === 'Zion' ? 'zion.db' : 'Thirumarai.db';
+          const sqliteDb = await SQLite.openDatabaseAsync(dbName);
+          let query = '';
+          if (block.data.book === 'Zion') query = `SELECT lyrics FROM songs WHERE song_number = ? LIMIT 1`;
+          else if (block.data.book === 'Hope') query = `SELECT lyrics FROM SongListTable WHERE Song_number_by_Nambikaiyen_Geethagal = ? LIMIT 1`;
+          else if (block.data.book === 'Old') query = `SELECT lyrics FROM SongListTable WHERE song_number = ? LIMIT 1`;
+          
+          const result = await sqliteDb.getAllAsync(query, [block.data.number]);
+          if (result && result.length > 0) content = result[0].lyrics; else content = "Lyrics not found.";
+          await sqliteDb.closeAsync().catch(() => {});
+        }
       } 
       else if ((block.category === 'bible' || block.category === 'tithe') && block.data.book && block.data.chapter && block.data.verse) {
         const bookObj = booksData.find(b => b.name_ta === block.data.book);
