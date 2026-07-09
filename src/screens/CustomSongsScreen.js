@@ -203,11 +203,19 @@ export default function CustomSongsScreen() {
       Alert.alert("Missing Info", "Please provide at least a Tamil Name and Lyrics.");
       return;
     }
+
+    // --- NEW SANITIZATION LOGIC ---
+    // This looks for en-dashes (–) and em-dashes (—) and replaces them with a standard hyphen (-)
+    const cleanTamil = formTamil.replace(/[–—]/g, '-');
+    const cleanThanglish = formThanglish.replace(/[–—]/g, '-');
+    const cleanLyrics = formLyrics.replace(/[–—]/g, '-');
+
     if (editingId) {
-      updateCustomSong(editingId, formTamil, formThanglish, formLyrics);
+      updateCustomSong(editingId, cleanTamil, cleanThanglish, cleanLyrics);
     } else {
-      addCustomSong(formTamil, formThanglish, formLyrics);
+      addCustomSong(cleanTamil, cleanThanglish, cleanLyrics);
     }
+    
     triggerHaptic(Haptics.ImpactFeedbackStyle.Success);
     setIsFormVisible(false);
     loadSongs();

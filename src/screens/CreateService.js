@@ -136,7 +136,11 @@ export default function CreateService() {
         );
 
         if (song) {
-          setTempSongData(prev => ({ ...prev, title: song.title_tamil || 'Unknown Title' }));
+          setTempSongData(prev => ({ 
+  ...prev, 
+  title: song.title_tamil || 'Unknown Title', 
+  lyrics: song.lyrics 
+}));
           setLivePreviewText(`[ Custom #${song.id} - ${song.title_tamil || 'Unknown'} ]
 
 ${song.lyrics}`);
@@ -175,7 +179,11 @@ ${song.lyrics}`);
       
       if (result && result.length > 0) {
         const song = result[0];
-        setTempSongData(prev => ({ ...prev, title: song.title_tamil || 'Unknown Title' }));
+        setTempSongData(prev => ({ 
+  ...prev, 
+  title: song.title_tamil || 'Unknown Title', 
+  lyrics: song.lyrics 
+}));
         setLivePreviewText(`[ ${song.song_number || '?'} - ${song.title_tamil || 'Unknown'} ]\n\n${song.lyrics}`);
       } else {
         setLivePreviewText('No song found matching this search.');
@@ -323,7 +331,13 @@ ${song.lyrics}`);
       if (!tempNoteText.trim()) isMissingData = true;
     } else if (activeConfigType === 'song') {
       finalData = { ...tempSongData, ledBy: tempPersonName };
-      if (!tempSongData.number || livePreviewText.includes('Not found') || livePreviewText.includes('Error')) isMissingData = true;
+      
+      // If it is a Custom Song, we MUST have lyrics captured
+      if (tempSongData.book === 'Custom' && !tempSongData.lyrics) {
+         isMissingData = true;
+      } else if (!tempSongData.number || livePreviewText.includes('Not found') || livePreviewText.includes('Error')) {
+         isMissingData = true;
+      }
     } else if (activeConfigType === 'bible') {
       finalData = { ...tempBibleData, ledBy: tempPersonName };
       if (!tempBibleData.chapter || !tempBibleData.verse || livePreviewText.includes('Not found')) isMissingData = true;

@@ -121,10 +121,9 @@ export default function ViewService() {
     try {
       if (block.category === 'song' && block.data.book && block.data.number) {
         if (block.data.book === 'Custom') {
-          // Tell the app to look in local device memory, not the SQL databases
-          const customSongs = getCustomSongs();
-          const song = customSongs.find(s => s.id.toString() === block.data.number.toString());
-          content = song ? song.lyrics : "Custom song lyrics not found.";
+          // SNAPSHOT FIX: Read the lyrics directly from the saved service block!
+          // This prevents breaking if the user deleted or re-indexed the song later.
+          content = block.data.lyrics ? block.data.lyrics : "Custom song lyrics not found in saved service.";
         } else {
           let dbName = block.data.book === 'Zion' ? 'zion.db' : 'Thirumarai.db';
           const sqliteDb = await SQLite.openDatabaseAsync(dbName);

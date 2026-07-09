@@ -54,7 +54,7 @@ export const getCustomSongs = () => {
   }
 };
 
-// Add a new song.
+// Add a new song. (No changes needed here, the re-index handles the sequence!)
 export const addCustomSong = (titleTamil, titleThanglish, lyrics) => {
   try {
     const result = db.runSync(
@@ -82,13 +82,32 @@ export const updateCustomSong = (id, titleTamil, titleThanglish, lyrics) => {
   }
 };
 
-// Delete a song permanently.
+// Delete a song permanently and Re-index all remaining songs!
 export const deleteCustomSong = (id) => {
   try {
+    // 1. Delete the targeted song
     db.runSync('DELETE FROM custom_songs WHERE id = ?', [id]);
+
+    // 2. Fetch all remaining songs in order
+    const remainingSongs = db.getAllSync('SELECT id FROM custom_songs ORDER BY id ASC');
+
+    // 3. Loop through and update their IDs to be perfectly sequential (1, 2, 3...)
+    for (let i = 0; i < remainingSongs.length; i++) {
+      const expectedId = i + 1;
+      const currentId = remainingSongs[i].id;
+      
+      // Only update if the ID doesn't match its proper sequential place
+      if (currentId !== expectedId) {
+        db.runSync('UPDATE custom_songs SET id = ? WHERE id = ?', [expectedId, currentId]);
+      }
+    }
+
+    // 4. Reset the SQLite auto-increment sequence so the next added song gets the correct NEXT number
+    db.runSync('UPDATE sqlite_sequence SET seq = ? WHERE name = ?', [remainingSongs.length, 'custom_songs']);
+
     return true;
   } catch (error) {
-    console.error('Error deleting custom song:', error);
+    console.error('Error deleting and re-indexing custom song:', error);
     return false;
   }
 };
