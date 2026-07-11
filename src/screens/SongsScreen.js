@@ -119,7 +119,7 @@ export default function SongsScreen() {
         const zionRes = await zionDb.getAllAsync('SELECT * FROM songs');
         masterList = [...masterList, ...zionRes.map((s, index) => ({
           global_id: `zion_${index}`,
-          source: 'Zion',
+          source: 'சீயோன் இனிய கீதங்கள்',
           sourceColor: ACCENT_ZION,
           num: s.song_number || '?', 
           title_tamil: s.title_tamil || 'Unknown Title',
@@ -130,24 +130,42 @@ export default function SongsScreen() {
         // 2. Fetch Thirumarai (Old & Hope) 
         const thiruDb = await SQLite.openDatabaseAsync('Thirumarai.db');
         const thiruRes = await thiruDb.getAllAsync('SELECT * FROM SongListTable');
-        masterList = [...masterList, ...thiruRes.map((s, index) => {
-          const isHope = s.Song_number_by_Nambikaiyen_Geethagal != null && s.Song_number_by_Nambikaiyen_Geethagal !== '';
-          return {
-            global_id: `thiru_${index}`,
-            source: isHope ? 'Hope' : 'Old',
-            sourceColor: isHope ? ACCENT_HOPE : ACCENT_OLD,
-            num: isHope ? s.Song_number_by_Nambikaiyen_Geethagal : (s.song_number || '?'),
-            title_tamil: s.song_title_tamil || 'Unknown Title',
-            search_en: s.song_title_english || '',
-            lyrics: s.lyrics
-          };
-        })];
+        
+        // We use forEach instead of map so one row can safely create TWO search results if needed!
+        thiruRes.forEach((s, index) => {
+          const hasHope = s.Song_number_by_Nambikaiyen_Geethagal != null && s.Song_number_by_Nambikaiyen_Geethagal !== '';
+          const hasOld = s.song_number != null && s.song_number !== '';
+
+          if (hasHope) {
+            masterList.push({
+              global_id: `thiru_hope_${index}`,
+              source: 'நம்பிக்கையின் கீதங்கள் புத்தக வரிசை',
+              sourceColor: ACCENT_HOPE,
+              num: s.Song_number_by_Nambikaiyen_Geethagal,
+              title_tamil: s.song_title_tamil || 'Unknown Title',
+              search_en: s.song_title_english || '',
+              lyrics: s.lyrics
+            });
+          }
+
+          if (hasOld) {
+            masterList.push({
+              global_id: `thiru_old_${index}`,
+              source: 'பழைய புத்தக வரிசை',
+              sourceColor: ACCENT_OLD,
+              num: s.song_number,
+              title_tamil: s.song_title_tamil || 'Unknown Title',
+              search_en: s.song_title_english || '',
+              lyrics: s.lyrics
+            });
+          }
+        });
 
         // 3. Fetch Custom Songs
         const customRes = getCustomSongs();
         masterList = [...masterList, ...customRes.map((s, index) => ({
           global_id: `custom_${index}`,
-          source: 'Custom',
+          source: 'எனது பாடல்கள்',
           sourceColor: ACCENT_CUSTOM,
           num: s.id.toString(),
           title_tamil: s.title_tamil || 'Unknown Title',
@@ -360,7 +378,7 @@ export default function SongsScreen() {
                  <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                    {activeGlobalSong?.num} - {activeGlobalSong?.title_tamil}
                  </Text>
-                 <Text style={{ color: activeGlobalSong?.sourceColor, fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' }}>{activeGlobalSong?.source} Directory</Text>
+                 <Text style={{ color: activeGlobalSong?.sourceColor, fontSize: 11, fontWeight: 'bold', fontFamily: 'Tamil003' }}>{activeGlobalSong?.source}</Text>
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
