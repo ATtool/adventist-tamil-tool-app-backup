@@ -352,7 +352,7 @@ export default function ZionScreen() {
         
         <Animated.View style={[styles.headerWrapper, { transform: [{ translateY: headerSlide }] }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-            <ScalePressable onPress={() => { triggerHaptic(); navigation.navigate('Songs'); }} style={{ marginRight: 10 }}>
+            <ScalePressable onPress={() => { triggerHaptic(); navigation.goBack(); }} style={{ marginRight: 10 }}>
               <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
                 <Ionicons name="chevron-back" size={28} color={colors.primary} />
               </View>

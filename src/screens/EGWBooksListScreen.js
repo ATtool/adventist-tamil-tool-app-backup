@@ -213,7 +213,7 @@ export default function EGWBooksListScreen({ navigation }) {
   const ListHeader = () => (
     <View>
       <View style={styles.header}>
-        <ScalePressable onPress={() => navigation.navigate('Books')}>
+        <ScalePressable onPress={() => navigation.goBack()}>
           <View style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={colors.primary} />
             <Text style={[styles.backText, { color: colors.primary }]}>Back</Text>

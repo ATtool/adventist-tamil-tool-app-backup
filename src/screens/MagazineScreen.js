@@ -460,7 +460,7 @@ export default function MagazineScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <ScalePressable onPress={() => navigation.navigate('Home')}>
+        <ScalePressable onPress={() => navigation.goBack()}>
           <View style={{ padding: 5 }}>
             <Ionicons name="arrow-back" size={26} color={colors.text} />
           </View>

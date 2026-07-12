@@ -444,7 +444,7 @@ export default function DictionaryScreen({ onClose }) {
       setActiveDict(null);
     } else {
       if (onClose) onClose();
-      else navigation.navigate('Study');
+      else navigation.goBack();
     }
   };
 

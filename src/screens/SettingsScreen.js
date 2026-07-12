@@ -229,7 +229,7 @@ export default function SettingsScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ padding: 5 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
             <Ionicons name="arrow-back" size={26} color={colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 12 }]}>Settings</Text>

@@ -188,7 +188,7 @@ export default function TodaysMannaScreen() {
       
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ padding: 5 }}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
           <Ionicons name="arrow-back" size={26} color={colors.text} />
         </TouchableOpacity>
         

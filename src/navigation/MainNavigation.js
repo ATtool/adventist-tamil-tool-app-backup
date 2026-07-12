@@ -1,12 +1,12 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack'; // <-- Native-optimized stack
 import { NavigationContainer } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSettings } from '../context/SettingsContext';
-import * as Linking from 'expo-linking'; // <--- NEW IMPORT FOR DEEP LINKING
 
 // --- MAIN TABS ---
 import HomeScreen from '../screens/HomeScreen';
@@ -15,7 +15,7 @@ import SongsScreen from '../screens/SongsScreen';
 import BooksScreen from '../screens/BooksScreen';
 import StudyScreen from '../screens/StudyScreen'; 
 
-// --- HIDDEN SCREENS ---
+// --- STACK SCREENS (Cleanly unmounted when not in use) ---
 import EGWBooksListScreen from '../screens/EGWBooksListScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TodaysMannaScreen from '../screens/TodaysMannaScreen';
@@ -25,37 +25,31 @@ import DictionaryScreen from '../screens/DictionaryScreen';
 import ConcordanceScreen from '../screens/ConcordanceScreen';
 import StudyExplanationsScreen from '../screens/StudyExplanationsScreen'; 
 
-// --- NEW SONG SCREENS ---
 import ZionScreen from '../screens/ZionScreen';
 import ThirumaraiOldScreen from '../screens/ThirumaraiOldScreen';
 import ThirumaraiHopeScreen from '../screens/ThirumaraiHopeScreen';
 import OtherSongsScreen from '../screens/OtherSongsScreen';
 import CustomSongsScreen from '../screens/CustomSongsScreen';
 
-// --- FELLOWSHIP / MEETING SCREENS ---
 import CreateService from '../screens/CreateService';
 import JoinService from '../screens/JoinService';
 import SavedServices from '../screens/SavedServices';
 import ViewService from '../screens/ViewService'; 
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator(); // The high-performance bookshelf coordinator
 
-// ==============================================================
-// 🌟 DEEP LINKING CONFIGURATION
-// ==============================================================
+// Deep linking remains fully active and maps directly to the Stack layout
 const linking = {
   prefixes: ['adventisttamil://', 'https://adventisttamil.app'],
   config: {
     screens: {
-      // Maps adventisttamil://join?data=... to the JoinService screen
       JoinService: 'join', 
     },
   },
 };
 
-// ==============================================================
-// 🌟 CUSTOM PREMIUM TAB BAR WITH MOVING GLOW
-// ==============================================================
+// --- CUSTOM TAB BAR ---
 function CustomTabBar({ state, descriptors, navigation, insets }) {
   const { colors, hapticsEnabled } = useSettings();
   const { width } = useWindowDimensions();
@@ -64,50 +58,18 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
   const TAB_BG = '#0A1929'; 
   const NEON_BLUE = colors.primary; 
 
-  const getActiveMainTab = (routeName) => {
-    const parentMap = {
-      ZionSongs: 'Songs',
-      ThirumaraiOld: 'Songs',
-      ThirumaraiHope: 'Songs',
-      OtherSongs: 'Songs',
-      CustomSongs: 'Songs',
-      Dictionary: 'Study',
-      Concordance: 'Study',
-      StudyExplanations: 'Study',
-      EGWBooksList: 'Books',
-      Settings: 'Home',
-      TodaysManna: 'Home',
-      About: 'Home',
-      Magazine: 'Home',
-      CreateService: 'Home',
-      JoinService: 'Home',
-      SavedServices: 'Home',
-      ViewService: 'Home',
-    };
-    return parentMap[routeName] || routeName;
-  };
-
-  const visibleRoutes = state.routes.filter(r => {
-    const { options } = descriptors[r.key];
-    return options.tabBarItemStyle?.display !== 'none';
-  });
-
+  const visibleRoutes = state.routes; 
   const TAB_WIDTH = width / visibleRoutes.length;
-  const currentRouteName = state.routes[state.index].name;
-  const activeMainTabName = getActiveMainTab(currentRouteName);
-  const activeVisibleIndex = visibleRoutes.findIndex(r => r.name === activeMainTabName);
   const slideAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (activeVisibleIndex >= 0) {
-      Animated.spring(slideAnim, {
-        toValue: activeVisibleIndex * TAB_WIDTH,
-        useNativeDriver: true,
-        friction: 7,    
-        tension: 50     
-      }).start();
-    }
-  }, [activeVisibleIndex, TAB_WIDTH]);
+    Animated.spring(slideAnim, {
+      toValue: state.index * TAB_WIDTH,
+      useNativeDriver: true,
+      friction: 7,    
+      tension: 50     
+    }).start();
+  }, [state.index, TAB_WIDTH]);
 
   return (
     <View style={{
@@ -139,11 +101,10 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
         shadowRadius: 10,
         elevation: 10,
         transform: [{ translateX: slideAnim }],
-        opacity: activeVisibleIndex >= 0 ? 1 : 0, 
       }} />
 
       {visibleRoutes.map((route, index) => {
-        const isFocused = activeVisibleIndex === index;
+        const isFocused = state.index === index;
         
         let iconName;
         if (route.name === 'Songs') iconName = isFocused ? 'musical-notes' : 'musical-notes-outline';
@@ -158,14 +119,8 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
             activeOpacity={0.8}
             onPress={() => {
               if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              const event = navigation.emit({
-                type: 'tabPress',
-                target: route.key,
-                canPreventDefault: true,
-              });
-              if (!isFocused && !event.defaultPrevented) {
-                navigation.navigate(route.name);
-              }
+              const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+              if (!isFocused && !event.defaultPrevented) navigation.navigate(route.name);
             }}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 12 }}
           >
@@ -180,50 +135,56 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
   );
 }
 
-// ==============================================================
-// MAIN NAVIGATION WRAPPER
-// ==============================================================
+// Sub-Navigator containing only your 5 core bottom tabs
+function TabNavigator() {
+  return (
+    <Tab.Navigator
+      initialRouteName="Home"
+      backBehavior="history" 
+      safeAreaInsets={{ left: 0, right: 0 }}
+      tabBar={(props) => <CustomTabBar {...props} />}
+      screenOptions={{ headerShown: false }}
+    >
+      <Tab.Screen name="Songs" component={SongsScreen} />
+      <Tab.Screen name="Bible" component={BibleScreen} />
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Study" component={StudyScreen} />
+      <Tab.Screen name="Books" component={BooksScreen} />
+    </Tab.Navigator>
+  );
+}
+
+// Master Navigation Component
 export default function MainNavigation() {
   return (
-    // We add the linking configuration here!
     <NavigationContainer linking={linking}>
-       <Tab.Navigator
-        initialRouteName="Home"
-        backBehavior="history" 
-        safeAreaInsets={{ left: 0, right: 0 }}
-        tabBar={(props) => <CustomTabBar {...props} />}
-        screenOptions={{ headerShown: false }}
-      >
-        <Tab.Screen name="Songs" component={SongsScreen} />
-        <Tab.Screen name="Bible" component={BibleScreen} />
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Study" component={StudyScreen} />
-        <Tab.Screen name="Books" component={BooksScreen} />
-
-        {/* --- HIDDEN SCREENS --- */}
-        <Tab.Screen name="EGWBooksList" component={EGWBooksListScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="TodaysManna" component={TodaysMannaScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="About" component={AboutScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Magazine" component={MagazineScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Dictionary" component={DictionaryScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="Concordance" component={ConcordanceScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="StudyExplanations" component={StudyExplanationsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+       <Stack.Navigator screenOptions={{ headerShown: false }}>
         
-        {/* --- NEW SONG SCREENS --- */}
-        <Tab.Screen name="ZionSongs" component={ZionScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="OtherSongs" component={OtherSongsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="CustomSongs" component={CustomSongsScreen} options={{ tabBarItemStyle: { display: 'none' } }} />
+        {/* The persistent bottom tabs are the root layer */}
+        <Stack.Screen name="MainTabs" component={TabNavigator} />
 
-        {/* --- FELLOWSHIP / MEETING SCREENS --- */}
-        <Tab.Screen name="CreateService" component={CreateService} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="JoinService" component={JoinService} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="SavedServices" component={SavedServices} options={{ tabBarItemStyle: { display: 'none' } }} />
-        <Tab.Screen name="ViewService" component={ViewService} options={{ tabBarItemStyle: { display: 'none' } }} />
+        {/* Detailed screens are layered on top sequentially and automatically unmounted */}
+        <Stack.Screen name="EGWBooksList" component={EGWBooksListScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="TodaysManna" component={TodaysMannaScreen} />
+        <Stack.Screen name="About" component={AboutScreen} />
+        <Stack.Screen name="Magazine" component={MagazineScreen} />
+        <Stack.Screen name="Dictionary" component={DictionaryScreen} />
+        <Stack.Screen name="Concordance" component={ConcordanceScreen} />
+        <Stack.Screen name="StudyExplanations" component={StudyExplanationsScreen} />
+        
+        <Stack.Screen name="ZionSongs" component={ZionScreen} />
+        <Stack.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} />
+        <Stack.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} />
+        <Stack.Screen name="OtherSongs" component={OtherSongsScreen} />
+        <Stack.Screen name="CustomSongs" component={CustomSongsScreen} />
 
-      </Tab.Navigator>
+        <Stack.Screen name="CreateService" component={CreateService} />
+        <Stack.Screen name="JoinService" component={JoinService} />
+        <Stack.Screen name="SavedServices" component={SavedServices} />
+        <Stack.Screen name="ViewService" component={ViewService} />
+
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
