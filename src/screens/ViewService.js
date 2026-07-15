@@ -18,6 +18,48 @@ import booksData from '../data/books.json';
 import { getCustomSongs } from '../utils/UserDataDB';
 
 const { height, width } = Dimensions.get('window');
+const NEWLINE = String.fromCharCode(10);
+const NEON_BLUE = '#00F0FF';
+
+const parseLyricStanzas = (text) => {
+  if (!text) return [];
+  const rawLines = text.split(NEWLINE);
+  const numberPattern = /^\s*(\d{1,3}[.)])\s*(.*)$/;
+
+  const isRefrainLine = (line, nextLine) => {
+    const trimmed = line.trim();
+    if (trimmed.indexOf('~') !== 0) return false;
+    if (nextLine === undefined) return true;
+    return nextLine.trim() === '';
+  };
+
+  const stanzas = [];
+  let currentNumber = null;
+  let currentLines = [];
+
+  const flush = () => {
+    while (currentLines.length > 0 && currentLines[currentLines.length - 1].content.trim() === '') currentLines.pop();
+    while (currentLines.length > 0 && currentLines[0].content.trim() === '') currentLines.shift();
+    if (currentLines.length > 0) stanzas.push({ number: currentNumber, lines: currentLines });
+  };
+
+  for (let i = 0; i < rawLines.length; i++) {
+    const line = rawLines[i];
+    const nextLine = rawLines[i + 1];
+    const match = line.match(numberPattern);
+    if (match) {
+      flush();
+      currentNumber = match[1];
+      const rest = match[2];
+      currentLines = [{ content: rest, isRefrain: isRefrainLine(rest, nextLine) }];
+    } else {
+      currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
+    }
+  }
+  flush();
+
+  return stanzas.length > 0 ? stanzas : [{ number: null, lines: [{ content: text.trim(), isRefrain: false }] }];
+};
 
 export default function ViewService() {
   const navigation = useNavigation();
@@ -236,9 +278,30 @@ export default function ViewService() {
                   {isExpanded && (
                     <View style={[styles.expandedContent, { borderTopColor: colors.border, backgroundColor: isDark ? '#121212' : '#F9F9F9' }]}>
                       {isLoadingContent && (!fetchedContent[block.id]) ? <ActivityIndicator size="small" color={colors.primary} /> : (
-                        <Text style={{ color: colors.text, fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, fontFamily: block.category === 'song' ? 'Tamil003' : undefined }}>
-                          {fetchedContent[block.id]}
-                        </Text>
+                        block.category === 'song' ? (
+                          parseLyricStanzas(fetchedContent[block.id]).map((stanza, sIdx) => (
+                            <View key={sIdx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
+                              <View style={{ width: 34 }}>
+                                {stanza.number && (
+                                  <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontWeight: '800', fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                                    {stanza.number}
+                                  </Text>
+                                )}
+                              </View>
+                              <Text style={{ flex: 1, color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                                {stanza.lines.map((line, lineIdx) => (
+                                  <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: '800' } : null}>
+                                    {line.content}{lineIdx < stanza.lines.length - 1 ? NEWLINE : ''}
+                                  </Text>
+                                ))}
+                              </Text>
+                            </View>
+                          ))
+                        ) : (
+                          <Text style={{ color: colors.text, fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                            {fetchedContent[block.id]}
+                          </Text>
+                        )
                       )}
                     </View>
                   )}
