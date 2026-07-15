@@ -16,6 +16,8 @@ import { getCustomSongs } from '../utils/UserDataDB';
 
 const { height } = Dimensions.get('window');
 const BRIGHT_YELLOW = '#FFD700';
+const NEWLINE = String.fromCharCode(10);
+const NEON_BLUE = '#00F0FF';
 
 const ACCENT_ZION = '#30D158';
 const ACCENT_HOPE = '#FF9F0A';
@@ -102,6 +104,47 @@ export default function SongsScreen() {
       ]).start();
     }
   }, [showTextSettings]);
+
+  const lyricStanzas = useMemo(() => {
+    const text = activeGlobalSong && activeGlobalSong.lyrics ? activeGlobalSong.lyrics : '';
+    if (!text) return [];
+    const rawLines = text.split(NEWLINE);
+    const numberPattern = /^\s*(\d{1,3}[.)])\s*(.*)$/;
+
+    const isRefrainLine = (line, nextLine) => {
+      const trimmed = line.trim();
+      if (trimmed.indexOf('~') !== 0) return false;
+      if (nextLine === undefined) return true;
+      return nextLine.trim() === '';
+    };
+
+    const stanzas = [];
+    let currentNumber = null;
+    let currentLines = [];
+
+    const flush = () => {
+      while (currentLines.length > 0 && currentLines[currentLines.length - 1].content.trim() === '') currentLines.pop();
+      while (currentLines.length > 0 && currentLines[0].content.trim() === '') currentLines.shift();
+      if (currentLines.length > 0) stanzas.push({ number: currentNumber, lines: currentLines });
+    };
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
+      const nextLine = rawLines[i + 1];
+      const match = line.match(numberPattern);
+      if (match) {
+        flush();
+        currentNumber = match[1];
+        const rest = match[2];
+        currentLines = [{ content: rest, isRefrain: isRefrainLine(rest, nextLine) }];
+      } else {
+        currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
+      }
+    }
+    flush();
+
+    return stanzas.length > 0 ? stanzas : [{ number: null, lines: [{ content: text.trim(), isRefrain: false }] }];
+  }, [activeGlobalSong]);
 
   // --- THE GLOBAL FETCH ENGINE ---
   const openGlobalSearch = async () => {
@@ -396,9 +439,24 @@ export default function SongsScreen() {
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 30, paddingBottom: 150 }}>
-              <Text style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
-                {activeGlobalSong?.lyrics}
-              </Text>
+              {lyricStanzas.map((stanza, idx) => (
+                <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
+                  <View style={{ width: 34 }}>
+                    {stanza.number && (
+                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontWeight: '800', fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                        {stanza.number}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={{ flex: 1, color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                    {stanza.lines.map((line, lineIdx) => (
+                      <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: '800' } : null}>
+                        {line.content}{lineIdx < stanza.lines.length - 1 ? NEWLINE : ''}
+                      </Text>
+                    ))}
+                  </Text>
+                </View>
+              ))}
             </ScrollView>
 
           {/* STANDALONE TEXT SETTINGS */}
