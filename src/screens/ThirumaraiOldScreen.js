@@ -14,6 +14,8 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 const { height } = Dimensions.get('window');
 const BRIGHT_YELLOW = '#FFD700';
+const NEWLINE = String.fromCharCode(10);
+const NEON_BLUE = '#00F0FF';
 
 const ScalePressable = ({ children, onPress, style, scaleTo = 0.90 }) => {
   const scale = useRef(new Animated.Value(1)).current;
@@ -328,6 +330,47 @@ export default function ThirumaraiOldScreen() {
 
   const activeSong = selectedSongIndex !== null ? filteredSongs[selectedSongIndex] : null;
 
+  const lyricStanzas = useMemo(() => {
+    const text = activeSong && activeSong.lyrics ? activeSong.lyrics : '';
+    if (!text) return [];
+    const rawLines = text.split(NEWLINE);
+    const numberPattern = /^\s*(\d{1,3}[.)])\s*(.*)$/;
+
+    const isRefrainLine = (line, nextLine) => {
+      const trimmed = line.trim();
+      if (trimmed.indexOf('~') !== 0) return false;
+      if (nextLine === undefined) return true;
+      return nextLine.trim() === '';
+    };
+
+    const stanzas = [];
+    let currentNumber = null;
+    let currentLines = [];
+
+    const flush = () => {
+      while (currentLines.length > 0 && currentLines[currentLines.length - 1].content.trim() === '') currentLines.pop();
+      while (currentLines.length > 0 && currentLines[0].content.trim() === '') currentLines.shift();
+      if (currentLines.length > 0) stanzas.push({ number: currentNumber, lines: currentLines });
+    };
+
+    for (let i = 0; i < rawLines.length; i++) {
+      const line = rawLines[i];
+      const nextLine = rawLines[i + 1];
+      const match = line.match(numberPattern);
+      if (match) {
+        flush();
+        currentNumber = match[1];
+        const rest = match[2];
+        currentLines = [{ content: rest, isRefrain: isRefrainLine(rest, nextLine) }];
+      } else {
+        currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
+      }
+    }
+    flush();
+
+    return stanzas.length > 0 ? stanzas : [{ number: null, lines: [{ content: text.trim(), isRefrain: false }] }];
+  }, [activeSong]);
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient colors={isDark ? ['#0A1929', colors.background] : ['#FFFFFF', colors.background]} style={StyleSheet.absoluteFillObject} />
@@ -510,9 +553,24 @@ export default function ThirumaraiOldScreen() {
             </View>
 
             <ScrollView ref={lyricsScrollRef} contentContainerStyle={{ padding: 30, paddingBottom: 150 }} keyboardDismissMode="on-drag">
-              <Text style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
-                {activeSong?.lyrics}
-              </Text>
+              {lyricStanzas.map((stanza, idx) => (
+                <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
+                  <View style={{ width: 34 }}>
+                    {stanza.number && (
+                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontWeight: '800', fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                        {stanza.number}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={{ flex: 1, color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                    {stanza.lines.map((line, lineIdx) => (
+                      <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: '800' } : null}>
+                        {line.content}{lineIdx < stanza.lines.length - 1 ? NEWLINE : ''}
+                      </Text>
+                    ))}
+                  </Text>
+                </View>
+              ))}
             </ScrollView>
 
             {activeSong && (

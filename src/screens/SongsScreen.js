@@ -139,7 +139,7 @@ export default function SongsScreen() {
           if (hasHope) {
             masterList.push({
               global_id: `thiru_hope_${index}`,
-              source: 'நம்பிக்கையின் கீதங்கள் புத்தக வரிசை',
+              source: 'திருமறைத்திருப் பாடல் நம்பிக்கையின் கீதங்கள் புத்தக வரிசை',
               sourceColor: ACCENT_HOPE,
               num: s.Song_number_by_Nambikaiyen_Geethagal,
               title_tamil: s.song_title_tamil || 'Unknown Title',
@@ -151,7 +151,7 @@ export default function SongsScreen() {
           if (hasOld) {
             masterList.push({
               global_id: `thiru_old_${index}`,
-              source: 'பழைய புத்தக வரிசை',
+              source: 'திருமறைத்திருப் பாடல் பழைய புத்தக வரிசை',
               sourceColor: ACCENT_OLD,
               num: s.song_number,
               title_tamil: s.song_title_tamil || 'Unknown Title',
