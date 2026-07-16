@@ -279,7 +279,7 @@ export default function MagazineScreen() {
           <ScalePressable onPress={() => Linking.openURL('https://api.whatsapp.com/send/?phone=918904072759&text&type=phone_number&app_absent=0')}>
             <View style={styles.whatsappBtn}>
               <Ionicons name="logo-whatsapp" size={20} color="#fff" />
-              <Text style={{ fontFamily: 'Tamil003', color: '#fff', marginLeft: 8, fontWeight: 'bold' }}>தொடர்பு கொள்ள</Text>
+              <Text style={{ fontFamily: 'Tamil003', color: '#fff', marginLeft: 8 }}>தொடர்பு கொள்ள</Text>
             </View>
           </ScalePressable>
         </View>

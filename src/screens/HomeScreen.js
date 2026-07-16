@@ -740,7 +740,7 @@ const styles = StyleSheet.create({
   iconContainer: { width: 56, height: 56, borderRadius: 28, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
   iconContainerSmall: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   cardTitle: { fontWeight: 'bold', marginBottom: 3, textAlign: 'center', includeFontPadding: false },
-  cardSub: { fontWeight: '500', textAlign: 'center', marginTop: 0, includeFontPadding: false },
+  cardSub: { fontWeight: 'normal', textAlign: 'center', marginTop: 0, includeFontPadding: false },
   langToggleBtn: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center' },
   updateItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
   updateBtn: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },

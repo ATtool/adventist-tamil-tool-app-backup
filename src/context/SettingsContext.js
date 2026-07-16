@@ -10,13 +10,13 @@ export const SettingsProvider = ({ children }) => {
   
   // Notice we changed this to _setAppFontSize. The underscore is a standard naming trick 
   // to say "this is the raw, internal state setter".
-  const [appFontSize, _setAppFontSize] = useState(16); 
+  const [appFontSize, _setAppFontSize] = useState(14); 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
   // --- SONG SETTINGS ---
-  const [titleSize, setTitleSize] = useState(20);
+  const [titleSize, setTitleSize] = useState(18);
   const [titleSpacing, setTitleSpacing] = useState(0);
-  const [lyricsSize, setLyricsSize] = useState(20); 
+  const [lyricsSize, setLyricsSize] = useState(18); 
   const [lyricsSpacing, setLyricsSpacing] = useState(0);
   const [lyricsLineHeight, setLyricsLineHeight] = useState(30);
 
@@ -24,7 +24,7 @@ export const SettingsProvider = ({ children }) => {
   const [bibleLanguage, _setBibleLanguage] = useState('both'); 
   const [activeEnglishVersion, _setActiveEnglishVersion] = useState('KJV');
 
-  const [bibleFontSize, setBibleFontSize] = useState(20);
+  const [bibleFontSize, setBibleFontSize] = useState(18);
   const [bibleLineHeight, setBibleLineHeight] = useState(32);
   const [bibleLetterSpacing, setBibleLetterSpacing] = useState(0);
 
@@ -75,12 +75,12 @@ export const SettingsProvider = ({ children }) => {
 
   // We also make sure the reset button clears the hard drive memory back to 16
   const restoreDefaultTextSettings = async () => {
-    _setAppFontSize(16);
-    await AsyncStorage.setItem('@app_font_size', '16');
+    _setAppFontSize(14);
+    await AsyncStorage.setItem('@app_font_size', '14');
 
-    setTitleSize(20); setTitleSpacing(0);
-    setLyricsSize(20); setLyricsSpacing(0); setLyricsLineHeight(30);
-    setBibleFontSize(20); setBibleLineHeight(32); setBibleLetterSpacing(0);
+    setTitleSize(18); setTitleSpacing(0);
+    setLyricsSize(18); setLyricsSpacing(0); setLyricsLineHeight(30);
+    setBibleFontSize(18); setBibleLineHeight(32); setBibleLetterSpacing(0);
   };
 
   const colors = {

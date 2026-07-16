@@ -132,5 +132,5 @@ const styles = StyleSheet.create({
   iconContainer: { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   textContainer: { flex: 1 },
   cardTitle: { fontWeight: 'bold', marginBottom: 3, includeFontPadding: false },
-  cardSub: { fontWeight: '500', includeFontPadding: false }
+  cardSub: { includeFontPadding: false }
 });

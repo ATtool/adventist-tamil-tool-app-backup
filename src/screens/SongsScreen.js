@@ -421,7 +421,7 @@ export default function SongsScreen() {
                  <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                    {activeGlobalSong?.num} - {activeGlobalSong?.title_tamil}
                  </Text>
-                 <Text style={{ color: activeGlobalSong?.sourceColor, fontSize: 11, fontWeight: 'bold', fontFamily: 'Tamil003' }}>{activeGlobalSong?.source}</Text>
+                 <Text style={{ color: activeGlobalSong?.sourceColor, fontSize: 11, fontFamily: 'Tamil003' }}>{activeGlobalSong?.source}</Text>
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -443,7 +443,7 @@ export default function SongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontWeight: '800', fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
                         {stanza.number}
                       </Text>
                     )}

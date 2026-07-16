@@ -516,7 +516,7 @@ export default function CustomSongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontWeight: '800', fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
                         {stanza.number}
                       </Text>
                     )}

@@ -283,14 +283,14 @@ export default function ViewService() {
                             <View key={sIdx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                               <View style={{ width: 34 }}>
                                 {stanza.number && (
-                                  <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontWeight: '800', fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                                  <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
                                     {stanza.number}
                                   </Text>
                                 )}
                               </View>
                               <Text style={{ flex: 1, color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
                                 {stanza.lines.map((line, lineIdx) => (
-                                  <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: '800' } : null}>
+                                  <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: 'normal' } : null}>
                                     {line.content}{lineIdx < stanza.lines.length - 1 ? NEWLINE : ''}
                                   </Text>
                                 ))}

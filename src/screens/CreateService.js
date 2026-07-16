@@ -602,7 +602,7 @@ ${song.lyrics}`);
                           }} 
                           style={[styles.pill, { backgroundColor: tempBibleData.book === book ? colors.primary : colors.border }]}
                         >
-                          <Text style={{ color: tempBibleData.book === book ? '#000' : colors.text, fontWeight: 'bold', fontFamily: 'Tamil008' }}>{book}</Text>
+                          <Text style={{ color: tempBibleData.book === book ? '#000' : colors.text, fontFamily: 'Tamil008' }}>{book}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
