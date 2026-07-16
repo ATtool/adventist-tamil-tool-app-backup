@@ -67,10 +67,15 @@ export default function TodaysMannaScreen() {
     try {
       const savedData = await AsyncStorage.getItem('@manna_data');
       if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        if (parsedData.devotions && parsedData.devotions[dateString]) {
-          foundDevotion = parsedData.devotions[dateString];
-          setTodayDevotion(foundDevotion);
+        try {
+          const parsedData = JSON.parse(savedData);
+          if (parsedData.devotions && parsedData.devotions[dateString]) {
+            foundDevotion = parsedData.devotions[dateString];
+            setTodayDevotion(foundDevotion);
+          }
+        } catch (error) {
+          console.warn("Corrupt local manna data found and cleared.");
+          await AsyncStorage.removeItem('@manna_data');
         }
       }
 
@@ -96,11 +101,17 @@ export default function TodaysMannaScreen() {
       const response = await fetch(cacheBusterUrl, { headers: { 'Cache-Control': 'no-cache' } });
       if (!response.ok) return null;
 
-      const json = await response.json();
-      await AsyncStorage.setItem('@manna_data', JSON.stringify(json));
+      try {
+        const rawText = await response.text();
+        const json = JSON.parse(rawText.replace(/^\uFEFF/, '').trim());
+        await AsyncStorage.setItem('@manna_data', JSON.stringify(json));
 
-      if (json.devotions && json.devotions[dateString]) {
-        return json.devotions[dateString];
+        if (json.devotions && json.devotions[dateString]) {
+          return json.devotions[dateString];
+        }
+      } catch (error) {
+        console.warn("API returned invalid JSON. Waiting for the dev to fix the typo on GitHub.");
+        return null;
       }
     } catch (error) {
       return null;

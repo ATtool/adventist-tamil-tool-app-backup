@@ -391,7 +391,7 @@ export default function SongsScreen() {
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil}</Text>
-                        <Text style={{ color: item.sourceColor, fontSize: appFontSize - 4, fontWeight: 'bold', textTransform: 'uppercase' }}>{item.source}</Text>
+                        <Text style={{ color: item.sourceColor, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>{item.source}</Text>
                       </View>
                       <Ionicons name="chevron-forward" size={20} color={colors.border} />
                     </View>
@@ -443,18 +443,28 @@ export default function SongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
                       </Text>
                     )}
                   </View>
-                  <Text style={{ flex: 1, color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                  <View style={{ flex: 1 }}>
                     {stanza.lines.map((line, lineIdx) => (
-                      <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: '800' } : null}>
-                        {line.content}{lineIdx < stanza.lines.length - 1 ? NEWLINE : ''}
+                      <Text
+                        key={lineIdx}
+                        style={{
+                          color: line.isRefrain ? NEON_BLUE : colors.text,
+                          fontSize: lyricsSize,
+                          fontFamily: 'Tamil003',
+                          lineHeight: lyricsLineHeight,
+                          letterSpacing: lyricsSpacing,
+                          includeFontPadding: false,
+                        }}
+                      >
+                        {line.content.trim() === '' ? ' ' : line.content}
                       </Text>
                     ))}
-                  </Text>
+                  </View>
                 </View>
               ))}
             </ScrollView>

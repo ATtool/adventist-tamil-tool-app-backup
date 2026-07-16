@@ -13,9 +13,10 @@ import { useNavigation } from '@react-navigation/native';
 import { EGW_BOOKS_DATA } from '../data/egwBooks'; 
 
 // Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// LayoutAnimation is enabled by default in the New Architecture.
+// if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
 
 const PROTECTED_DBS = ['KJV.db', 'TAMIL.db', 'zion.db', 'Zion.db', 'Thirumarai.db', 'cross_references.db', 'UserData.db', 'UserData.db-journal'];
 

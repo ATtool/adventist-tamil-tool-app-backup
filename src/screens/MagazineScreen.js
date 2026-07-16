@@ -21,9 +21,10 @@ const ProgressBar = ({ progress = 0, color = '#00F0FF', trackColor = 'rgba(255,2
 );
 
 // Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// LayoutAnimation is enabled by default in the New Architecture.
+// if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
 
 // (removed — no longer needed after switching to expo-audio)
 

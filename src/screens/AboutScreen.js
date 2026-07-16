@@ -8,9 +8,10 @@ import { useSettings } from '../context/SettingsContext';
 import InAppBrowser from '../components/InAppBrowser'; 
 
 // Enable LayoutAnimation for Android smooth expanding panels
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// LayoutAnimation is enabled by default in the New Architecture.
+// if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+//   UIManager.setLayoutAnimationEnabledExperimental(true);
+// }
 
 // -------------------------------------------------------------
 // Translations Dictionary

@@ -29,7 +29,8 @@ const COUNTRIES = [
 // --- CRITICAL: Tell Android/iOS how to handle notifications when app is open ---
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -112,19 +113,29 @@ export default function HomeScreen() {
         const savedData = await AsyncStorage.getItem('@manna_data');
         
         if (savedData) {
-          const parsedData = JSON.parse(savedData);
-          if (parsedData.devotions && parsedData.devotions[dateString]) {
-            foundVerse = parsedData.devotions[dateString].verse;
+          try {
+            const parsedData = JSON.parse(savedData);
+            if (parsedData.devotions && parsedData.devotions[dateString]) {
+              foundVerse = parsedData.devotions[dateString].verse;
+            }
+          } catch (parseError) {
+            console.warn("Corrupt local manna data found and cleared.");
+            await AsyncStorage.removeItem('@manna_data');
           }
         }
         
         if (!foundVerse) {
           const response = await fetch('https://gist.githubusercontent.com/ATtool/e3a8241e07503969cb06448a32eb4382/raw/manna.json', { headers: { 'Cache-Control': 'no-cache' } });
           if (response.ok) {
-            const json = await response.json();
-            await AsyncStorage.setItem('@manna_data', JSON.stringify(json));
-            if (json.devotions && json.devotions[dateString]) {
-              foundVerse = json.devotions[dateString].verse;
+            try {
+              const rawText = await response.text();
+              const json = JSON.parse(rawText.replace(/^\uFEFF/, '').trim());
+              await AsyncStorage.setItem('@manna_data', JSON.stringify(json));
+              if (json.devotions && json.devotions[dateString]) {
+                foundVerse = json.devotions[dateString].verse;
+              }
+            } catch (fetchError) {
+              console.warn("Gist JSON has a typo right now. The app will safely wait until you fix it.");
             }
           }
         }
