@@ -1,3 +1,4 @@
+import { getThiruDb } from '../utils/SongDb';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -192,7 +193,7 @@ export default function ThirumaraiOldScreen() {
   const fetchSongs = async () => {
     let db = null;
     try {
-      db = await SQLite.openDatabaseAsync('Thirumarai.db');
+      db = await getThiruDb();
       const result = await db.getAllAsync('SELECT * FROM SongListTable'); 
       const validSongs = (result || []).filter(s => s.song_number != null && s.song_number !== '');
       const cleanedSongs = validSongs.map(s => ({ 
@@ -207,8 +208,6 @@ export default function ThirumaraiOldScreen() {
       setSongs(cleanedSongs);
     } catch (e) { 
       setSongs([]); 
-    } finally {
-      if (db) await db.closeAsync().catch(() => {});
     }
   };
 
@@ -475,7 +474,7 @@ export default function ThirumaraiOldScreen() {
                 <ScalePressable onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}>
                   <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
                     <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
+                    <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
                   </View>
                 </ScalePressable>
               ) : null
@@ -507,13 +506,13 @@ export default function ThirumaraiOldScreen() {
             <ScalePressable onPress={selectNumberOrder}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
+                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
               </View>
             </ScalePressable>
             <ScalePressable onPress={selectAlphabetOrder}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
+                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
               </View>
             </ScalePressable>
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>

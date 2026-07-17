@@ -435,7 +435,7 @@ export default function CustomSongsScreen() {
             <View style={{ flex: 1, padding: 20 }}>
               <Text style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Tamil (Required)</Text>
               <TextInput 
-                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]} 
+                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontFamily: 'Tamil003' }]} 
                 placeholder="எ.கா: தேவனுக்கு மகிமை" 
                 placeholderTextColor={colors.subtext}
                 value={formTamil}

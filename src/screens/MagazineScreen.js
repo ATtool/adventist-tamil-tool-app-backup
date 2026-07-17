@@ -538,7 +538,7 @@ const styles = StyleSheet.create({
   treeYearDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 3, marginTop: 28, zIndex: 1 },
   
   treeBranchBtn: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10, padding: 15, borderRadius: 14, borderWidth: 1, marginLeft: 10 },
-  yearText: { fontSize: 16, fontWeight: '900', letterSpacing: 1 },
+  yearText: { fontSize: 18, fontFamily: 'Tamil003', letterSpacing: 1 },
   yearCountBadge: { minWidth: 24, height: 22, borderRadius: 11, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 6 },
   currentYearTag: { marginLeft: 8, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: '#FF9F0A' },
   currentYearTagText: { fontSize: 9, fontWeight: '900', color: '#101010', letterSpacing: 0.5 },

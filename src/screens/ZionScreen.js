@@ -10,6 +10,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
+import { getZionDb } from '../utils/SongDb';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
 const { height } = Dimensions.get('window');
@@ -62,7 +63,7 @@ const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onTog
           </View>
           <View style={styles.titleContainer}>
             <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil || 'Unknown'}</Text>
-            <Text style={{ color: colors.primary, fontSize: appFontSize - 4, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 4 }}>{item.category}</Text>
+            <Text style={{ color: colors.primary, fontSize: appFontSize - 1, fontFamily: 'Tamil003', letterSpacing: 0.5, marginTop: 5, includeFontPadding: false }}>{item.category}</Text>
           </View>
           <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
         </View>
@@ -195,7 +196,7 @@ export default function ZionScreen() {
 
   const fetchSongs = async () => {
     try {
-      const db = await SQLite.openDatabaseAsync('zion.db');
+      const db = await getZionDb();
       const result = await db.getAllAsync('SELECT * FROM songs'); 
       const cleanedSongs = (result || []).map(s => ({ 
         ...s, 
@@ -403,8 +404,8 @@ export default function ZionScreen() {
 
             <View style={[styles.searchPill, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}>
               <View style={{ flex: 1 }}>
-                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="சீயோன் / zion" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
-                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="சீயோன் / zion" placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
+                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="சீயோன் / zion" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
+                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="சீயோன் / zion" placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
               </View>
 
               {search.length > 0 && (
@@ -498,7 +499,7 @@ export default function ZionScreen() {
                 <ScalePressable onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}>
                   <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
                     <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
+                    <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
                   </View>
                 </ScalePressable>
               ) : null
@@ -530,13 +531,13 @@ export default function ZionScreen() {
             <ScalePressable onPress={selectNumberOrder}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
+                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
               </View>
             </ScalePressable>
             <ScalePressable onPress={selectAlphabetOrder}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
+                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
               </View>
             </ScalePressable>
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
@@ -556,7 +557,7 @@ export default function ZionScreen() {
               renderItem={({ item }) => (
                 <ScalePressable onPress={() => handleCategorySelect(item)}>
                   <View style={[styles.categoryListItem, { borderBottomColor: colors.border }]}>
-                    <Text style={{ color: selectedCategory === item ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: selectedCategory === item ? '800' : 'normal' }}>{item}</Text>
+                    <Text style={{ color: selectedCategory === item ? colors.primary : colors.text, fontSize: appFontSize + 5, fontFamily: 'Tamil003' }}>{item}</Text>
                   </View>
                 </ScalePressable>
               )}
@@ -712,7 +713,7 @@ const styles = StyleSheet.create({
   songCard: { flexDirection: 'row', alignItems: 'center', padding: 10, marginBottom: 8, borderRadius: 16, borderWidth: 1 },
   numberCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12, borderWidth: 1 },
   titleContainer: { flex: 1, justifyContent: 'center' },
-  songTitle: { marginBottom: 2 },
+  songTitle: { marginBottom: 0 },
   backToGridBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 16, marginBottom: 15, borderWidth: 1 },
   gridItemCompact: { paddingVertical: 12, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.2, shadowRadius: 3 },
   fabContainer: { position: 'absolute', bottom: 25, alignSelf: 'center', zIndex: 10 },
@@ -721,11 +722,11 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 10, borderBottomWidth: 1 },
   textSettingsBtn: { flexDirection: 'row', alignItems: 'center', padding: 8, backgroundColor: 'rgba(128,128,128,0.2)', borderRadius: 12, marginRight: 5 },
   modalBg: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
-  categoryModalCard: { width: '85%', maxHeight: '60%', borderRadius: 24, overflow: 'hidden' },
+  categoryModalCard: { width: '85%', maxHeight: '75%', borderRadius: 24, overflow: 'hidden' },
   sortModalCard: { width: '85%', borderRadius: 24, overflow: 'hidden' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', padding: 25 },
   modalHeaderTitle: { fontWeight: '900', textAlign: 'center', padding: 20, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-  categoryListItem: { padding: 15, alignItems: 'center', borderBottomWidth: 1 },
+  categoryListItem: { paddingVertical: 3, paddingHorizontal: 15, alignItems: 'center', borderBottomWidth: 1 },
   settingsCard: { width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   settingLabel: { fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },

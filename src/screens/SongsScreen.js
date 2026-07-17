@@ -1,3 +1,4 @@
+import { getZionDb, getThiruDb } from '../utils/SongDb';
 import React, { useRef, useCallback, useState, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Modal, TextInput, FlatList, Keyboard, Share, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -158,7 +159,7 @@ export default function SongsScreen() {
         let masterList = [];
 
         // 1. Fetch Zion 
-        const zionDb = await SQLite.openDatabaseAsync('zion.db');
+        const zionDb = await getZionDb();
         const zionRes = await zionDb.getAllAsync('SELECT * FROM songs');
         masterList = [...masterList, ...zionRes.map((s, index) => ({
           global_id: `zion_${index}`,
@@ -171,7 +172,7 @@ export default function SongsScreen() {
         }))];
 
         // 2. Fetch Thirumarai (Old & Hope) 
-        const thiruDb = await SQLite.openDatabaseAsync('Thirumarai.db');
+        const thiruDb = await getThiruDb();
         const thiruRes = await thiruDb.getAllAsync('SELECT * FROM SongListTable');
         
         // We use forEach instead of map so one row can safely create TWO search results if needed!
