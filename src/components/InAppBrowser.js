@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, ActivityIndicator, Linking, Share, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Dimensions, ActivityIndicator, Linking, Share, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,15 +18,50 @@ export default function InAppBrowser({ visible, url, title, onClose }) {
   const [canGoForward, setCanGoForward] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
+  // Keeps the Modal mounted for the full duration of the close animation,
+  // instead of the Modal vanishing the instant `visible` becomes false.
+  const [isRendered, setIsRendered] = useState(false);
+
   const slideAnim = useRef(new Animated.Value(height)).current;
+  const backdropAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (visible && url) {
       setCurrentUrl(url);
-      Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }).start();
-    } else {
-      Animated.timing(slideAnim, { toValue: height, duration: 250, useNativeDriver: true }).start();
+      setIsRendered(true);
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 380,
+          easing: Easing.bezier(0.16, 1, 0.3, 1), // smooth "ease-out" deceleration, like a native sheet settling into place
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropAnim, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (isRendered) {
       setShowMenu(false);
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: height,
+          duration: 300,
+          easing: Easing.bezier(0.4, 0, 1, 1), // smooth "ease-in" acceleration on the way down
+          useNativeDriver: true,
+        }),
+        Animated.timing(backdropAnim, {
+          toValue: 0,
+          duration: 250,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // Only unmount the Modal after the slide-down has fully finished
+        setIsRendered(false);
+      });
     }
   }, [visible, url]);
 
@@ -65,8 +100,8 @@ export default function InAppBrowser({ visible, url, title, onClose }) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="none">
-      <View style={styles.overlay}>
+    <Modal visible={isRendered} transparent animationType="none">
+      <Animated.View style={[styles.overlay, { opacity: backdropAnim }]}>
         
         <Animated.View style={[styles.panel, { transform: [{ translateY: slideAnim }], backgroundColor: colors.background }]}>
           <SafeAreaView style={{ flex: 1 }} edges={['top']}>
@@ -165,7 +200,7 @@ export default function InAppBrowser({ visible, url, title, onClose }) {
 
           </SafeAreaView>
         </Animated.View>
-      </View>
+      </Animated.View>
     </Modal>
   );
 }

@@ -10,6 +10,7 @@ import { useSettings } from '../context/SettingsContext';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import * as Notifications from 'expo-notifications';
+import InAppBrowser from '../components/InAppBrowser';
 
 // Import app.json to get current app version safely
 import appConfig from '../../app.json'; 
@@ -48,6 +49,11 @@ export default function HomeScreen() {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false); 
   const [showMeetingMenu, setShowMeetingMenu] = useState(false);
+  const [showSabbathOptions, setShowSabbathOptions] = useState(false);
+  const [sabbathSheetRendered, setSabbathSheetRendered] = useState(false);
+  const [browserVisible, setBrowserVisible] = useState(false);
+  const [browserUrl, setBrowserUrl] = useState('');
+  const [browserTitle, setBrowserTitle] = useState('');
   
   const [greeting, setGreeting] = useState('');
   const [userName, setUserName] = useState('');
@@ -73,6 +79,8 @@ export default function HomeScreen() {
   const slideAnim = useRef(new Animated.Value(20)).current;
   const menuSlideAnim = useRef(new Animated.Value(width)).current; 
   const menuFadeAnim = useRef(new Animated.Value(0)).current;
+  const sabbathSlideAnim = useRef(new Animated.Value(height)).current;
+  const sabbathBackdropAnim = useRef(new Animated.Value(0)).current;
   
   const cardScales = useRef([...Array(3)].map(() => new Animated.Value(0.8))).current; 
   const cardOpacities = useRef([...Array(3)].map(() => new Animated.Value(0))).current;
@@ -170,6 +178,44 @@ export default function HomeScreen() {
       Animated.timing(menuFadeAnim, { toValue: isMenuOpen ? 1 : 0, duration: 300, useNativeDriver: true })
     ]).start();
   }, [isMenuOpen]);
+
+  // --- Smooth open/close animation for the Sabbath School options sheet ---
+  useEffect(() => {
+    if (showSabbathOptions) {
+      setSabbathSheetRendered(true);
+      Animated.parallel([
+        Animated.timing(sabbathSlideAnim, {
+          toValue: 0,
+          duration: 380,
+          easing: Easing.bezier(0.16, 1, 0.3, 1), // eases out gently, like a native bottom sheet settling
+          useNativeDriver: true,
+        }),
+        Animated.timing(sabbathBackdropAnim, {
+          toValue: 1,
+          duration: 300,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (sabbathSheetRendered) {
+      Animated.parallel([
+        Animated.timing(sabbathSlideAnim, {
+          toValue: height,
+          duration: 300,
+          easing: Easing.bezier(0.4, 0, 1, 1), // eases in, accelerating downward on close
+          useNativeDriver: true,
+        }),
+        Animated.timing(sabbathBackdropAnim, {
+          toValue: 0,
+          duration: 250,
+          easing: Easing.in(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setSabbathSheetRendered(false);
+      });
+    }
+  }, [showSabbathOptions]);
 
   // --- NEW: Check if user read today's manna ---
   const checkReadStatus = async () => {
@@ -390,9 +436,17 @@ export default function HomeScreen() {
     setTimeout(() => { navigation.navigate(screenName); }, 200);
   };
 
-  const openSabbathSchoolLink = async () => {
+  const openSabbathSchoolLink = () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await WebBrowser.openBrowserAsync('https://share.google/eCOZ36uegDz6DFCBq');
+    setShowSabbathOptions(true);
+  };
+
+  const openSabbathOption = (url, title) => {
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowSabbathOptions(false);
+    setBrowserTitle(title);
+    setBrowserUrl(url);
+    setTimeout(() => setBrowserVisible(true), 320);
   };
 
   const renderUpdateItem = (item, index) => {
@@ -516,7 +570,7 @@ export default function HomeScreen() {
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[1], transform: [{ scale: cardScales[1] }] }]} onPress={openSabbathSchoolLink}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(48, 209, 88, 0.1)' }]}><Ionicons name="library" size={32} color="#30D158" /></View>
               <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Sabbath School</Text>
-              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>ஓய்வுநாள் பள்ளி பாடம்</Text>
+              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003', fontWeight: 'normal' }]} allowFontScaling={false}>ஓய்வுநாள் பள்ளி</Text>
             </AnimatedTouchableOpacity>
 
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[2], transform: [{ scale: cardScales[2] }] }]} onPress={() => navigation.navigate('Magazine')}>
@@ -651,6 +705,110 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
+      <Modal visible={sabbathSheetRendered} transparent animationType="none" onRequestClose={() => setShowSabbathOptions(false)}>
+        <Animated.View style={[styles.modalOverlay, { opacity: sabbathBackdropAnim }]}>
+          <Animated.View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border, transform: [{ translateY: sabbathSlideAnim }] }]}>
+            
+            <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
+              <View>
+                <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Sabbath School</Text>
+                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003', fontWeight: 'normal', marginTop: 2 }}>ஓய்வுநாள் பள்ளி</Text>
+              </View>
+              <TouchableOpacity onPress={() => setShowSabbathOptions(false)}>
+                <Ionicons name="close-circle" size={32} color={colors.subtext} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.disclaimerBox}>
+              <Ionicons name="information-circle-outline" size={16} color={colors.subtext} style={{ marginRight: 6, marginTop: 1 }} />
+              <Text style={{ color: colors.subtext, fontSize: 12, flex: 1, lineHeight: 17 }}>
+                These websites are not owned by us — we simply link to the original sources so you can visit them easily.
+              </Text>
+            </View>
+
+            <View style={{ paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 10 : 6 }}>
+
+              {/* OPTION 1 — PRIMARY / FEATURED: Tamil Sabbath School */}
+              <TouchableOpacity
+                style={[styles.sabbathPrimaryCard, { borderColor: '#30D158' }]}
+                activeOpacity={0.85}
+                onPress={() => openSabbathOption('https://www.fustero.es/index_tm.php', 'Tamil Sabbath School')}
+              >
+                <LinearGradient
+                  colors={['#0F3D24', '#155C33']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.sabbathPrimaryGradient}
+                >
+                  <View style={styles.sabbathPrimaryTopRow}>
+                    <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
+                      <Ionicons name="book" size={22} color="#FFFFFF" />
+                    </View>
+                    <View style={styles.recommendedPill}>
+                      <Ionicons name="star" size={10} color="#0F3D24" />
+                      <Text style={styles.recommendedPillText}>Recommended</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Tamil Sabbath School</Text>
+                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>தமிழ் ஓய்வுநாள் பள்ளி</Text>
+                  <Text style={styles.sabbathPrimaryDesc} allowFontScaling={false}>
+                    இங்கு தமிழில் வார ஓய்வுநாள் பள்ளி பாட புத்தகம், வார ஊழிய அறிக்கை, மற்றும் அவற்றின் PPT பைல்களை பதிவிறக்கம் செய்யலாம்.
+                  </Text>
+                  <View style={styles.sabbathPrimaryFooter}>
+                    <Text style={styles.sabbathPrimaryFooterText}>Open Website</Text>
+                    <Ionicons name="arrow-forward-circle" size={20} color="#FFFFFF" />
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* OPTION 2 — Official GC website (smaller) */}
+              <TouchableOpacity
+                style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={0.8}
+                onPress={() => openSabbathOption('https://sabbath-school.adventech.io/ta?group=%E0%AE%AA%E0%AF%86%E0%AE%B0%E0%AE%BF%E0%AE%AF%E0%AF%8B%E0%AE%B0%E0%AF%8D-%E0%AE%AA%E0%AE%BE%E0%AE%9F%E0%AE%99%E0%AF%8D%E0%AE%95%E0%AE%B3%E0%AF%8D', 'Official GC Sabbath School')}
+              >
+                <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(0, 122, 255, 0.1)', marginRight: 12 }]}>
+                  <Ionicons name="globe-outline" size={20} color="#0A84FF" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Official GC Website</Text>
+                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
+                    If Option 1 isn't working, try this. Note: mission report isn't available here.
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+              </TouchableOpacity>
+
+              {/* OPTION 3 — Backup / old lessons (smaller) */}
+              <TouchableOpacity
+                style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}
+                activeOpacity={0.8}
+                onPress={() => openSabbathOption('https://onedrive.live.com/?id=964A92A9B81F49C6%21517682&cid=964A92A9B81F49C6&redeem=aHR0cHM6Ly8xZHJ2Lm1zL3UvcyFBc1pKSDdpcGtrcVduOHd5V29YUDNLUjgwSFF2bUE%5FZT1ZM0xsTUY', 'Backup Lessons')}
+              >
+                <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)', marginRight: 12 }]}>
+                  <Ionicons name="archive-outline" size={20} color="#FF9F0A" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Backup</Text>
+                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, fontFamily: 'Tamil003', fontWeight: 'normal' }} allowFontScaling={false}>
+                    பழைய பாட தொகுப்புகள்
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+              </TouchableOpacity>
+
+            </View>
+          </Animated.View>
+        </Animated.View>
+      </Modal>
+
+      <InAppBrowser
+        visible={browserVisible}
+        url={browserUrl}
+        title={browserTitle}
+        onClose={() => setBrowserVisible(false)}
+      />
+
       <Modal visible={isMenuOpen} transparent animationType="none" onRequestClose={() => setIsMenuOpen(false)}>
         <View style={{ flex: 1, flexDirection: 'row' }}>
           <Animated.View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', opacity: menuFadeAnim }}>
@@ -782,5 +940,20 @@ const styles = StyleSheet.create({
   fab: { justifyContent: 'center', alignItems: 'center' },
   fabGlowSvg: { position: 'absolute' },
   meetingSheet: { width: '100%', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, paddingBottom: 30 },
-  meetingOption: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1 }
+  meetingOption: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
+
+  disclaimerBox: { flexDirection: 'row', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, alignItems: 'flex-start' },
+
+  sabbathPrimaryCard: { borderRadius: 20, borderWidth: 1.5, marginBottom: 14, overflow: 'hidden', elevation: 6, shadowColor: '#30D158', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+  sabbathPrimaryGradient: { padding: 18 },
+  sabbathPrimaryTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  recommendedPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD700', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  recommendedPillText: { color: '#0F3D24', fontSize: 10, fontWeight: 'bold', marginLeft: 4 },
+  sabbathPrimaryTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: 'bold', includeFontPadding: false },
+  sabbathPrimaryTamil: { color: 'rgba(255,255,255,0.85)', fontSize: 15, fontFamily: 'Tamil003', fontWeight: 'normal', marginTop: 2, includeFontPadding: false },
+  sabbathPrimaryDesc: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontFamily: 'Tamil003', fontWeight: 'normal', lineHeight: 20, marginTop: 10 },
+  sabbathPrimaryFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
+  sabbathPrimaryFooterText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginRight: 8 },
+
+  sabbathSmallCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 }
 });
