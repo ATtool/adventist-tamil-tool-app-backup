@@ -16,7 +16,7 @@ import { initUserDataDB } from './src/utils/UserDataDB';
 
 SplashScreen.preventAutoHideAsync();
 
-const DB_VERSION = "1.6.4"; 
+const DB_VERSION = "1.6.5"; 
 
 async function copyDatabase(dbName, assetName) {
   const sqliteDirectory = FileSystem.documentDirectory + 'SQLite';

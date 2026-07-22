@@ -301,7 +301,7 @@ export default function MagazineScreen() {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={[styles.featuredCard, { borderColor: colors.primary + '40' }]}
             >
-              <View style={[styles.featuredIconBox, { shadowColor: colors.primary }]}>
+              <View style={[styles.featuredIconBox, Platform.OS === 'ios' ? { shadowColor: colors.primary } : null]}>
                 <LinearGradient colors={[colors.primary, '#0080C0']} style={styles.featuredIconGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                   <Ionicons name={downloadedFiles[latestMag.id] ? "book" : "sparkles"} size={26} color="#FFF" />
                 </LinearGradient>
@@ -395,7 +395,7 @@ export default function MagazineScreen() {
         <View style={styles.treeItemContent}>
           <View style={[styles.magCard, { backgroundColor: colors.card, borderColor: isDownloaded ? '#4CAF5030' : colors.border }]}>
             <View style={styles.magHeader}>
-              <View style={[styles.iconBoxGlow, { shadowColor: isDownloaded ? '#4CAF50' : colors.primary }]}>
+              <View style={[styles.iconBoxGlow, Platform.OS === 'ios' ? { shadowColor: isDownloaded ? '#4CAF50' : colors.primary } : null]}>
                 <LinearGradient
                   colors={isDownloaded ? ['#66BB6A', '#2E7D32'] : [colors.primary, '#0080C0']}
                   style={styles.iconBox}
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 20, fontWeight: 'bold' },
   centerBox: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   
-  brandingCard: { margin: 15, padding: 20, borderRadius: 20, borderWidth: 1, elevation: 8, shadowColor: '#00F0FF', shadowOpacity: 0.15, shadowOffset: {width: 0, height: 6}, shadowRadius: 10, marginBottom: 15 },
+  brandingCard: { margin: 15, padding: 20, borderRadius: 20, borderWidth: 1, marginBottom: 15, ...Platform.select({ ios: { shadowColor: '#00F0FF', shadowOpacity: 0.15, shadowOffset: { width: 0, height: 6 }, shadowRadius: 10 }, android: { elevation: 4 } }) },
   brandRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 15 },
   logoImg: { width: 75, height: 75, borderRadius: 37.5, marginRight: 15, borderWidth: 2, borderColor: 'rgba(255,255,255,0.1)' },
   authorBlock: { paddingTop: 15, borderTopWidth: 1 },
