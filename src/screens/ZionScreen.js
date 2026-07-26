@@ -404,8 +404,8 @@ export default function ZionScreen() {
 
             <View style={[styles.searchPill, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}>
               <View style={{ flex: 1 }}>
-                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="சீயோன் / zion" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
-                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="சீயோன் / zion" placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
+                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="ஏசுவின் / Yesuvin" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
+                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
               </View>
 
               {search.length > 0 && (
