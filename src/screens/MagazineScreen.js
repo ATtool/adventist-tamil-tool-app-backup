@@ -7,7 +7,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as IntentLauncher from 'expo-intent-launcher'; 
-import { createAudioPlayer } from 'expo-audio';
 import { useSettings } from '../context/SettingsContext';
 
 // Short month labels for the archive timeline
@@ -77,14 +76,6 @@ export default function MagazineScreen() {
         Animated.timing(listFadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true })
       ]).start();
 
-      function playSound() {
-        try {
-          const player = createAudioPlayer(require('../../assets/data/sparrow.mp3'));
-          player.play();
-          setTimeout(() => { player.remove(); }, 2000);
-        } catch (error) { console.log("Audio Error", error); }
-      }
-      playSound();
       checkDownloadedStatus();
 
       return () => {};

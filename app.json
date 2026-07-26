@@ -36,8 +36,7 @@
         {
           "photosPermission": "Allow Adventist Tamil Tool to access your photos so you can select a QR code image to join a service."
         }
-      ],
-      "expo-audio"
+      ]
     ],
     "extra": {
       "eas": {

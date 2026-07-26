@@ -13,10 +13,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { SettingsProvider } from './src/context/SettingsContext';
 import MainNavigation from './src/navigation/MainNavigation';
 import { initUserDataDB } from './src/utils/UserDataDB';
+import { scheduleMannaNotifications } from './src/utils/NotificationService';
 
 SplashScreen.preventAutoHideAsync();
 
-const DB_VERSION = "1.6.5"; 
+const DB_VERSION = "1.6.7"; 
 
 async function copyDatabase(dbName, assetName) {
   const sqliteDirectory = FileSystem.documentDirectory + 'SQLite';
@@ -72,6 +73,16 @@ export default function App() {
         await copyDatabase('Thirumarai.db', 'Thirumarai.db'); 
 
         initUserDataDB();
+
+        // --- SILENT ALARM SCHEDULER ---
+        // Grab the offline manna data and set the 4 AM alarms for the week
+        const savedManna = await AsyncStorage.getItem('@manna_data');
+        if (savedManna) {
+          const parsedManna = JSON.parse(savedManna);
+          if (parsedManna.devotions) {
+            scheduleMannaNotifications(parsedManna.devotions);
+          }
+        }
 
       } catch (e) {
         console.warn("Error during app preparation: ", e);
