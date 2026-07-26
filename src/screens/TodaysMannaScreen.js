@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Speech from 'expo-speech';
+import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+import * as FileSystem from 'expo-file-system/legacy';
 // You can leave expo-clipboard imported if you use it later, or remove it.
 import * as Clipboard from 'expo-clipboard'; 
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -12,6 +13,63 @@ import Slider from '@react-native-community/slider';
 import { useSettings } from '../context/SettingsContext';
 
 const DEVOTION_URL = 'https://gist.githubusercontent.com/ATtool/e3a8241e07503969cb06448a32eb4382/raw/manna.json';
+
+// --- FREE GOOGLE TRANSLATE TEXT-TO-SPEECH (no API key, no billing, no card needed) ---
+// This uses the same voice you hear when you tap the speaker icon on translate.google.com.
+// It's not the premium WaveNet voice, but it's a real natural voice, completely free forever.
+const TTS_LANGUAGE_CODE = 'ta'; // Tamil
+// Google Translate's TTS endpoint truncates long text, so we keep chunks short and safe.
+const TTS_MAX_CHUNK_CHARS = 180;
+// Playback speed for the devotion audio. 1.0 = normal, 0.5 = half speed.
+const SPEECH_PLAYBACK_RATE = 1.2;
+
+function buildTranslateTtsUrl(text) {
+  return `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${TTS_LANGUAGE_CODE}&client=tw-ob`;
+}
+
+// Splits long text into speech-friendly chunks without cutting sentences in half.
+function splitTextForSpeech(text, maxChars = TTS_MAX_CHUNK_CHARS) {
+  const sentences = text.split(/(?<=[.!?।])\s+/).filter(Boolean);
+  const chunks = [];
+  let current = '';
+
+  for (const sentence of sentences) {
+    if ((current + ' ' + sentence).trim().length > maxChars) {
+      if (current) chunks.push(current.trim());
+      // A single sentence longer than maxChars: hard-split it.
+      if (sentence.length > maxChars) {
+        for (let i = 0; i < sentence.length; i += maxChars) {
+          chunks.push(sentence.slice(i, i + maxChars));
+        }
+        current = '';
+      } else {
+        current = sentence;
+      }
+    } else {
+      current = (current + ' ' + sentence).trim();
+    }
+  }
+  if (current) chunks.push(current.trim());
+  return chunks;
+}
+
+// Downloads one chunk of speech audio from Google Translate TTS and returns a local file URI.
+async function synthesizeChunkToFile(text, index) {
+  const url = buildTranslateTtsUrl(text);
+  const fileUri = `${FileSystem.cacheDirectory}manna_tts_${index}_${Date.now()}.mp3`;
+
+  const downloadResult = await FileSystem.downloadAsync(url, fileUri, {
+    headers: {
+      // Some free/unofficial endpoints reject requests with no browser-like User-Agent.
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
+    },
+  });
+
+  if (downloadResult.status !== 200) {
+    throw new Error(`Translate TTS request failed (status ${downloadResult.status})`);
+  }
+  return fileUri;
+}
 
 export default function TodaysMannaScreen() {
   const { colors, appFontSize, isDark } = useSettings();
@@ -24,9 +82,39 @@ export default function TodaysMannaScreen() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  
+  const [isSpeechLoading, setIsSpeechLoading] = useState(false);
+  // Refs so async playback logic always sees the latest state without stale closures.
   const [showFontSettings, setShowFontSettings] = useState(false);
   const [readerFontSize, setReaderFontSize] = useState(appFontSize);
+
+
+  const soundRef = React.useRef(null);
+  const stopRequestedRef = React.useRef(false);
+
+  const unloadSound = async () => {
+    if (soundRef.current) {
+      try {
+        soundRef.current.release();
+      } catch (e) {
+        // ignore
+      }
+      soundRef.current = null;
+    }
+  };
+
+  const stopSpeech = async () => {
+    stopRequestedRef.current = true;
+    await unloadSound();
+    setIsPlaying(false);
+    setIsSpeechLoading(false);
+  };
+
+  useEffect(() => {
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: false,
+    });
+  }, []);
 
   useEffect(() => {
     const backAction = () => {
@@ -44,12 +132,11 @@ export default function TodaysMannaScreen() {
 
   useEffect(() => {
     loadDevotion(selectedDate);
-    Speech.stop();
-    setIsPlaying(false);
+    stopSpeech();
   }, [selectedDate]);
 
   useEffect(() => {
-    return () => Speech.stop();
+    return () => { stopSpeech(); };
   }, []);
 
   const loadDevotion = async (dateObj) => {
@@ -145,23 +232,70 @@ export default function TodaysMannaScreen() {
     );
   };
 
-  const toggleSpeech = () => {
-    if (isPlaying) {
-      Speech.stop();
-      setIsPlaying(false);
-    } else {
-      if (todayDevotion) {
-        const textToRead = `${todayDevotion.title}. ${todayDevotion.verse}. ${todayDevotion.content}`;
-        Speech.speak(textToRead, {
-          language: 'ta-IN',
-          rate: 0.85, 
-          pitch: 1.0, 
-          onDone: () => setIsPlaying(false),
-          onStopped: () => setIsPlaying(false),
-          onError: () => setIsPlaying(false),
+  const playChunksSequentially = async (fileUris) => {
+    for (let i = 0; i < fileUris.length; i++) {
+  // Plays an array of local mp3 file URIs back-to-back.
+      if (stopRequestedRef.current) break;
+
+      soundRef.current = player;
+      player.setPlaybackRate(SPEECH_PLAYBACK_RATE, 'high');
+
+      const player = createAudioPlayer({ uri: fileUris[i] });
+      await new Promise((resolve) => {
+        const subscription = player.addListener('playbackStatusUpdate', (status) => {
+          if (status.didJustFinish || stopRequestedRef.current) {
+            subscription.remove();
+            resolve();
+          }
         });
-        setIsPlaying(true);
-      }
+        player.play();
+      });
+
+      player.release();
+      soundRef.current = null;
+    }
+  };
+
+  const toggleSpeech = async () => {
+    if (isPlaying || isSpeechLoading) {
+      await stopSpeech();
+      return;
+    }
+
+    if (!todayDevotion) return;
+
+    stopRequestedRef.current = false;
+    setIsSpeechLoading(true);
+
+    try {
+      const textToRead = `${todayDevotion.title}. ${todayDevotion.verse}. ${todayDevotion.content}`;
+      const chunks = splitTextForSpeech(textToRead);
+
+      // Synthesize the first chunk before starting playback so audio starts promptly,
+      // then synthesize the rest while the first chunk plays.
+      const firstFile = await synthesizeChunkToFile(chunks[0], 0);
+      if (stopRequestedRef.current) return;
+
+      setIsSpeechLoading(false);
+      setIsPlaying(true);
+
+      const remainingFilesPromise = Promise.all(
+        chunks.slice(1).map((chunk, idx) => synthesizeChunkToFile(chunk, idx + 1))
+      );
+
+      await playChunksSequentially([firstFile]);
+      if (stopRequestedRef.current) return;
+
+      const remainingFiles = await remainingFilesPromise;
+      if (stopRequestedRef.current) return;
+
+      await playChunksSequentially(remainingFiles);
+    } catch (error) {
+      console.log('TTS error:', error);
+      Alert.alert('Audio error', 'Could not play audio for this devotion. Please try again.');
+    } finally {
+      setIsPlaying(false);
+      setIsSpeechLoading(false);
     }
   };
 
@@ -209,8 +343,7 @@ export default function TodaysMannaScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerTools}>
-          
-          {/* ALWAYS show the sync button so users can manually refresh the Gist */}
+
           <TouchableOpacity 
             onPress={() => loadDevotion(selectedDate)} 
             style={styles.iconBtn}
@@ -221,8 +354,12 @@ export default function TodaysMannaScreen() {
 
           {todayDevotion && (
             <>
-              <TouchableOpacity onPress={toggleSpeech} style={styles.iconBtn}>
-                <Ionicons name={isPlaying ? "stop-circle" : "volume-high"} size={22} color={isPlaying ? "#FF3B30" : "#00F0FF"} />
+              <TouchableOpacity onPress={toggleSpeech} style={styles.iconBtn} disabled={isSpeechLoading && !isPlaying}>
+                {isSpeechLoading ? (
+                  <ActivityIndicator size="small" color="#00F0FF" />
+                ) : (
+                  <Ionicons name={isPlaying ? "stop-circle" : "volume-high"} size={22} color={isPlaying ? "#FF3B30" : "#00F0FF"} />
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => setShowFontSettings(true)} style={styles.iconBtn}>
@@ -241,8 +378,6 @@ export default function TodaysMannaScreen() {
       {showDatePicker && (
         <DateTimePicker
           value={selectedDate}
-          mode="date"
-          display="default"
           maximumDate={new Date()} 
           onChange={onChangeDate}
         />
@@ -254,7 +389,6 @@ export default function TodaysMannaScreen() {
           
           <TouchableOpacity style={[styles.fontCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]} activeOpacity={1}>
             <Text style={{ color: colors.text, fontSize: 16, marginBottom: 20, fontFamily: 'Tamil003' }}>எழுத்து அளவு (Font Size)</Text>
-            
             <View style={styles.sliderWrapper}>
               <Text style={{ color: colors.subtext, fontSize: 14 }}>A</Text>
               <Slider
@@ -264,9 +398,10 @@ export default function TodaysMannaScreen() {
                 step={2}
                 value={readerFontSize}
                 onValueChange={setReaderFontSize}
-                minimumTrackTintColor="#00F0FF"
                 maximumTrackTintColor={colors.border}
                 thumbTintColor="#00F0FF"
+            
+                minimumTrackTintColor="#00F0FF"
               />
               <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>A</Text>
             </View>
@@ -302,9 +437,10 @@ export default function TodaysMannaScreen() {
             {/* Verse is now readerFontSize + 2 (16 + 2 = 18) */}
             <Text style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 2 }]}>
               {todayDevotion.verse}
-            </Text>
-          </View>
-
+            </Text>          
+          {/* ALWAYS show the sync button so users can manually refresh the Gist */}
+          mode="date"
+          display="default"
           {/* Content is now readerFontSize (16) */}
           <Text style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize, lineHeight: readerFontSize * 1.8 }]}>
             {todayDevotion.content}
@@ -320,9 +456,9 @@ export default function TodaysMannaScreen() {
           </View>
 
           <View style={styles.navButtonsContainer}>
-            <TouchableOpacity 
-              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+            <TouchableOpacity  
               onPress={goToPreviousDay}
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
               <Ionicons name="chevron-back" size={20} color={colors.text} />
               <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: 14 }}>முந்தைய நாள்</Text>
