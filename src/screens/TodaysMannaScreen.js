@@ -246,6 +246,21 @@ export default function TodaysMannaScreen() {
         <View style={styles.center}>
           <Ionicons name="book-outline" size={60} color={colors.border} />
           <Text style={{ color: colors.text, marginTop: 20, fontSize: appFontSize, fontFamily: 'Tamil003', textAlign: 'center', paddingHorizontal: 30, lineHeight: 28 }}>{errorMsg}</Text>
+
+          <TouchableOpacity
+            onPress={() => loadDevotion(selectedDate)}
+            style={[styles.retryBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator size="small" color="#00F0FF" />
+            ) : (
+              <Ionicons name="reload" size={18} color="#00F0FF" />
+            )}
+            <Text style={{ color: '#00F0FF', marginLeft: 8, fontFamily: 'Tamil003', fontSize: 15 }}>
+              மீண்டும் முயற்சிக்க
+            </Text>
+          </TouchableOpacity>
         </View>
       ) : todayDevotion ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -312,6 +327,7 @@ const styles = StyleSheet.create({
   sliderWrapper: { flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' },
 
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  retryBtn: { flexDirection: 'row', alignItems: 'center', marginTop: 25, paddingVertical: 12, paddingHorizontal: 22, borderRadius: 25, borderWidth: 1 },
   content: { padding: 25, paddingBottom: 80 },
   
   title: { fontFamily: 'Tamil003', marginBottom: 25, textAlign: 'center', lineHeight: 36 },
