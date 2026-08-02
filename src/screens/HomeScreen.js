@@ -842,6 +842,15 @@ export default function HomeScreen() {
                   <Ionicons name="information-circle" size={24} color={colors.text} style={{ marginRight: 15 }} />
                   <Text style={{ color: colors.text, fontSize: 18 }}>About the App</Text>
                 </TouchableOpacity>
+                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
+                <TouchableOpacity style={styles.drawerItem} onPress={() => Linking.openURL('mailto:adventisttamiltool@gmail.com')}>
+                  <Image source={require('../../assets/Gmail.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
+                  <Text style={{ color: colors.text, fontSize: 16 }}>adventisttamiltool@gmail.com</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.drawerItem} onPress={() => Linking.openURL('https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p')}>
+                  <Image source={require('../../assets/whatsapp.png')} style={{ width: 48, height: 48, marginRight: 15 }} resizeMode="contain" />
+                  <Text style={{ color: colors.text, fontSize: 18 }}>Join our WhatsApp Channel</Text>
+                </TouchableOpacity>
               </ScrollView>
             </SafeAreaView>
           </Animated.View>
