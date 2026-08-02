@@ -80,7 +80,7 @@ export default function EGWBooksListScreen({ navigation }) {
       await downloadResumable.downloadAsync();
       setDownloadedFiles(prev => ({ ...prev, [book.id]: true }));
     } catch (error) {
-      Alert.alert("பிழை", "டவுன்லோடு செய்ய முடியவில்லை. இணைய இணைப்பை சரிபார்க்கவும்.");
+      Alert.alert("Error", "Download failed. Please check your internet connection.");
     } finally {
       setDownloadingId(null);
       setDownloadProgress(prev => {
@@ -94,16 +94,16 @@ export default function EGWBooksListScreen({ navigation }) {
   // 1. Double Confirmation Delete Feature
   const handleDelete = (book) => {
     Alert.alert(
-      "எச்சரிக்கை", 
-      `'${book.title_tamil}' புத்தகத்தை நீக்க விரும்புகிறீர்களா?`,
+      "Warning", 
+      `Do you want to delete '${book.title_tamil}'?`,
       [
         { text: "Cancel", style: "cancel" },
         { 
           text: "Yes", 
           onPress: () => {
             Alert.alert(
-              "உறுதிப்படுத்தவும்", 
-              "நிச்சயமாக போனில் இருந்து நீக்க வேண்டுமா?",
+              "Confirm Delete", 
+              "Are you sure you want to permanently delete this from your device?",
               [
                 { text: "Cancel", style: "cancel" },
                 { 
@@ -115,7 +115,7 @@ export default function EGWBooksListScreen({ navigation }) {
                       await FileSystem.deleteAsync(fileUri, { idempotent: true });
                       setDownloadedFiles(prev => ({ ...prev, [book.id]: false })); 
                     } catch (e) {
-                      Alert.alert("பிழை", "நீக்க முடியவில்லை.");
+                      Alert.alert("Error", "Could not delete the file.");
                     }
                   }
                 }

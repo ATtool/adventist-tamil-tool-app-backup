@@ -147,7 +147,7 @@ export default function TodaysMannaScreen() {
       "🌾 இன்றைய நாள் உங்களுக்கு ஆசிர்வாதமாக இருப்பதாக. 🌟",
       "🌾 தேவனுடைய கற்பனையின்படி நடக்க மறவாதீர்கள் 😇",
       "✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p",
-"📲Download our APP in Play Store : \https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool
+      "📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool",
     ];
     return textBlocks.join('\n\n'); 
   };

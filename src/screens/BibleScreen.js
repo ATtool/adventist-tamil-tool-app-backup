@@ -195,7 +195,7 @@ export default function BibleScreen() {
     });
     
     // Added the WhatsApp Channel Link
-    shareText += `Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p\n\n~ Shared from Adventist Tamil Tool`;
+    shareText += `Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p\n\n✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p \n\n📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool`;
     
     try { await Share.share({ message: shareText }); } catch (e) {}
     setSelectedVerses([]);

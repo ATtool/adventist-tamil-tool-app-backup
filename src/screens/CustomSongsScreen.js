@@ -168,7 +168,7 @@ export default function CustomSongsScreen() {
   // Actions
   const handleShare = async (song) => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    try { await Share.share({ message: `${song.id} - ${song.title_tamil}\n\n${song.lyrics}\n\n~ Shared from Adventist Tamil Tool` }); } catch (error) { console.log(error.message); }
+    try { await Share.share({ message: `${song.id} - ${song.title_tamil}\n\n${song.lyrics}\n\n✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p \n\n📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool` }); } catch (error) { console.log(error.message); }
   };
 
   const clearAllFilters = () => {
