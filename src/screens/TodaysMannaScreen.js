@@ -125,15 +125,6 @@ export default function TodaysMannaScreen() {
     setSelectedDate(nextDate);
   };
 
-  const isToday = () => {
-    const today = new Date();
-    return (
-      selectedDate.getDate() === today.getDate() &&
-      selectedDate.getMonth() === today.getMonth() &&
-      selectedDate.getFullYear() === today.getFullYear()
-    );
-  };
-
   const displayDate = `${selectedDate.getDate()}/${selectedDate.getMonth() + 1}/${selectedDate.getFullYear()}`;
 
   const getFullDevotionText = () => {
@@ -147,7 +138,7 @@ export default function TodaysMannaScreen() {
       "🌾 இன்றைய நாள் உங்களுக்கு ஆசிர்வாதமாக இருப்பதாக. 🌟",
       "🌾 தேவனுடைய கற்பனையின்படி நடக்க மறவாதீர்கள் 😇",
       "✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p",
-      "📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool",
+      "📲Download our APP in Play Store : \nhttps://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool"
     ];
     return textBlocks.join('\n\n'); 
   };
@@ -202,7 +193,6 @@ export default function TodaysMannaScreen() {
       {showDatePicker && (
         <DateTimePicker
           value={selectedDate}
-          maximumDate={new Date()} 
           onChange={onChangeDate}
         />
       )}
@@ -262,6 +252,26 @@ export default function TodaysMannaScreen() {
               மீண்டும் முயற்சிக்க
             </Text>
           </TouchableOpacity>
+
+          {/* Added Navigation Buttons for when no devotion is found (e.g. Future Days) */}
+          <View style={[styles.navButtonsContainer, { width: '100%', paddingHorizontal: 30, marginTop: 50 }]}>
+            <TouchableOpacity  
+              onPress={goToPreviousDay}
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
+            >
+              <Ionicons name="chevron-back" size={20} color={colors.text} />
+              <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: 14 }}>முந்தைய நாள்</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
+              onPress={goToNextDay}
+            >
+              <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+
         </View>
       ) : todayDevotion ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -299,9 +309,8 @@ export default function TodaysMannaScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isToday() ? 0.3 : 1 }]} 
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
               onPress={goToNextDay}
-              disabled={isToday()}
             >
               <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.text} />
