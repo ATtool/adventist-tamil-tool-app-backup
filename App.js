@@ -5,19 +5,19 @@ import React, { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as Notifications from 'expo-notifications';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-// --- STRICT IMPORTS (These must match perfectly to avoid crashes) ---
 import { SettingsProvider } from './src/context/SettingsContext';
-import MainNavigation from './src/navigation/MainNavigation';
+import MainNavigation, { navigationRef } from './src/navigation/MainNavigation';
 import { initUserDataDB } from './src/utils/UserDataDB';
 import { scheduleMannaNotifications } from './src/utils/NotificationService';
 
 SplashScreen.preventAutoHideAsync();
 
-const DB_VERSION = "2.1.0"; 
+const DB_VERSION = "2.1.0";
 
 async function copyDatabase(dbName, assetName) {
   const sqliteDirectory = FileSystem.documentDirectory + 'SQLite';
@@ -26,23 +26,23 @@ async function copyDatabase(dbName, assetName) {
   }
   const dbUri = sqliteDirectory + '/' + dbName;
   const dbFileInfo = await FileSystem.getInfoAsync(dbUri);
-  
+
   const currentDbVersion = await AsyncStorage.getItem(`@db_version_${dbName}`);
 
   if (!dbFileInfo.exists || dbFileInfo.size < 10000 || currentDbVersion !== DB_VERSION) {
     let asset;
-    
+
     if (assetName === 'KJV.db') asset = require('./assets/data/KJV.db');
     else if (assetName === 'TAMIL.db') asset = require('./assets/data/TAMIL.db');
     else if (assetName === 'cross_references.db') asset = require('./assets/data/cross_references.db');
-    else if (assetName === 'zion.db') asset = require('./assets/data/zion.db'); 
-    else if (assetName === 'Thirumarai.db') asset = require('./assets/data/Thirumarai.db'); 
-    
+    else if (assetName === 'zion.db') asset = require('./assets/data/zion.db');
+    else if (assetName === 'Thirumarai.db') asset = require('./assets/data/Thirumarai.db');
+
     if (asset) {
       if (dbFileInfo.exists) {
         await FileSystem.deleteAsync(dbUri, { idempotent: true });
       }
-      
+
       const assetObj = (await Asset.loadAsync(asset))[0];
       await FileSystem.downloadAsync(assetObj.uri, dbUri);
       await AsyncStorage.setItem(`@db_version_${dbName}`, DB_VERSION);
@@ -50,6 +50,21 @@ async function copyDatabase(dbName, assetName) {
     } else {
       console.warn(`⚠️ Warning: Asset ${assetName} not found in require list.`);
     }
+  }
+}
+
+async function navigateFromNotification(response) {
+  const screen = response?.notification?.request?.content?.data?.screen;
+  if (!screen) return;
+
+  let attempts = 0;
+  while (!navigationRef.isReady() && attempts < 25) {
+    await new Promise((r) => setTimeout(r, 200));
+    attempts++;
+  }
+
+  if (navigationRef.isReady()) {
+    navigationRef.navigate(screen);
   }
 }
 
@@ -69,20 +84,22 @@ export default function App() {
         await copyDatabase('KJV.db', 'KJV.db');
         await copyDatabase('TAMIL.db', 'TAMIL.db');
         await copyDatabase('cross_references.db', 'cross_references.db');
-        await copyDatabase('zion.db', 'zion.db'); 
-        await copyDatabase('Thirumarai.db', 'Thirumarai.db'); 
+        await copyDatabase('zion.db', 'zion.db');
+        await copyDatabase('Thirumarai.db', 'Thirumarai.db');
 
         initUserDataDB();
 
-        // --- SILENT ALARM SCHEDULER ---
-        // Grab the offline manna data and set the 4 AM alarms for the week
+        let devotions = null;
         const savedManna = await AsyncStorage.getItem('@manna_data');
         if (savedManna) {
-          const parsedManna = JSON.parse(savedManna);
-          if (parsedManna.devotions) {
-            scheduleMannaNotifications(parsedManna.devotions);
+          try {
+            const parsedManna = JSON.parse(savedManna);
+            devotions = parsedManna.devotions || null;
+          } catch (e) {
+            devotions = null;
           }
         }
+        scheduleMannaNotifications(devotions);
 
       } catch (e) {
         console.warn("Error during app preparation: ", e);
@@ -92,6 +109,16 @@ export default function App() {
       }
     }
     prepare();
+  }, []);
+
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(navigateFromNotification);
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) navigateFromNotification(response);
+    });
+
+    return () => subscription.remove();
   }, []);
 
   if (!appIsReady) {

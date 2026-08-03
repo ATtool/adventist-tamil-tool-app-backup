@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack'; // <-- Native-optimized stack
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +35,8 @@ import CreateService from '../screens/CreateService';
 import JoinService from '../screens/JoinService';
 import SavedServices from '../screens/SavedServices';
 import ViewService from '../screens/ViewService'; 
+
+export const navigationRef = createNavigationContainerRef();
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator(); // The high-performance bookshelf coordinator
@@ -157,7 +159,7 @@ function TabNavigator() {
 // Master Navigation Component
 export default function MainNavigation() {
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer ref={navigationRef} linking={linking}>
        <Stack.Navigator screenOptions={{ headerShown: false }}>
         
         {/* The persistent bottom tabs are the root layer */}
