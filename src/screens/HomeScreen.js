@@ -707,7 +707,7 @@ export default function HomeScreen() {
 
       <Modal visible={sabbathSheetRendered} transparent animationType="none" onRequestClose={() => setShowSabbathOptions(false)}>
         <Animated.View style={[styles.modalOverlay, { opacity: sabbathBackdropAnim }]}>
-          <Animated.View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border, transform: [{ translateY: sabbathSlideAnim }] }]}>
+          <Animated.View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border, transform: [{ translateY: sabbathSlideAnim }], maxHeight: '85%' }]}>
             
             <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
               <View>
@@ -719,49 +719,53 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.disclaimerBox}>
-              <Ionicons name="information-circle-outline" size={16} color={colors.subtext} style={{ marginRight: 6, marginTop: 1 }} />
-              <Text style={{ color: colors.subtext, fontSize: 12, flex: 1, lineHeight: 17 }}>
-                These websites are not owned by us — we simply link to the original sources so you can visit them easily.
-              </Text>
-            </View>
+            <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 30 : 20 }} showsVerticalScrollIndicator={false}>
+              
+              <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 15, marginBottom: 10, fontSize: appFontSize - 2 }]}>IN-APP READER (OFFLINE)</Text>
 
-            <View style={{ paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 10 : 6 }}>
-
-              {/* OPTION 1 — PRIMARY / FEATURED: Tamil Sabbath School */}
+              {/* SINGLE OFFLINE OPTION: Read Today */}
               <TouchableOpacity
-                style={[styles.sabbathPrimaryCard, { borderColor: '#30D158' }]}
+                style={[styles.sabbathPrimaryCard, { borderColor: '#00F0FF' }]}
                 activeOpacity={0.85}
-                onPress={() => openSabbathOption('https://www.fustero.es/index_tm.php', 'Tamil Sabbath School')}
+                onPress={() => {
+                  if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowSabbathOptions(false);
+                  // We navigate straight to the Reader!
+                  setTimeout(() => navigation.navigate('SabbathSchoolReader'), 200);
+                }}
               >
-                <LinearGradient
-                  colors={['#0F3D24', '#155C33']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.sabbathPrimaryGradient}
-                >
+                <LinearGradient colors={['#004d66', '#0099cc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sabbathPrimaryGradient}>
                   <View style={styles.sabbathPrimaryTopRow}>
                     <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                      <Ionicons name="book" size={22} color="#FFFFFF" />
-                    </View>
-                    <View style={styles.recommendedPill}>
-                      <Ionicons name="star" size={10} color="#0F3D24" />
-                      <Text style={styles.recommendedPillText}>Recommended</Text>
+                      <Ionicons name="today" size={22} color="#FFFFFF" />
                     </View>
                   </View>
-                  <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Tamil Sabbath School</Text>
-                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>தமிழ் ஓய்வுநாள் பள்ளி</Text>
-                  <Text style={styles.sabbathPrimaryDesc} allowFontScaling={false}>
-                    இங்கு தமிழில் வார ஓய்வுநாள் பள்ளி பாட புத்தகம், வார ஊழிய அறிக்கை, மற்றும் அவற்றின் PPT பைல்களை பதிவிறக்கம் செய்யலாம்.
-                  </Text>
-                  <View style={styles.sabbathPrimaryFooter}>
-                    <Text style={styles.sabbathPrimaryFooterText}>Open Website</Text>
-                    <Ionicons name="arrow-forward-circle" size={20} color="#FFFFFF" />
-                  </View>
+                  <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Today's Lesson</Text>
+                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>இன்றைய பாடம்</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
-              {/* OPTION 2 — Official GC website (smaller) */}
+              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: appFontSize - 2 }]}>OTHER WEB SOURCES</Text>
+
+              {/* EXTERNAL OPTION 1: Fustero */}
+              <TouchableOpacity
+                style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                activeOpacity={0.8}
+                onPress={() => openSabbathOption('https://www.fustero.es/index_tm.php', 'Tamil Sabbath School')}
+              >
+                <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(48, 209, 88, 0.1)', marginRight: 12 }]}>
+                  <Ionicons name="globe-outline" size={20} color="#30D158" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Tamil Sabbath School</Text>
+                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
+                    Includes Mission Report & Children's lessons. (மிஷன் ரிப்போர்ட்)
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
+              </TouchableOpacity>
+
+              {/* EXTERNAL OPTION 2: Official GC */}
               <TouchableOpacity
                 style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 activeOpacity={0.8}
@@ -773,13 +777,13 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Official GC Website</Text>
                   <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
-                    If Option 1 isn't working, try this. Note: mission report isn't available here.
+                    No mission report available here.
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
               </TouchableOpacity>
 
-              {/* OPTION 3 — Backup / old lessons (smaller) */}
+              {/* EXTERNAL OPTION 3: Backup */}
               <TouchableOpacity
                 style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}
                 activeOpacity={0.8}
@@ -797,7 +801,7 @@ export default function HomeScreen() {
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
               </TouchableOpacity>
 
-            </View>
+            </ScrollView>
           </Animated.View>
         </Animated.View>
       </Modal>

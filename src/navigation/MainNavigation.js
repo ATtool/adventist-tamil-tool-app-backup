@@ -25,6 +25,10 @@ import DictionaryScreen from '../screens/DictionaryScreen';
 import ConcordanceScreen from '../screens/ConcordanceScreen';
 import StudyExplanationsScreen from '../screens/StudyExplanationsScreen'; 
 
+// --- NEW SABBATH SCHOOL SCREENS ---
+import SabbathSchoolListScreen from '../screens/SabbathSchoolListScreen';
+import SabbathSchoolReaderScreen from '../screens/SabbathSchoolReaderScreen';
+
 import ZionScreen from '../screens/ZionScreen';
 import ThirumaraiOldScreen from '../screens/ThirumaraiOldScreen';
 import ThirumaraiHopeScreen from '../screens/ThirumaraiHopeScreen';
@@ -175,6 +179,10 @@ export default function MainNavigation() {
         <Stack.Screen name="Concordance" component={ConcordanceScreen} />
         <Stack.Screen name="StudyExplanations" component={StudyExplanationsScreen} />
         
+        {/* --- NEW SABBATH SCHOOL SCREENS --- */}
+        <Stack.Screen name="SabbathSchoolList" component={SabbathSchoolListScreen} />
+        <Stack.Screen name="SabbathSchoolReader" component={SabbathSchoolReaderScreen} />
+
         <Stack.Screen name="ZionSongs" component={ZionScreen} />
         <Stack.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} />
         <Stack.Screen name="ThirumaraiHope" component={ThirumaraiHopeScreen} />

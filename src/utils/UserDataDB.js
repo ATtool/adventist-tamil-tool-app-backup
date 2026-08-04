@@ -34,6 +34,19 @@ export const initUserDataDB = () => {
         lyrics TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
+
+      -- NEW: Sabbath School Offline Storage
+      CREATE TABLE IF NOT EXISTS sabbath_lessons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        quarter TEXT NOT NULL,
+        week TEXT NOT NULL,
+        day TEXT NOT NULL,
+        title TEXT,
+        date TEXT,
+        content TEXT NOT NULL,
+        downloaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(quarter, week, day)
+      );
     `);
 
     console.log('✅ UserData DB successfully initialized with favorites, highlights, and custom_songs tables.');
@@ -109,5 +122,43 @@ export const deleteCustomSong = (id) => {
   } catch (error) {
     console.error('Error deleting and re-indexing custom song:', error);
     return false;
+  }
+};
+
+// --- NEW HELPER FUNCTIONS FOR SABBATH SCHOOL ---
+
+// 1. Save a lesson to the phone for offline reading
+export const saveSabbathLesson = (quarter, week, day, title, date, content) => {
+  try {
+    // We use INSERT OR REPLACE so if we download an update for a specific day, it just overwrites it safely!
+    db.runSync(
+      'INSERT OR REPLACE INTO sabbath_lessons (quarter, week, day, title, date, content) VALUES (?, ?, ?, ?, ?, ?)',
+      [quarter, week, day, title, date, content]
+    );
+    return true;
+  } catch (error) {
+    console.error('Error saving Sabbath lesson:', error);
+    return false;
+  }
+};
+
+// 2. Fetch all downloaded lessons (to show in the List screen)
+export const getSabbathLessons = () => {
+  try {
+    // We order them by ID so they show up in the order they were saved
+    return db.getAllSync('SELECT * FROM sabbath_lessons ORDER BY id ASC');
+  } catch (error) {
+    console.error('Error fetching Sabbath lessons:', error);
+    return [];
+  }
+};
+
+// 3. Fetch a specific lesson by date (for the "Today's Lesson" button)
+export const getSabbathLessonByDate = (date) => {
+  try {
+    return db.getFirstSync('SELECT * FROM sabbath_lessons WHERE date = ?', [date]);
+  } catch (error) {
+    console.error('Error fetching lesson by date:', error);
+    return null;
   }
 };

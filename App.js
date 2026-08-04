@@ -3,8 +3,8 @@ global.Buffer = Buffer;
 
 import React, { useState, useEffect } from 'react';
 import * as Font from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
 import * as FileSystem from 'expo-file-system/legacy';
+import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
