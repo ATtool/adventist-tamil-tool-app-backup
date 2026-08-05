@@ -119,25 +119,10 @@ export default function TodaysMannaScreen() {
     setSelectedDate(prevDate);
   };
 
-  const isToday = (date) => {
-    const today = new Date();
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
-  };
-
   const goToNextDay = () => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    
     const nextDate = new Date(selectedDate);
     nextDate.setDate(nextDate.getDate() + 1);
-
-    if (nextDate <= today) {
-      setSelectedDate(nextDate);
-    }
+    setSelectedDate(nextDate);
   };
 
   const displayDate = `${selectedDate.getDate()}/${selectedDate.getMonth() + 1}/${selectedDate.getFullYear()}`;
@@ -209,7 +194,6 @@ export default function TodaysMannaScreen() {
         <DateTimePicker
           value={selectedDate}
           onChange={onChangeDate}
-          maximumDate={new Date()}
         />
       )}
 
@@ -280,12 +264,11 @@ export default function TodaysMannaScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isToday(selectedDate) ? 0.4 : 1 }]} 
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
               onPress={goToNextDay}
-              disabled={isToday(selectedDate)}
             >
-              <Text style={{ color: isToday(selectedDate) ? colors.subtext : colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
-              <Ionicons name="chevron-forward" size={20} color={isToday(selectedDate) ? colors.subtext : colors.text} />
+              <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
@@ -326,12 +309,11 @@ export default function TodaysMannaScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isToday(selectedDate) ? 0.4 : 1 }]} 
+              style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]} 
               onPress={goToNextDay}
-              disabled={isToday(selectedDate)}
             >
-              <Text style={{ color: isToday(selectedDate) ? colors.subtext : colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
-              <Ionicons name="chevron-forward" size={20} color={isToday(selectedDate) ? colors.subtext : colors.text} />
+              <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.text} />
             </TouchableOpacity>
           </View>
 
