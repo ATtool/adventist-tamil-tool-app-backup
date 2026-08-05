@@ -741,11 +741,11 @@ export default function HomeScreen() {
                     </View>
                   </View>
                   <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Today's Sabbath School Lesson</Text>
-                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம் #Adventech</Text>
+                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம்</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
-              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: appFontSize - 2 }]}>OTHER WEB SOURCES</Text>
+              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: appFontSize - 2 }]}>OTHER WEB SOURCES ( Internet Requied )</Text>
 
               {/* EXTERNAL OPTION 1: Fustero */}
               <TouchableOpacity
@@ -758,8 +758,8 @@ export default function HomeScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Tamil Sabbath School</Text>
-                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
-                    Includes Mission Report & Children's lessons. (மிஷன் ரிப்போர்ட்)
+                  <Text style={{ color: colors.subtext, fontFamily: 'Tamil003', fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
+                    ஒய்வுநாள் பள்ளி பாடம், ஊழிய அறிக்கை மற்றும் சிறுவர் ஒய்வுநாள் பள்ளி பாடம் ( PDF, PPT )
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
@@ -777,7 +777,7 @@ export default function HomeScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Official GC Website</Text>
                   <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
-                    No mission report available here.
+                    ஒய்வுநாள் பள்ளி பாடம் மட்டும்
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />

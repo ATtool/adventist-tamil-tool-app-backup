@@ -7,12 +7,6 @@ import { useSettings } from '../context/SettingsContext';
 // Import your existing InAppBrowser component (adjust path if needed)
 import InAppBrowser from '../components/InAppBrowser'; 
 
-// Enable LayoutAnimation for Android smooth expanding panels
-// LayoutAnimation is enabled by default in the New Architecture.
-// if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-//   UIManager.setLayoutAnimationEnabledExperimental(true);
-// }
-
 // -------------------------------------------------------------
 // Translations Dictionary
 // -------------------------------------------------------------
@@ -40,6 +34,8 @@ const T = {
     thanglishDesc: "SDA Teacher, Co-founder of Balams Donkey Ministry.",
     attrTitle: "Data Sources & Attributions",
     viewSource: "View Source",
+    readMore: "Read More",
+    showLess: "Show Less",
   },
   ta: {
     header: "செயலியைப் பற்றி",
@@ -64,6 +60,8 @@ const T = {
     thanglishDesc: "SDA ஆசிரியை, Balams Donkey Ministry-ன் இணை நிறுவனர்.",
     attrTitle: "தரவு மூலங்கள் மற்றும் உரிமைகள்",
     viewSource: "மூலத்தைக் காண்க",
+    readMore: "அதிகமாகப் படிக்க",
+    showLess: "சுருக்கவும்",
   }
 };
 
@@ -89,6 +87,7 @@ export default function AboutScreen({ navigation }) {
   // States
   const [lang, setLang] = useState('en');
   const [expandedSection, setExpandedSection] = useState('welcome'); 
+  const [showSabbathLicense, setShowSabbathLicense] = useState(false);
   
   // In-App Browser States
   const [browserVisible, setBrowserVisible] = useState(false);
@@ -114,6 +113,11 @@ export default function AboutScreen({ navigation }) {
   const toggleSection = (section) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedSection(prev => prev === section ? null : section);
+  };
+
+  const toggleLicenseExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowSabbathLicense(!showSabbathLicense);
   };
 
   const openWebLink = (url, title) => {
@@ -152,7 +156,7 @@ export default function AboutScreen({ navigation }) {
     );
   };
 
-  const AttributionItem = ({ title, desc, url }) => (
+  const AttributionItem = ({ title, desc, url, children }) => (
     <View style={styles.attrItem}>
       <View style={styles.attrDot} />
       <View style={{ flex: 1 }}>
@@ -166,6 +170,7 @@ export default function AboutScreen({ navigation }) {
             </View>
           </TouchableOpacity>
         )}
+        {children}
       </View>
     </View>
   );
@@ -263,6 +268,42 @@ export default function AboutScreen({ navigation }) {
             <AttributionItem title="Bible Commentary" desc="Matthew Henry Complete Commentary" url="https://www.biblesnet.com/matthew_henry_download.html" />
             <AttributionItem title="Study Explanations" url="https://bibletool.info" />
             <AttributionItem title="Song Books" desc="Copied from the official SDA 'Seeyon Iniya Geethangal' and 'Thirumarai Thirupaadalgal' Song Books." />
+            
+            {/* TAMIL SABBATH SCHOOL ATTRIBUTION */}
+            <AttributionItem 
+              title="Tamil Sabbath School" 
+              url="https://github.com/Adventech/sabbath-school-lessons"
+            >
+              <Text style={[styles.attrDesc, { color: colors.subtext, marginTop: 4 }]}>
+                MIT license: The MIT License (MIT) Copyright (c) 2016. Adventech
+              </Text>
+
+              {/* READ MORE BUTTON */}
+              <TouchableOpacity onPress={toggleLicenseExpand} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
+                <View style={[styles.readMoreBtn, { backgroundColor: 'rgba(0, 240, 255, 0.08)', borderColor: colors.primary }]}>
+                  <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>
+                    {showSabbathLicense ? text.showLess : text.readMore}
+                  </Text>
+                  <Ionicons 
+                    name={showSabbathLicense ? 'chevron-up' : 'chevron-down'} 
+                    size={14} 
+                    color={colors.primary} 
+                    style={{ marginLeft: 4 }} 
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {/* EXPANDABLE FULL LICENSE TEXT */}
+              {showSabbathLicense && (
+                <View style={[styles.licenseBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  <Text style={[styles.licenseText, { color: colors.subtext }]}>
+                    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:{"\n\n"}
+                    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.{"\n\n"}
+                    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                  </Text>
+                </View>
+              )}
+            </AttributionItem>
           </AccordionCard>
 
         </Animated.View>
@@ -312,5 +353,9 @@ const styles = StyleSheet.create({
   attrDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(0, 240, 255, 0.5)', marginTop: 6, marginRight: 12 },
   attrTitle: { fontSize: 15, fontWeight: 'bold' },
   attrDesc: { fontSize: 13, marginTop: 4, lineHeight: 18 },
-  sourceBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 }
+  sourceBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
+  
+  readMoreBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  licenseBox: { marginTop: 10, padding: 12, borderRadius: 8, borderWidth: 1 },
+  licenseText: { fontSize: 11, lineHeight: 16, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }
 });

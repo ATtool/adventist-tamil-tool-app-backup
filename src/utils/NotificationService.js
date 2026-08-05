@@ -25,9 +25,11 @@ export async function scheduleMannaNotifications(mannaData) {
 
   const hasPermission = await requestNotificationPermissions();
   if (!hasPermission) {
-    console.log("User denied notification permissions.");
+    console.log("⚠️ Notifications: User denied permission.");
     return;
   }
+  
+  console.log("✅ Notifications: Permission granted. Scheduling alarms...");
 
   const today = new Date();
 
