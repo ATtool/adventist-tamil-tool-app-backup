@@ -685,19 +685,19 @@ export default function HomeScreen() {
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.border} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('JoinService'); }}>
-              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(48, 209, 88, 0.1)', marginRight: 15 }]}><Ionicons name="qr-code" size={24} color="#30D158" /></View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Join Service</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>ஆராதனையில் இணைய</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={colors.border} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.meetingOption} onPress={() => { setShowMeetingMenu(false); navigation.navigate('SavedServices'); }}>
+            <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('SavedServices'); }}>
               <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)', marginRight: 15 }]}><Ionicons name="bookmark" size={24} color="#FF9F0A" /></View>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Saved Services</Text>
                 <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>சேமிக்கப்பட்டவை</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.border} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.meetingOption} onPress={() => { setShowMeetingMenu(false); navigation.navigate('JoinService'); }}>
+              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(48, 209, 88, 0.1)', marginRight: 15 }]}><Ionicons name="qr-code" size={24} color="#30D158" /></View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Join Service</Text>
+                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>ஆராதனையில் இணைய</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.border} />
             </TouchableOpacity>
