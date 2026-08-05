@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack'; // <-- Native-optimized stack
+import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -15,7 +15,7 @@ import SongsScreen from '../screens/SongsScreen';
 import BooksScreen from '../screens/BooksScreen';
 import StudyScreen from '../screens/StudyScreen'; 
 
-// --- STACK SCREENS (Cleanly unmounted when not in use) ---
+// --- STACK SCREENS ---
 import EGWBooksListScreen from '../screens/EGWBooksListScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import TodaysMannaScreen from '../screens/TodaysMannaScreen';
@@ -25,9 +25,8 @@ import DictionaryScreen from '../screens/DictionaryScreen';
 import ConcordanceScreen from '../screens/ConcordanceScreen';
 import StudyExplanationsScreen from '../screens/StudyExplanationsScreen'; 
 
-// --- NEW SABBATH SCHOOL SCREENS ---
-import SabbathSchoolListScreen from '../screens/SabbathSchoolListScreen';
-import SabbathSchoolReaderScreen from '../screens/SabbathSchoolReaderScreen';
+// --- NEW UNIFIED SABBATH SCHOOL SCREEN ---
+import SabbathSchoolScreen from '../screens/SabbathSchoolScreen';
 
 import ZionScreen from '../screens/ZionScreen';
 import ThirumaraiOldScreen from '../screens/ThirumaraiOldScreen';
@@ -43,9 +42,8 @@ import ViewService from '../screens/ViewService';
 export const navigationRef = createNavigationContainerRef();
 
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator(); // The high-performance bookshelf coordinator
+const Stack = createNativeStackNavigator(); 
 
-// Deep linking remains fully active and maps directly to the Stack layout
 const linking = {
   prefixes: ['adventisttamil://', 'https://adventisttamil.app'],
   config: {
@@ -141,7 +139,6 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
   );
 }
 
-// Sub-Navigator containing only your 5 core bottom tabs
 function TabNavigator() {
   return (
     <Tab.Navigator
@@ -160,16 +157,13 @@ function TabNavigator() {
   );
 }
 
-// Master Navigation Component
 export default function MainNavigation() {
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
        <Stack.Navigator screenOptions={{ headerShown: false }}>
         
-        {/* The persistent bottom tabs are the root layer */}
         <Stack.Screen name="MainTabs" component={TabNavigator} />
 
-        {/* Detailed screens are layered on top sequentially and automatically unmounted */}
         <Stack.Screen name="EGWBooksList" component={EGWBooksListScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="TodaysManna" component={TodaysMannaScreen} />
@@ -179,9 +173,8 @@ export default function MainNavigation() {
         <Stack.Screen name="Concordance" component={ConcordanceScreen} />
         <Stack.Screen name="StudyExplanations" component={StudyExplanationsScreen} />
         
-        {/* --- NEW SABBATH SCHOOL SCREENS --- */}
-        <Stack.Screen name="SabbathSchoolList" component={SabbathSchoolListScreen} />
-        <Stack.Screen name="SabbathSchoolReader" component={SabbathSchoolReaderScreen} />
+        {/* --- NEW UNIFIED SABBATH SCHOOL SCREEN --- */}
+        <Stack.Screen name="SabbathSchool" component={SabbathSchoolScreen} />
 
         <Stack.Screen name="ZionSongs" component={ZionScreen} />
         <Stack.Screen name="ThirumaraiOld" component={ThirumaraiOldScreen} />

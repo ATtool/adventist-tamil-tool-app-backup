@@ -730,8 +730,8 @@ export default function HomeScreen() {
                 onPress={() => {
                   if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowSabbathOptions(false);
-                  // We navigate straight to the Reader!
-                  setTimeout(() => navigation.navigate('SabbathSchoolReader'), 200);
+                  // Navigate to the new unified screen
+                  setTimeout(() => navigation.navigate('SabbathSchool'), 200);
                 }}
               >
                 <LinearGradient colors={['#004d66', '#0099cc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sabbathPrimaryGradient}>
@@ -740,8 +740,8 @@ export default function HomeScreen() {
                       <Ionicons name="today" size={22} color="#FFFFFF" />
                     </View>
                   </View>
-                  <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Today's Lesson</Text>
-                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>இன்றைய பாடம்</Text>
+                  <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Today's Sabbath School Lesson</Text>
+                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம் #Adventech</Text>
                 </LinearGradient>
               </TouchableOpacity>
 
