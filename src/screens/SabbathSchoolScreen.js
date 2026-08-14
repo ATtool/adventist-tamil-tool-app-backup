@@ -19,7 +19,8 @@ const DAY_NAMES = {
   "04": "செவ்வாய்க்கிழமை",
   "05": "புதன்கிழமை",
   "06": "வியாழக்கிழமை",
-  "07": "வெள்ளிக்கிழமை"
+  "07": "வெள்ளிக்கிழமை",
+  "inside-story": "மிஷன் கதை (Inside Story)"
 };
 
 const BOOK_MAP = {
@@ -374,15 +375,32 @@ export default function SabbathSchoolScreen() {
 
   const renderDayDetail = (weekKey, dayKey) => {
     const weekData = quarterData.lessons[weekKey];
-    const dayData = weekData[dayKey];
-    const isFriday = dayKey === "07";
     const insideStory = weekData["inside-story"];
-
-    const titleMatch = dayData.match(/title:\s*(.*)/);
-    const rawTitle = titleMatch ? titleMatch[1].trim() : "பாடம்";
+    const isFriday = dayKey === "07";
+    const isInsideStory = dayKey === "inside-story";
     
-    const dateMatch = dayData.match(/date:\s*(\d{2}\/\d{2}\/\d{4})/);
+    // If we clicked inside story, render that. Otherwise, render the standard day data.
+    const dataToRender = isInsideStory ? insideStory : weekData[dayKey];
+
+    const titleMatch = dataToRender ? dataToRender.match(/title:\s*(.*)/) : null;
+    const rawTitle = titleMatch ? titleMatch[1].trim() : (isInsideStory ? "மிஷன் கதை" : "பாடம்");
+    
+    const dateMatch = dataToRender ? dataToRender.match(/date:\s*(\d{2}\/\d{2}\/\d{4})/) : null;
     const rawDate = dateMatch ? dateMatch[1] : "";
+
+    // Setup Smart Navigation Logic
+    const isPrevDisabled = dayKey === "01";
+    const isNextDisabled = isInsideStory || (isFriday && !insideStory);
+
+    const handlePrev = () => {
+      if (isInsideStory) setSelectedDay("07");
+      else setSelectedDay(`0${parseInt(dayKey) - 1}`);
+    };
+
+    const handleNext = () => {
+      if (isFriday) setSelectedDay("inside-story");
+      else setSelectedDay(`0${parseInt(dayKey) + 1}`);
+    };
 
     return (
       <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
@@ -394,17 +412,18 @@ export default function SabbathSchoolScreen() {
         )}
 
         <Text style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 10, textAlign: 'center' }}>
-          பாடம் {parseInt(dayKey)} : {rawTitle}
+          {isInsideStory ? rawTitle : `பாடம் ${parseInt(dayKey)} : ${rawTitle}`}
         </Text>
         
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 10, borderBottomWidth: 1, borderColor: colors.border }}>
           <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{DAY_NAMES[dayKey]}</Text>
-          <Text style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{rawDate}</Text>
+          {!!rawDate && <Text style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{rawDate}</Text>}
         </View>
 
-        {renderBookText(dayData)}
+        {renderBookText(dataToRender)}
 
-        {isFriday && insideStory && (
+        {/* ONLY append inside story at the bottom if we are on Tab 0 (Today) and it's Friday */}
+        {activeTab === 0 && isFriday && insideStory && (
           <View style={[styles.missionStoryBox, { borderColor: colors.border }]}>
              <Text style={{ color: colors.primary, fontSize: readerFontSize + 2, fontFamily: 'Tamil003', marginBottom: 15, textAlign: 'center' }}>
                மிஷன் கதை (Inside Story)
@@ -415,15 +434,15 @@ export default function SabbathSchoolScreen() {
 
         <View style={styles.navRow}>
           <TouchableOpacity 
-            style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: dayKey === "01" ? 0.3 : 1 }]} 
-            disabled={dayKey === "01"} onPress={() => setSelectedDay(`0${parseInt(dayKey) - 1}`)}
+            style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isPrevDisabled ? 0.3 : 1 }]} 
+            disabled={isPrevDisabled} onPress={handlePrev}
           >
             <Ionicons name="chevron-back" size={20} color={colors.text} />
             <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003' }}>முந்தைய</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: dayKey === "07" ? 0.3 : 1 }]} 
-            disabled={dayKey === "07"} onPress={() => setSelectedDay(`0${parseInt(dayKey) + 1}`)}
+            style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isNextDisabled ? 0.3 : 1 }]} 
+            disabled={isNextDisabled} onPress={handleNext}
           >
             <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003' }}>அடுத்த</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
@@ -454,13 +473,20 @@ export default function SabbathSchoolScreen() {
         </View>
 
         <View style={{ marginTop: 20 }}>
-          {["01", "02", "03", "04", "05", "06", "07"].map(day => {
+          {/* Dynamically push 'inside-story' into the array if it exists for this week */}
+          {["01", "02", "03", "04", "05", "06", "07", ...(weekData["inside-story"] ? ["inside-story"] : [])].map(day => {
             if (!weekData[day]) return null;
+            
+            const isInsideStory = day === "inside-story";
             const titleMatch = weekData[day].match(/title:\s*(.*)/);
-            const rawTitle = titleMatch ? titleMatch[1].trim() : "பாடம்";
+            const rawTitle = titleMatch ? titleMatch[1].trim() : (isInsideStory ? "மிஷன் கதை" : "பாடம்");
+            
+            // Show 'MS' (Mission Story) inside the circle icon instead of the long 'inside-story' text
+            const circleIconText = isInsideStory ? "MS" : day; 
+            
             return (
               <TouchableOpacity key={day} activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: '#BF5AF2' }]} onPress={() => setSelectedDay(day)}>
-                <View style={[styles.iconContainer, { backgroundColor: '#BF5AF222' }]}><Text style={{ color: '#BF5AF2', fontFamily: 'Tamil003', fontSize: 16 }}>{day}</Text></View>
+                <View style={[styles.iconContainer, { backgroundColor: '#BF5AF222' }]}><Text style={{ color: '#BF5AF2', fontFamily: 'Tamil003', fontSize: 16 }}>{circleIconText}</Text></View>
                 <View style={styles.textContainer}>
                   <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }]} numberOfLines={1}>{rawTitle}</Text>
                   <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>{DAY_NAMES[day]}</Text>

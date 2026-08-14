@@ -776,7 +776,7 @@ export default function HomeScreen() {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Official GC Website</Text>
-                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
+                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, fontFamily: 'Tamil003', fontWeight: 'normal', lineHeight: 16 }} allowFontScaling={false}>
                     ஒய்வுநாள் பள்ளி பாடம் மட்டும்
                   </Text>
                 </View>
@@ -847,11 +847,21 @@ export default function HomeScreen() {
                   <Text style={{ color: colors.text, fontSize: 18 }}>About the App</Text>
                 </TouchableOpacity>
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
-                <TouchableOpacity style={styles.drawerItem} onPress={() => Linking.openURL('mailto:adventisttamiltool@gmail.com')}>
+                
+                {/* 1st: Our Website */}
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://adventisttamiltool.great-site.net/'); }}>
+                  <Image source={require('../../assets/WWW.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
+                  <Text style={{ color: colors.text, fontSize: 18 }}>Our Website</Text>
+                </TouchableOpacity>
+                
+                {/* 2nd: Gmail */}
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('mailto:adventisttamiltool@gmail.com'); }}>
                   <Image source={require('../../assets/Gmail.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
                   <Text style={{ color: colors.text, fontSize: 16 }}>adventisttamiltool@gmail.com</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.drawerItem} onPress={() => Linking.openURL('https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p')}>
+                
+                {/* 3rd: WhatsApp */}
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p'); }}>
                   <Image source={require('../../assets/whatsapp.png')} style={{ width: 48, height: 48, marginRight: 15 }} resizeMode="contain" />
                   <Text style={{ color: colors.text, fontSize: 18 }}>Join our WhatsApp Channel</Text>
                 </TouchableOpacity>
