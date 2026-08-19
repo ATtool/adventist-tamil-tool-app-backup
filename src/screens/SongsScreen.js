@@ -205,7 +205,28 @@ export default function SongsScreen() {
           }
         });
 
-        // 3. Fetch Custom Songs
+        // 3. Fetch Other Songs from GIST
+        try {
+          const GIST_RAW_URL = 'https://gist.githubusercontent.com/ATtool/cf27796976a73404f254b4bc81240f5f/raw/other_songs.json';
+          const cacheBusterUrl = `${GIST_RAW_URL}?t=${new Date().getTime()}`;
+          const response = await fetch(cacheBusterUrl, {
+            headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
+          });
+          const otherRes = await response.json();
+          masterList = [...masterList, ...(otherRes || []).map((s, index) => ({
+            global_id: `other_${index}`,
+            source: 'இதர பாடல்கள்',
+            sourceColor: ACCENT_OTHER,
+            num: s.song_number || s.id || '?', 
+            title_tamil: s.title_tamil || 'Unknown Title',
+            search_en: s.title_english || s.title_thanglish || '',
+            lyrics: s.lyrics || ''
+          }))];
+        } catch (gistError) {
+          console.error("Global Search - Other Songs Fetch Error:", gistError);
+        }
+
+        // 4. Fetch Custom Songs
         const customRes = getCustomSongs();
         masterList = [...masterList, ...customRes.map((s, index) => ({
           global_id: `custom_${index}`,
