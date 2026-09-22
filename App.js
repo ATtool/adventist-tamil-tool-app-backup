@@ -17,7 +17,7 @@ import { scheduleMannaNotifications } from './src/utils/NotificationService';
 
 SplashScreen.preventAutoHideAsync();
 
-const DB_VERSION = "2.1.1";
+const DB_VERSION = "3.0.0";
 
 async function copyDatabase(dbName, assetName) {
   const sqliteDirectory = FileSystem.documentDirectory + 'SQLite';
