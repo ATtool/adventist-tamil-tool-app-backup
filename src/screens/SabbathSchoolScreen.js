@@ -9,7 +9,7 @@ import * as SQLite from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '../context/SettingsContext';
 
-const GIST_URL = 'https://gist.githubusercontent.com/ATtool/515dee23d057c967636146fded6645f4/raw/9de3ccd674fca98961d3dfae15364dacb47224f0/SSl-Ta';
+const GIST_URL = 'https://gist.githubusercontent.com/ATtool/515dee23d057c967636146fded6645f4/raw/SSl-Ta';
 const CACHE_KEY = '@sabbath_quarterly_data';
 
 const DAY_NAMES = {
