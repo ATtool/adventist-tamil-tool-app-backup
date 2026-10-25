@@ -191,7 +191,9 @@ export default function SongsScreen() {
 
         // 2. Fetch Thirumarai (Old & Hope) 
         const thiruDb = await getThiruDb();
-        const thiruRes = await thiruDb.getAllAsync('SELECT * FROM SongListTable');
+        const thiruTables = await thiruDb.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
+        const thiruTableName = thiruTables && thiruTables.length > 0 ? thiruTables[0].name : 'SongListTable';
+        const thiruRes = await thiruDb.getAllAsync(`SELECT * FROM "${thiruTableName}"`);
         
         // We use forEach instead of map so one row can safely create TWO search results if needed!
         thiruRes.forEach((s, index) => {
