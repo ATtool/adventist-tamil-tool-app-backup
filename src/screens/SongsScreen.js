@@ -2,7 +2,7 @@ import { getZionDb, getThiruDb } from '../utils/SongDb';
 import React, { useRef, useCallback, useState, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated, Modal, TextInput, FlatList, Keyboard, Share, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
 import * as SQLite from 'expo-sqlite';
@@ -44,6 +44,10 @@ export default function SongsScreen() {
   const insets = useSafeAreaInsets(); 
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
 
+  // --- LANGUAGE TOGGLE STATE & ANIMATION ---
+  const [isThanglish, setIsThanglish] = useState(false);
+  const toggleSlideAnim = useRef(new Animated.Value(0)).current; // 0 = Tamil, 1 = Thanglish
+
   // --- ANIMATION VALUES ---
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const cardAnims = useRef([...Array(5)].map(() => new Animated.Value(50))).current; 
@@ -64,6 +68,20 @@ export default function SongsScreen() {
   const triggerHaptic = useCallback((style = Haptics.ImpactFeedbackStyle.Medium) => { 
     if (hapticsEnabled) Haptics.impactAsync(style); 
   }, [hapticsEnabled]);
+
+  const handleLanguageToggle = () => {
+    triggerHaptic();
+    const newValue = !isThanglish;
+    setIsThanglish(newValue);
+    
+    // Smooth, modern sliding animation for the pill
+    Animated.spring(toggleSlideAnim, {
+      toValue: newValue ? 1 : 0,
+      useNativeDriver: true,
+      friction: 7,
+      tension: 50
+    }).start();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -163,7 +181,7 @@ export default function SongsScreen() {
         const zionRes = await zionDb.getAllAsync('SELECT * FROM songs');
         masterList = [...masterList, ...zionRes.map((s, index) => ({
           global_id: `zion_${index}`,
-          source: 'சீயோன் இனிய கீதங்கள்',
+          source: isThanglish ? 'Zion Iniya Geethangal' : 'சீயோன் இனிய கீதங்கள்',
           sourceColor: ACCENT_ZION,
           num: s.song_number || '?', 
           title_tamil: s.title_tamil || 'Unknown Title',
@@ -183,7 +201,7 @@ export default function SongsScreen() {
           if (hasHope) {
             masterList.push({
               global_id: `thiru_hope_${index}`,
-              source: 'திருமறைத்திருப் பாடல் நம்பிக்கையின் கீதங்கள் புத்தக வரிசை',
+              source: isThanglish ? 'Thirumarai Thirupaadalgal (Hope)' : 'திருமறைத்திருப் பாடல் நம்பிக்கையின் கீதங்கள் புத்தக வரிசை',
               sourceColor: ACCENT_HOPE,
               num: s.Song_number_by_Nambikaiyen_Geethagal,
               title_tamil: s.song_title_tamil || 'Unknown Title',
@@ -195,7 +213,7 @@ export default function SongsScreen() {
           if (hasOld) {
             masterList.push({
               global_id: `thiru_old_${index}`,
-              source: 'திருமறைத்திருப் பாடல் பழைய புத்தக வரிசை',
+              source: isThanglish ? 'Thirumarai Thirupaadalgal (Old)' : 'திருமறைத்திருப் பாடல் பழைய புத்தக வரிசை',
               sourceColor: ACCENT_OLD,
               num: s.song_number,
               title_tamil: s.song_title_tamil || 'Unknown Title',
@@ -215,7 +233,7 @@ export default function SongsScreen() {
           const otherRes = await response.json();
           masterList = [...masterList, ...(otherRes || []).map((s, index) => ({
             global_id: `other_${index}`,
-            source: 'இதர பாடல்கள்',
+            source: isThanglish ? 'Ithara Paadalgal' : 'இதர பாடல்கள்',
             sourceColor: ACCENT_OTHER,
             num: s.song_number || s.id || '?', 
             title_tamil: s.title_tamil || 'Unknown Title',
@@ -230,7 +248,7 @@ export default function SongsScreen() {
         const customRes = getCustomSongs();
         masterList = [...masterList, ...customRes.map((s, index) => ({
           global_id: `custom_${index}`,
-          source: 'எனது பாடல்கள்',
+          source: isThanglish ? 'Enathu Paadalgal' : 'எனது பாடல்கள்',
           sourceColor: ACCENT_CUSTOM,
           num: s.id.toString(),
           title_tamil: s.title_tamil || 'Unknown Title',
@@ -271,8 +289,16 @@ export default function SongsScreen() {
 
   const openScreen = (screenName) => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate(screenName);
+    // Pass the isThanglish memory to the next screen!
+    navigation.navigate(screenName, { isThanglish });
   };
+
+  // Modern Toggle Slider Translation Math
+  const TOGGLE_WIDTH = 180;
+  const thumbTranslateX = toggleSlideAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [2, (TOGGLE_WIDTH / 2) - 2] // Slides perfectly to the right half
+  });
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
@@ -294,7 +320,11 @@ export default function SongsScreen() {
         <Animated.View style={{ opacity: cardOpacities[0], transform: [{ translateY: cardAnims[0] }] }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_ZION }]} onPress={() => openScreen('ZionSongs')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_ZION + '22' }]}><Ionicons name="musical-notes" size={22} color={ACCENT_ZION} /></View>
-            <View style={styles.textContainer}><Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 10 }]}>சீயோன் இனிய கீதங்கள்</Text></View>
+            <View style={styles.textContainer}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 10 }]}>
+                {isThanglish ? 'Zion Iniya Geethangal' : 'சீயோன் இனிய கீதங்கள்'}
+              </Text>
+            </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
@@ -304,8 +334,12 @@ export default function SongsScreen() {
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_HOPE }]} onPress={() => openScreen('ThirumaraiHope')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_HOPE + '22' }]}><Ionicons name="star" size={22} color={ACCENT_HOPE} /></View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 10 }]}>திருமறைத்திருப் பாடல்கள்</Text>
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize +1, lineHeight: appFontSize + 2 }]}>( நம்பிக்கையின் கீதங்கள் புத்தக வரிசை )</Text>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 10 }]}>
+                {isThanglish ? 'Thirumarai Thirupaadalgal' : 'திருமறைத்திருப் பாடல்கள்'}
+              </Text>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize + 1, lineHeight: appFontSize + 2 }]}>
+                {isThanglish ? '( Songs of Hope )' : '( நம்பிக்கையின் கீதங்கள் புத்தக வரிசை )'}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
@@ -316,8 +350,12 @@ export default function SongsScreen() {
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_OLD }]} onPress={() => openScreen('ThirumaraiOld')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_OLD + '22' }]}><Ionicons name="book" size={22} color={colors.primary} /></View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>திருமறைத்திருப் பாடல்கள்</Text>
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize +1, lineHeight: appFontSize + 2 }]}>( பழைய புத்தக வரிசை )</Text>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>
+                {isThanglish ? 'Thirumarai Thirupaadalgal' : 'திருமறைத்திருப் பாடல்கள்'}
+              </Text>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize + 1, lineHeight: appFontSize + 2 }]}>
+                {isThanglish ? '( Old Song Book )' : '( பழைய புத்தக வரிசை )'}
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
@@ -327,7 +365,11 @@ export default function SongsScreen() {
         <Animated.View style={{ opacity: cardOpacities[3], transform: [{ translateY: cardAnims[3] }] }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_OTHER }]} onPress={() => openScreen('OtherSongs')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_OTHER + '22' }]}><Ionicons name="library" size={22} color={ACCENT_OTHER} /></View>
-            <View style={styles.textContainer}><Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>இதர பாடல்கள்</Text></View>
+            <View style={styles.textContainer}>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>
+                {isThanglish ? 'Ithara Paadalgal' : 'இதர பாடல்கள்'}
+              </Text>
+            </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
@@ -337,14 +379,59 @@ export default function SongsScreen() {
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_CUSTOM }]} onPress={() => openScreen('CustomSongs')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_CUSTOM + '22' }]}><Ionicons name="create" size={22} color={ACCENT_CUSTOM} /></View>
             <View style={styles.textContainer}>
-              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>எனது பாடல்கள்</Text>
-              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize +1, lineHeight: appFontSize + 2 }]}>( Custom Songs )</Text>
+              <Text style={[styles.tamilText, { color: colors.text, fontSize: appFontSize + 7, lineHeight: appFontSize + 8 }]}>
+                {isThanglish ? 'Enathu Paadalgal' : 'எனது பாடல்கள்'}
+              </Text>
+              <Text style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: appFontSize + 1, lineHeight: appFontSize + 2 }]}>
+                ( Custom Songs )
+              </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
 
       </ScrollView>
+
+      {/* --- SMALL, MODERN ANIMATED TOGGLE BUTTON --- */}
+      <View style={{ alignItems: 'center', paddingBottom: 15, paddingTop: 5 }}>
+        <TouchableOpacity 
+          activeOpacity={0.9} 
+          onPress={handleLanguageToggle}
+          style={{
+            width: TOGGLE_WIDTH,
+            height: 38,
+            backgroundColor: colors.card,
+            borderRadius: 19,
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: colors.border,
+            position: 'relative',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+            elevation: 2
+          }}
+        >
+          {/* The Glowing Sliding Pill */}
+          <Animated.View style={{
+            position: 'absolute',
+            width: (TOGGLE_WIDTH / 2) - 2,
+            height: 32,
+            backgroundColor: colors.primary,
+            borderRadius: 16,
+            transform: [{ translateX: thumbTranslateX }]
+          }} />
+          
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+            <Text style={{ color: !isThanglish ? (isDark ? '#000' : '#FFF') : colors.subtext, fontWeight: 'bold', fontSize: 13 }}>தமிழ்</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 1 }}>
+            <Text style={{ color: isThanglish ? (isDark ? '#000' : '#FFF') : colors.subtext, fontWeight: 'bold', fontSize: 13 }}>Thanglish</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
       {/* ------------------------------------------- */}
       {/* GLOBAL SEARCH MODAL                         */}
@@ -541,6 +628,8 @@ const styles = StyleSheet.create({
   card: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderLeftWidth: 4, marginBottom: 12, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
   iconContainer: { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   textContainer: { flex: 1, justifyContent: 'center' },
+  
+  // Completely restored the original text styles here!
   tamilText: { fontFamily: 'Tamil003', marginBottom: 2 },
   tamilSubText: { fontFamily: 'Tamil003' },
   

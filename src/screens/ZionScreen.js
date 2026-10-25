@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -11,7 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
 import { getZionDb } from '../utils/SongDb';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 
 const { height } = Dimensions.get('window');
 const BRIGHT_YELLOW = '#FFD700';
@@ -49,7 +49,8 @@ const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size =
   );
 };
 
-const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize }) => {
+// FULLY LOCKED FONTS IN THE LIST ITEM (No fontWeight conflicts so Tamil003 renders cleanly)
+const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize, isThanglish }) => {
   const translateY = listAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [30 + (index % 10) * 5, 0] 
@@ -59,11 +60,32 @@ const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onTog
       <ScalePressable onPress={() => onPress(item)}>
         <View style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]}>
           <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
-            <Text style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.song_number || item.id || '?'}</Text>
+            <Text style={{ color: colors.primary, fontSize: appFontSize, fontFamily: 'Tamil008', includeFontPadding: false }}>{item.song_number || item.id || '?'}</Text>
           </View>
           <View style={styles.titleContainer}>
-            <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil || 'Unknown'}</Text>
-            <Text style={{ color: colors.primary, fontSize: appFontSize - 1, fontFamily: 'Tamil003', letterSpacing: 0.5, marginTop: 5, includeFontPadding: false }}>{item.category}</Text>
+            <Text 
+              style={[styles.songTitle, { 
+                color: colors.text, 
+                fontFamily: 'Tamil003',
+                fontSize: appFontSize + (isThanglish ? 4 : 2),
+                includeFontPadding: false
+              }]} 
+              numberOfLines={1}
+            >
+              {item.title || 'Unknown'}
+            </Text>
+            <Text 
+              style={{ 
+                color: colors.primary, 
+                fontSize: appFontSize - 1, 
+                fontFamily: 'Tamil003',
+                letterSpacing: 0.5, 
+                marginTop: 5, 
+                includeFontPadding: false 
+              }}
+            >
+              {item.category}
+            </Text>
           </View>
           <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
         </View>
@@ -78,7 +100,7 @@ const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, a
     <Animated.View style={{ flex: 1, margin: 5, opacity: listAnim, transform: [{ translateY }] }}>
       <ScalePressable onPress={() => onPress(letter)}>
         <View style={[styles.gridItemCompact, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize + 2 }}>{letter}</Text>
+          <Text style={{ color: colors.primary, fontSize: appFontSize + 2, fontFamily: 'Tamil008', includeFontPadding: false }}>{letter}</Text>
         </View>
       </ScalePressable>
     </Animated.View>
@@ -87,6 +109,11 @@ const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, a
 
 export default function ZionScreen() {
   const navigation = useNavigation();
+  const route = useRoute();
+  
+  // Catch the memory from SongsScreen
+  const isThanglish = route.params?.isThanglish || false;
+  
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
   
   const [songs, setSongs] = useState([]);
@@ -106,6 +133,9 @@ export default function ZionScreen() {
   const [showTextSettings, setShowTextSettings] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Translation State
+  const [showCombinedLyrics, setShowCombinedLyrics] = useState(false);
 
   const flatListRef = useRef(null);
   const headerSlide = useRef(new Animated.Value(-50)).current;
@@ -174,7 +204,7 @@ export default function ZionScreen() {
     return () => backHandler.remove();
   }, [isAlphabetMode, selectedSongIndex, showCategoryModal, showSortMenu, showTextSettings]);
 
-  useEffect(() => { loadFavorites(); fetchSongs(); }, []);
+  useEffect(() => { loadFavorites(); fetchSongs(); }, [isThanglish]);
   useEffect(() => { if (selectedSongIndex !== null) activateKeepAwakeAsync(); else deactivateKeepAwake(); }, [selectedSongIndex]);
 
   const loadFavorites = async () => {
@@ -198,11 +228,13 @@ export default function ZionScreen() {
     try {
       const db = await getZionDb();
       const result = await db.getAllAsync('SELECT * FROM songs'); 
+      
       const cleanedSongs = (result || []).map(s => ({ 
         ...s, 
-        title: s.title_tamil, 
-        category: s.category ? s.category.trim() : 'Uncategorized' 
+        title: isThanglish ? (s.title_english ? s.title_english.toString() : s.title_tamil) : s.title_tamil, 
+        category: isThanglish ? (s.category_en ? s.category_en.trim() : (s.category ? s.category.trim() : 'Uncategorized')) : (s.category ? s.category.trim() : 'Uncategorized')
       }));
+      
       setSongs(cleanedSongs);
       const uniqueCats = Array.from(new Set(cleanedSongs.map(s => s.category)));
       setCategories(['All', ...uniqueCats]);
@@ -312,7 +344,7 @@ export default function ZionScreen() {
 
   const handleShare = async (song) => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    try { await Share.share({ message: `${song.song_number || song.id} - ${song.title_tamil}\n\n${song.lyrics}\n\n✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p \n\n📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool` }); } catch (error) { console.log(error.message); }
+    try { await Share.share({ message: `${song.song_number || song.id} - ${song.title}\n\n${song.lyrics}\n\n✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p \n\n📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool` }); } catch (error) { console.log(error.message); }
   };
 
   const changeSong = (direction) => {
@@ -325,7 +357,8 @@ export default function ZionScreen() {
   };
 
   const closeReadingScreen = () => { 
-    setSelectedSongIndex(null); 
+    setSelectedSongIndex(null);
+    setShowCombinedLyrics(false); // Reset translation toggle when closing
   };
 
   const toggleKeyboardType = (isNumeric) => {
@@ -347,11 +380,18 @@ export default function ZionScreen() {
 
   const activeSong = selectedSongIndex !== null ? filteredSongs[selectedSongIndex] : null;
 
+  // THE SMART PARSER LOGIC
   const lyricStanzas = useMemo(() => {
-    const text = activeSong && activeSong.lyrics ? activeSong.lyrics : '';
+    const text = activeSong ? (showCombinedLyrics ? (activeSong.lyrics_combined || activeSong.lyrics) : (isThanglish ? (activeSong.lyrics_transliteration || activeSong.lyrics) : activeSong.lyrics)) : '';
     if (!text) return [];
+    
     const rawLines = text.split(NEWLINE);
-    const numberPattern = /^\s*(\d{1,3}[.)])\s*(.*)$/;
+    const stanzas = [];
+    let currentNumber = null;
+    let currentLines = [];
+    
+    let seenChorusText = null;
+    let isCurrentBlockChorus = false;
 
     const isRefrainLine = (line, nextLine) => {
       const trimmed = line.trim();
@@ -360,33 +400,71 @@ export default function ZionScreen() {
       return nextLine.trim() === '';
     };
 
-    const stanzas = [];
-    let currentNumber = null;
-    let currentLines = [];
-
     const flush = () => {
       while (currentLines.length > 0 && currentLines[currentLines.length - 1].content.trim() === '') currentLines.pop();
       while (currentLines.length > 0 && currentLines[0].content.trim() === '') currentLines.shift();
-      if (currentLines.length > 0) stanzas.push({ number: currentNumber, lines: currentLines });
+
+      if (currentLines.length > 0) {
+        const blockText = currentLines.map(l => l.content).join('\n').trim();
+        
+        if (isCurrentBlockChorus) {
+          if (!seenChorusText) {
+            seenChorusText = blockText; 
+            stanzas.push({ number: currentNumber, lines: currentLines });
+          } else if (seenChorusText !== blockText) {
+            stanzas.push({ number: currentNumber, lines: currentLines }); 
+          }
+        } else {
+          stanzas.push({ number: currentNumber, lines: currentLines });
+        }
+      }
+      
+      currentLines = [];
+      currentNumber = null;
+      isCurrentBlockChorus = false;
     };
 
     for (let i = 0; i < rawLines.length; i++) {
       const line = rawLines[i];
-      const nextLine = rawLines[i + 1];
-      const match = line.match(numberPattern);
-      if (match) {
-        flush();
-        currentNumber = match[1];
-        const rest = match[2];
-        currentLines = [{ content: rest, isRefrain: isRefrainLine(rest, nextLine) }];
-      } else {
-        currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
-      }
-    }
-    flush();
+      const trimmed = line.trim();
 
-    return stanzas.length > 0 ? stanzas : [{ number: null, lines: [{ content: text.trim(), isRefrain: false }] }];
-  }, [activeSong]);
+      if (trimmed.toLowerCase() === '[chorus]') {
+        flush();
+        isCurrentBlockChorus = true;
+        continue;
+      }
+
+      const verseMatch = trimmed.match(/^\[Verse\s+(\d+)\]$/i);
+      if (verseMatch) {
+        flush();
+        currentNumber = verseMatch[1] + ".";
+        continue;
+      }
+
+      const numMatch = trimmed.match(/^\s*(\d{1,3}[.)])\s*(.*)$/);
+      if (numMatch && !isCurrentBlockChorus) {
+        flush();
+        currentNumber = numMatch[1];
+        const rest = line.substring(line.indexOf(numMatch[1]) + numMatch[1].length).trim();
+        const nextLine = rawLines[i + 1];
+        if (rest) {
+          currentLines.push({ content: rest, isRefrain: isRefrainLine(rest, nextLine) });
+        }
+        continue;
+      }
+
+      if (trimmed === '') {
+        flush();
+        continue;
+      }
+
+      const nextLine = rawLines[i + 1];
+      currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
+    }
+    flush(); 
+
+    return stanzas;
+  }, [activeSong, showCombinedLyrics, isThanglish]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -416,10 +494,10 @@ export default function ZionScreen() {
 
               <View style={[styles.inlineToggleContainer, { backgroundColor: isDark ? '#2A2D35' : '#E5E7EB' }]}>
                 <TouchableOpacity style={[styles.inlineToggleBtn, !isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(false)}>
-                  <Text style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>ABC</Text>
+                  <Text style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontFamily: 'Tamil003', fontSize: 12, includeFontPadding: false }}>ABC</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.inlineToggleBtn, isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(true)}>
-                  <Text style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>123</Text>
+                  <Text style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontFamily: 'Tamil003', fontSize: 12, includeFontPadding: false }}>123</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -430,7 +508,7 @@ export default function ZionScreen() {
               <ScalePressable onPress={clearAllFilters} style={{ marginRight: 8 }}>
                 <View style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
                   <Ionicons name="close" size={14} color="#FF3B30" />
-                  <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Clear All</Text>
+                  <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Clear All</Text>
                 </View>
               </ScalePressable>
             )}
@@ -438,21 +516,21 @@ export default function ZionScreen() {
             <ScalePressable onPress={() => { triggerHaptic(); setShowSortMenu(true); Keyboard.dismiss(); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: isAlphabetMode ? colors.primary + '20' : colors.card }]}>
                 <MaterialCommunityIcons name={sortOrder === 'number' ? "sort-numeric-ascending" : "sort-alphabetical-ascending"} size={16} color={isAlphabetMode ? colors.primary : colors.text} />
-                <Text style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Sort</Text>
+                <Text style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Sort</Text>
               </View>
             </ScalePressable>
 
             <ScalePressable onPress={() => { triggerHaptic(); setShowCategoryModal(true); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: selectedCategory !== 'All' ? colors.primary + '20' : colors.card }]}>
                 <Ionicons name="filter" size={14} color={selectedCategory !== 'All' ? colors.primary : colors.text} />
-                <Text style={{ color: selectedCategory !== 'All' ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Category</Text>
+                <Text style={{ color: selectedCategory !== 'All' ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Category</Text>
               </View>
             </ScalePressable>
 
             <ScalePressable onPress={handleToggleFavoritesList} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: showFavoritesOnly ? 'rgba(255,0,0,0.1)' : colors.card }]}>
                 <Ionicons name={showFavoritesOnly ? "heart" : "heart-outline"} size={14} color={showFavoritesOnly ? "red" : colors.text} />
-                <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Favorites</Text>
+                <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Favorites</Text>
               </View>
             </ScalePressable>
           </ScrollView>
@@ -473,7 +551,7 @@ export default function ZionScreen() {
               <ScalePressable onPress={() => { triggerHaptic(); selectNumberOrder(); }}>
                 <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary, marginHorizontal: 5 }]}>
                   <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>Back to Numbers</Text>
+                  <Text style={{ color: colors.primary, fontSize: appFontSize, marginLeft: 8, fontFamily: 'Tamil003', includeFontPadding: false }}>Back to Numbers</Text>
                 </View>
               </ScalePressable>
             }
@@ -499,18 +577,18 @@ export default function ZionScreen() {
                 <ScalePressable onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}>
                   <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
                     <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                    <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8 }}>அகர வரிசைக்குச் செல் (Back)</Text>
+                    <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8, includeFontPadding: false }}>அகர வரிசைக்குச் செல் (Back)</Text>
                   </View>
                 </ScalePressable>
               ) : null
             }
             renderItem={({ item, index }) => (
-              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
+              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} isThanglish={isThanglish} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
             )}
             ListEmptyComponent={
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100 }}>
                  <Ionicons name="search" size={60} color={colors.border} />
-                 <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15 }}>No songs found matching your search.</Text>
+                 <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15, fontFamily: 'Tamil003', includeFontPadding: false }}>No songs found matching your search.</Text>
               </View>
             }
           />
@@ -527,43 +605,42 @@ export default function ZionScreen() {
       <Modal visible={showSortMenu} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Sort Options</Text>
+            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4, fontFamily: 'Tamil008' }]}>Sort Options</Text>
             <ScalePressable onPress={selectNumberOrder}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
+                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15, includeFontPadding: false }}>🔢 எண் வரிசை (Number Order)</Text>
               </View>
             </ScalePressable>
             <ScalePressable onPress={selectAlphabetOrder}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
+                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15, includeFontPadding: false }}>🔠 அகர வரிசை (Alphabetical)</Text>
               </View>
             </ScalePressable>
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
-              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</Text>
+              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </BlurView>
       </Modal>
 
-      {/* CATEGORY MODAL - Restored and Compact */}
       <Modal visible={showCategoryModal} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.categoryModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Select Category</Text>
+            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4, fontFamily: 'Tamil008' }]}>Select Category</Text>
             <FlatList
               data={categories} keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <ScalePressable onPress={() => handleCategorySelect(item)}>
                   <View style={[styles.categoryListItem, { borderBottomColor: colors.border }]}>
-                    <Text style={{ color: selectedCategory === item ? colors.primary : colors.text, fontSize: appFontSize + 5, fontFamily: 'Tamil003' }}>{item}</Text>
+                    <Text style={{ color: selectedCategory === item ? colors.primary : colors.text, fontSize: appFontSize + 5, fontFamily: 'Tamil003', includeFontPadding: false }}>{item}</Text>
                   </View>
                 </ScalePressable>
               )}
             />
             <TouchableOpacity onPress={() => { triggerHaptic(); setShowCategoryModal(false); }} style={{ padding: 20, alignItems: 'center' }}>
-              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Close</Text>
+              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Close</Text>
             </TouchableOpacity>
           </View>
         </BlurView>
@@ -580,14 +657,34 @@ export default function ZionScreen() {
                 </View>
               </ScalePressable>
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
-                 <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
-                   {activeSong?.song_number || activeSong?.id} - {activeSong?.title_tamil}
+                 {/* FULLY LOCKED HEADER TITLE FONT */}
+                 <Text 
+                    style={{ 
+                      color: colors.primary, 
+                      fontFamily: 'Tamil008',
+                      fontSize: isThanglish ? titleSize + 2 : titleSize, 
+                      letterSpacing: titleSpacing, 
+                      textShadowColor: isDark ? colors.glow : 'transparent', 
+                      textShadowRadius: 10,
+                      includeFontPadding: false
+                    }} 
+                    numberOfLines={1}
+                 >
+                   {activeSong?.song_number || activeSong?.id} - {activeSong?.title}
                  </Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                
+                {/* TRANSLATE BUTTON */}
+                <ScalePressable onPress={() => { triggerHaptic(); setShowCombinedLyrics(!showCombinedLyrics); }}>
+                  <View style={[styles.textSettingsBtn, showCombinedLyrics && { backgroundColor: BRIGHT_YELLOW }]}>
+                    <Ionicons name="language" size={20} color={showCombinedLyrics ? '#000' : BRIGHT_YELLOW} />
+                  </View>
+                </ScalePressable>
+
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <Text style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</Text>
+                    <Text style={{ color: BRIGHT_YELLOW, marginRight: 4, fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Aa</Text>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeSong)}>
@@ -610,6 +707,7 @@ export default function ZionScreen() {
                   </View>
                   <View style={{ flex: 1 }}>
                     {stanza.lines.map((line, lineIdx) => (
+                      // FULLY LOCKED LYRICS FONT
                       <Text
                         key={lineIdx}
                         style={{
@@ -621,7 +719,21 @@ export default function ZionScreen() {
                           includeFontPadding: false,
                         }}
                       >
-                        {line.content.trim() === '' ? ' ' : line.content}
+                        {line.content.trim() === '' ? ' ' : 
+                          (showCombinedLyrics ? 
+                            line.content.split(/([a-zA-Z]+)/).map((part, i) => 
+                              /^[a-zA-Z]+$/.test(part) ? (
+                                <Text key={i} style={{ color: colors.subtext, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
+                                  {part}
+                                </Text>
+                              ) : (
+                                <Text key={i} style={{ color: line.isRefrain ? NEON_BLUE : colors.text, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
+                                  {part}
+                                </Text>
+                              )
+                            ) 
+                          : line.content)
+                        }
                       </Text>
                     ))}
                   </View>
@@ -668,26 +780,26 @@ export default function ZionScreen() {
               </Animated.View>
               <Animated.View style={[styles.settingsCard, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, transform: [{ translateY: settingsSlideAnim }] }]}>
                 <View style={styles.settingsHeader}>
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
+                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil008', includeFontPadding: false }}>Reading Preferences</Text>
                   <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(false); }}>
                     <Ionicons name="close" size={28} color={colors.text} />
                   </ScalePressable>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Title Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</Text>
+                  <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2, fontFamily: 'Tamil008' }]}>Title Settings</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Font Size: {titleSize}</Text>
                   <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2 }]}>Lyrics Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</Text>
+                  <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2, fontFamily: 'Tamil008' }]}>Lyrics Settings</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Font Size: {lyricsSize}</Text>
                   <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Line Spacing: {lyricsLineHeight}</Text>
                   <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</Text>
+                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Letter Spacing: {lyricsSpacing}</Text>
                   <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
                   <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
                     <View style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]}>
                       <Ionicons name="refresh" size={20} color={colors.primary} />
-                      <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</Text>
+                      <Text style={{ color: colors.primary, marginLeft: 8, fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Restore Defaults</Text>
                     </View>
                   </ScalePressable>
                 </ScrollView>
@@ -725,11 +837,11 @@ const styles = StyleSheet.create({
   categoryModalCard: { width: '85%', maxHeight: '75%', borderRadius: 24, overflow: 'hidden' },
   sortModalCard: { width: '85%', borderRadius: 24, overflow: 'hidden' },
   sortBtn: { flexDirection: 'row', alignItems: 'center', padding: 25 },
-  modalHeaderTitle: { fontWeight: '900', textAlign: 'center', padding: 20, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+  modalHeaderTitle: { fontFamily: 'Tamil008', textAlign: 'center', padding: 20, borderBottomWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
   categoryListItem: { paddingVertical: 3, paddingHorizontal: 15, alignItems: 'center', borderBottomWidth: 1 },
   settingsCard: { width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
-  settingLabel: { fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },
+  settingLabel: { fontFamily: 'Tamil008', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },
   restoreBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 16, borderRadius: 16, marginTop: 40, marginBottom: 20 },
   floatLeft: { position: 'absolute', bottom: 20, left: 20, borderRadius: 25, overflow: 'hidden', borderWidth: 1 },
   floatRight: { position: 'absolute', bottom: 20, right: 20, borderRadius: 25, overflow: 'hidden', borderWidth: 1 },
