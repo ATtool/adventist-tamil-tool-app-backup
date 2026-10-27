@@ -229,11 +229,14 @@ export default function ZionScreen() {
       const db = await getZionDb();
       const result = await db.getAllAsync('SELECT * FROM songs'); 
       
-      const cleanedSongs = (result || []).map(s => ({ 
-        ...s, 
-        title: isThanglish ? (s.title_english ? s.title_english.toString() : s.title_tamil) : s.title_tamil, 
-        category: isThanglish ? (s.category_en ? s.category_en.trim() : (s.category ? s.category.trim() : 'Uncategorized')) : (s.category ? s.category.trim() : 'Uncategorized')
-      }));
+      const cleanedSongs = (result || []).map(s => {
+        const catEn = s['category-en'] || s.category_en;
+        return { 
+          ...s, 
+          title: isThanglish ? (s.title_english ? s.title_english.toString() : s.title_tamil) : s.title_tamil, 
+          category: isThanglish ? (catEn ? catEn.toString().trim() : (s.category ? s.category.trim() : 'Uncategorized')) : (s.category ? s.category.trim() : 'Uncategorized')
+        };
+      });
       
       setSongs(cleanedSongs);
       const uniqueCats = Array.from(new Set(cleanedSongs.map(s => s.category)));
