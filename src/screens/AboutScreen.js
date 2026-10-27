@@ -30,8 +30,8 @@ const T = {
     dev: "Developer",
     mag: "Chittukuruvi Magazine",
     magDesc: "Published by Danny’s Publications on behalf of God is Judge Ministries. Nagercoil – 629004.",
-    thanglish: "Thanglish Song Titles",
-    thanglishDesc: "SDA Teacher, Co-founder of Balams Donkey Ministry.",
+    thanglish: "Thanglish Song",
+    thanglishDesc: "Funder of sdahymn.app",
     attrTitle: "Data Sources & Attributions",
     viewSource: "View Source",
     readMore: "Read More",
@@ -56,8 +56,8 @@ const T = {
     dev: "உருவாக்குநர்",
     mag: "சிட்டுக்குருவி இதழ்",
     magDesc: "Danny’s Publications மற்றும் God is Judge Ministries சார்பாக வெளியிடப்பட்டது. நாகர்கோவில் – 629004.",
-    thanglish: "தங்க்லீஷ் பாடல் தலைப்புகள்",
-    thanglishDesc: "SDA ஆசிரியை, Balams Donkey Ministry-ன் இணை நிறுவனர்.",
+    thanglish: "தங்க்லீஷ் பாடல்",
+    thanglishDesc: "Mr. லோகேஷ்  ரிச்சர்ட்ஸ் /nFounder of sdahymn.app",
     attrTitle: "தரவு மூலங்கள் மற்றும் உரிமைகள்",
     viewSource: "மூலத்தைக் காண்க",
     readMore: "அதிகமாகப் படிக்க",
@@ -253,7 +253,7 @@ export default function AboutScreen({ navigation }) {
 
             <View style={[styles.contributorBox, { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}>
               <Text style={[styles.contributorRole, { color: colors.subtext }]}>{text.thanglish}</Text>
-              <Text style={[styles.contributorName, { color: colors.text }]}>Miss. Hanly</Text>
+              <Text style={[styles.contributorName, { color: colors.text }]}>Mr. Lokesh Richardz</Text>
               <Text style={[styles.contributorDesc, { color: colors.subtext }]}>{text.thanglishDesc}</Text>
             </View>
 
