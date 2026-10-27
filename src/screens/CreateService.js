@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Animated, KeyboardAvoidingView, Platform, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
@@ -48,16 +48,18 @@ const MARRIAGE_TEMPLATE = [
 ];
 
 const SONGBOOKS = [
-  { id: 'Zion', name: 'சீயோன் இனிய கீதங்கள்', db: 'zion.db' },
-  { id: 'Hope', name: 'திருமறைத்திருப் பாடல்கள் ( நம்பிக்கையின் கீதங்கள் )', db: 'Thirumarai.db' },
-  { id: 'Old', name: 'திருமறைத்திருப் பாடல்கள் ( பழைய புத்தக வரிசை )', db: 'Thirumarai.db' },
-  { id: 'Custom', name: 'எனது பாடல்கள் ( Custom Songs )', db: 'custom' }
+  { id: 'Zion', ta: 'சீயோன் இனிய கீதங்கள்', en: 'Zion Iniya Geethangal' },
+  { id: 'Hope', ta: 'திருமறைத்திருப் (நம்பிக்கை)', en: 'Thirumarai (Hope)' },
+  { id: 'Old', ta: 'திருமறைத்திருப் (பழையது)', en: 'Thirumarai (Old)' },
+  { id: 'Custom', ta: 'எனது பாடல்கள் (Custom)', en: 'Enathu Paadalgal' }
 ];
 
 export default function CreateService() {
   const navigation = useNavigation();
+  const route = useRoute();
   const { colors, isDark, appFontSize, hapticsEnabled } = useSettings();
 
+  const [serviceId, setServiceId] = useState(null); // Used for editing an existing service
   const [meetingName, setMeetingName] = useState('');
   const [meetingDate, setMeetingDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false); 
@@ -73,26 +75,52 @@ export default function CreateService() {
   const [livePreviewText, setLivePreviewText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  // Form Fields
   const [tempPersonName, setTempPersonName] = useState('');
   const [tempNoteText, setTempNoteText] = useState('');
   const [tempSongData, setTempSongData] = useState({ book: 'Zion', number: '', title: '' });
-  
-  const dbBibleBooks = booksData.map(b => b.name_ta);
   const [tempBibleData, setTempBibleData] = useState({ book: 'ஆதியாகமம்', chapter: '1', verse: '1' });
+
+  // Toggles
+  const [isThanglishSong, setIsThanglishSong] = useState(false);
+  const [isEnglishBible, setIsEnglishBible] = useState(false);
 
   const sheetAnim = useRef(new Animated.Value(height)).current;
   const configSheetAnim = useRef(new Animated.Value(height)).current;
+  const songToggleAnim = useRef(new Animated.Value(0)).current;
+  const bibleToggleAnim = useRef(new Animated.Value(0)).current;
 
   const triggerHaptic = (style = Haptics.ImpactFeedbackStyle.Light) => {
     if (hapticsEnabled) Haptics.impactAsync(style);
   };
+
+  // --- NEW: Handle Editing Existing Service ---
+  useEffect(() => {
+    if (route.params?.editService) {
+      const srv = route.params.editService;
+      setServiceId(srv.id);
+      setMeetingName(srv.name);
+      setMeetingDate(new Date(srv.date));
+      setBlocks(srv.agenda || []);
+    }
+  }, [route.params]);
+
+  // Translate Bible book selector when language flips
+  useEffect(() => {
+    const currentBook = booksData.find(b => b.name_ta === tempBibleData.book || b.name_en === tempBibleData.book);
+    if (currentBook) {
+      const newBookName = isEnglishBible ? currentBook.name_en : currentBook.name_ta;
+      setTempBibleData(prev => ({ ...prev, book: newBookName }));
+      fetchBiblePreview(newBookName, tempBibleData.chapter, tempBibleData.verse, isEnglishBible);
+    }
+  }, [isEnglishBible]);
 
   const handleSaveService = async () => {
     if (!meetingName || blocks.length === 0) return;
     triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
     
     const newService = {
-      id: Date.now().toString(),
+      id: serviceId || Date.now().toString(), // Use existing ID if we are editing
       name: meetingName,
       date: meetingDate.toISOString(),
       agenda: blocks
@@ -100,11 +128,19 @@ export default function CreateService() {
 
     try {
       const existing = await AsyncStorage.getItem('@saved_services');
-      const services = existing ? JSON.parse(existing) : [];
-      services.push(newService);
-      await AsyncStorage.setItem('@saved_services', JSON.stringify(services));
+      let services = existing ? JSON.parse(existing) : [];
       
-      Alert.alert("Success", "Service playlist saved successfully!");
+      if (serviceId) {
+        // We are editing, so overwrite the old one
+        const index = services.findIndex(s => s.id === serviceId);
+        if (index !== -1) services[index] = newService;
+        else services.push(newService);
+      } else {
+        services.push(newService);
+      }
+      
+      await AsyncStorage.setItem('@saved_services', JSON.stringify(services));
+      Alert.alert("Success", "Service saved successfully!");
       navigation.goBack();
     } catch (e) {
       console.error('Failed to save service', e);
@@ -117,7 +153,7 @@ export default function CreateService() {
     if (selectedDate) setMeetingDate(selectedDate);
   };
 
-  const fetchSongPreview = async (bookId, searchText) => {
+  const fetchSongPreview = async (bookId, searchText, isThanglish) => {
     if (!searchText || searchText.trim() === '') { 
       setLivePreviewText(''); 
       return; 
@@ -136,14 +172,9 @@ export default function CreateService() {
         );
 
         if (song) {
-          setTempSongData(prev => ({ 
-  ...prev, 
-  title: song.title_tamil || 'Unknown Title', 
-  lyrics: song.lyrics 
-}));
-          setLivePreviewText(`[ Custom #${song.id} - ${song.title_tamil || 'Unknown'} ]
-
-${song.lyrics}`);
+          const title = isThanglish ? (song.title_thanglish || song.title_tamil) : song.title_tamil;
+          setTempSongData(prev => ({ ...prev, title: title || 'Unknown Title', lyrics: song.lyrics }));
+          setLivePreviewText(`[ Custom #${song.id} - ${title || 'Unknown'} ]\n\n${song.lyrics}`);
         } else {
           setLivePreviewText('No custom song found matching this search.');
         }
@@ -152,39 +183,45 @@ ${song.lyrics}`);
       } finally {
         setIsSearching(false);
       }
-      return; // Stop here! Don't let it go to the SQLite code below.
+      return; 
     }
 
     let db = null;
-
     try {
       let dbName = bookId === 'Zion' ? 'zion.db' : 'Thirumarai.db';
       db = await SQLite.openDatabaseAsync(dbName);
       
+      // Dynamic table detector to prevent crash!
+      const tableRes = await db.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
+      const tableName = tableRes && tableRes.length > 0 ? tableRes.find(t => t.name === 'songs' || t.name === 'SongListTable')?.name || tableRes[0].name : 'SongListTable';
+
       let query = '';
-      let params = [];
+      let params = [searchText];
 
       if (bookId === 'Zion') {
-        query = `SELECT lyrics, title_tamil, song_number FROM songs WHERE song_number = ? OR title_tamil LIKE ? LIMIT 1`;
-        params = [searchText, `%${searchText}%`];
+        query = `SELECT * FROM "${tableName}" WHERE song_number = ? LIMIT 1`;
       } else if (bookId === 'Hope') {
-        query = `SELECT lyrics, song_title_tamil as title_tamil, Song_number_by_Nambikaiyen_Geethagal as song_number FROM SongListTable WHERE Song_number_by_Nambikaiyen_Geethagal = ? LIMIT 1`;
-        params = [searchText];
+        query = `SELECT * FROM "${tableName}" WHERE Song_number_by_Nambikaiyen_Geethagal = ? LIMIT 1`;
       } else if (bookId === 'Old') {
-        query = `SELECT lyrics, song_title_tamil as title_tamil, song_number FROM SongListTable WHERE song_number = ? LIMIT 1`;
-        params = [searchText];
+        query = `SELECT * FROM "${tableName}" WHERE song_number = ? LIMIT 1`;
       }
 
       const result = await db.getAllAsync(query, params);
       
       if (result && result.length > 0) {
         const song = result[0];
-        setTempSongData(prev => ({ 
-  ...prev, 
-  title: song.title_tamil || 'Unknown Title', 
-  lyrics: song.lyrics 
-}));
-        setLivePreviewText(`[ ${song.song_number || '?'} - ${song.title_tamil || 'Unknown'} ]\n\n${song.lyrics}`);
+        // Parse Title depending on language mode
+        const title = isThanglish 
+          ? (song.title_english || song.song_title_english || song.title_tamil || song.song_title_tamil || 'Unknown Title')
+          : (song.title_tamil || song.song_title_tamil || 'Unknown Title');
+          
+        // Parse Lyrics depending on language mode (falls back to tamil lyrics if no transliteration is found)
+        const lyrics = isThanglish 
+          ? (song.lyrics_transliteration || song.lyrics)
+          : song.lyrics;
+
+        setTempSongData(prev => ({ ...prev, title, lyrics }));
+        setLivePreviewText(`[ ${searchText} - ${title} ]\n\n${lyrics}`);
       } else {
         setLivePreviewText('No song found matching this search.');
       }
@@ -196,8 +233,8 @@ ${song.lyrics}`);
     }
   };
 
-  const fetchBiblePreview = async (bookNameTa, chapterStr, verseStr) => {
-    if (!bookNameTa || !chapterStr || !verseStr) { 
+  const fetchBiblePreview = async (bookName, chapterStr, verseStr, isEnglish) => {
+    if (!bookName || !chapterStr || !verseStr) { 
       setLivePreviewText(''); 
       return; 
     }
@@ -206,10 +243,11 @@ ${song.lyrics}`);
     let db = null;
 
     try {
-      const bookObj = booksData.find(b => b.name_ta === bookNameTa);
+      const bookObj = booksData.find(b => b.name_ta === bookName || b.name_en === bookName);
       if (!bookObj) return;
 
-      db = await SQLite.openDatabaseAsync('TAMIL.db');
+      const dbName = isEnglish ? 'KJV.db' : 'TAMIL.db';
+      db = await SQLite.openDatabaseAsync(dbName);
       
       const tableRes = await db.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
       if (!tableRes || tableRes.length === 0) return;
@@ -260,9 +298,7 @@ ${song.lyrics}`);
        }
     }));
     
-    // Automatically set the Service Name if it's blank
     if (!meetingName) setMeetingName("Marriage Program");
-    
     setBlocks([...blocks, ...marriageBlocks]);
     closeAddModal();
   };
@@ -273,7 +309,13 @@ ${song.lyrics}`);
     setPendingBlockTemplate(template);
     setTempPersonName(''); setTempNoteText(''); setLivePreviewText('');
     setTempSongData({ book: 'Zion', number: '', title: '' });
+    
+    // Reset to local language defaults
+    setIsThanglishSong(false);
+    setIsEnglishBible(false);
     setTempBibleData({ book: 'ஆதியாகமம்', chapter: '1', verse: '1' });
+    songToggleAnim.setValue(0);
+    bibleToggleAnim.setValue(0);
 
     Animated.timing(sheetAnim, { toValue: height, duration: 200, useNativeDriver: true }).start(() => {
       setShowAddModal(false);
@@ -294,16 +336,16 @@ ${song.lyrics}`);
     
     if (block.category === 'song') {
       setTempSongData({ book: block.data.book || 'Zion', number: block.data.number || '', title: block.data.title || '' });
-      if (block.data.book && block.data.number) fetchSongPreview(block.data.book, block.data.number);
+      if (block.data.book && block.data.number) fetchSongPreview(block.data.book, block.data.number, isThanglishSong);
     } else {
       setTempSongData({ book: 'Zion', number: '', title: '' });
     }
 
     if (block.category === 'bible' || block.category === 'tithe') {
-      setTempBibleData({ book: block.data.book || 'ஆதியாகமம்', chapter: block.data.chapter || '1', verse: block.data.verse || '1' });
-      if (block.data.book && block.data.chapter && block.data.verse) fetchBiblePreview(block.data.book, block.data.chapter, block.data.verse);
+      setTempBibleData({ book: block.data.book || (isEnglishBible ? 'Genesis' : 'ஆதியாகமம்'), chapter: block.data.chapter || '1', verse: block.data.verse || '1' });
+      if (block.data.book && block.data.chapter && block.data.verse) fetchBiblePreview(block.data.book, block.data.chapter, block.data.verse, isEnglishBible);
     } else {
-      setTempBibleData({ book: 'ஆதியாகமம்', chapter: '1', verse: '1' });
+      setTempBibleData({ book: (isEnglishBible ? 'Genesis' : 'ஆதியாகமம்'), chapter: '1', verse: '1' });
     }
 
     Animated.spring(configSheetAnim, { toValue: 0, friction: 8, useNativeDriver: true }).start();
@@ -331,8 +373,6 @@ ${song.lyrics}`);
       if (!tempNoteText.trim()) isMissingData = true;
     } else if (activeConfigType === 'song') {
       finalData = { ...tempSongData, ledBy: tempPersonName };
-      
-      // If it is a Custom Song, we MUST have lyrics captured
       if (tempSongData.book === 'Custom' && !tempSongData.lyrics) {
          isMissingData = true;
       } else if (!tempSongData.number || livePreviewText.includes('Not found') || livePreviewText.includes('Error')) {
@@ -412,11 +452,11 @@ ${song.lyrics}`);
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontSize: 17 }}>Back</Text>
+            <Text style={{ color: colors.primary, fontSize: 17, fontFamily: 'Tamil003', includeFontPadding: false }}>Back</Text>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Service Builder</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{serviceId ? "Edit Service" : "Service Builder"}</Text>
           <TouchableOpacity onPress={handleSaveService} style={styles.headerBtn} disabled={!meetingName || blocks.length === 0}>
-            <Text style={{ color: (meetingName && blocks.length > 0) ? colors.primary : colors.subtext, fontSize: 17, fontWeight: 'bold' }}>Save</Text>
+            <Text style={{ color: (meetingName && blocks.length > 0) ? colors.primary : colors.subtext, fontSize: 17, fontWeight: 'bold', fontFamily: 'Tamil003', includeFontPadding: false }}>Save</Text>
           </TouchableOpacity>
         </View>
 
@@ -553,7 +593,7 @@ ${song.lyrics}`);
                    <View style={[styles.gridIcon, { backgroundColor: colors.primary + '30', marginRight: 15 }]}><Ionicons name="heart" size={28} color={colors.primary} /></View>
                    <View>
                       <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold' }}>Marriage Program</Text>
-                      <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Tamil003' }}>திருமண நிகழ்ச்சி நிரல்</Text>
+                      <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Tamil003', includeFontPadding: false }}>திருமண நிகழ்ச்சி நிரல்</Text>
                    </View>
                 </View>
               </TouchableOpacity>
@@ -563,7 +603,7 @@ ${song.lyrics}`);
                 <TouchableOpacity key={index} style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => initiateBlockConfig(item)}>
                   <View style={[styles.gridIcon, { backgroundColor: item.color + '15' }]}><Ionicons name={item.icon} size={28} color={item.color} /></View>
                   <Text style={{ color: colors.text, fontSize: 13, fontWeight: 'bold', textAlign: 'center', marginTop: 10 }}>{item.type}</Text>
-                  <Text style={{ color: colors.subtext, fontSize: 10, fontFamily: 'Tamil003', textAlign: 'center', marginTop: 2 }}>{item.tamil}</Text>
+                  <Text style={{ color: colors.subtext, fontSize: 10, fontFamily: 'Tamil003', textAlign: 'center', marginTop: 2, includeFontPadding: false }}>{item.tamil}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -591,30 +631,52 @@ ${song.lyrics}`);
                 {(activeConfigType === 'bible' || activeConfigType === 'tithe') && (
                   <View>
                     <Text style={[styles.compactLabel, { color: colors.subtext }]}>Select Book</Text>
+                    
+                    {/* BIBLE LANGUAGE TOGGLE */}
+                    <View style={{ alignItems: 'center', marginBottom: 15 }}>
+                      <TouchableOpacity 
+                        activeOpacity={0.9} 
+                        onPress={() => {
+                          triggerHaptic();
+                          const next = !isEnglishBible;
+                          setIsEnglishBible(next);
+                          Animated.spring(bibleToggleAnim, { toValue: next ? 1 : 0, useNativeDriver: true }).start();
+                        }}
+                        style={[styles.toggleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      >
+                        <Animated.View style={[styles.toggleThumb, { backgroundColor: colors.primary, transform: [{ translateX: bibleToggleAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 108] }) }] }]} />
+                        <View style={styles.toggleOption}><Text style={{ color: !isEnglishBible ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>தமிழ்</Text></View>
+                        <View style={styles.toggleOption}><Text style={{ color: isEnglishBible ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>English</Text></View>
+                      </TouchableOpacity>
+                    </View>
+
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }}>
-                      {dbBibleBooks.map(book => (
-                        <TouchableOpacity 
-                          key={book} 
-                          onPress={() => { 
-                            setTempBibleData({...tempBibleData, book}); 
-                            triggerHaptic(); 
-                            fetchBiblePreview(book, tempBibleData.chapter, tempBibleData.verse);
-                          }} 
-                          style={[styles.pill, { backgroundColor: tempBibleData.book === book ? colors.primary : colors.border }]}
-                        >
-                          <Text style={{ color: tempBibleData.book === book ? '#000' : colors.text, fontFamily: 'Tamil008' }}>{book}</Text>
-                        </TouchableOpacity>
-                      ))}
+                      {booksData.map(book => {
+                        const displayName = isEnglishBible ? book.name_en : book.name_ta;
+                        return (
+                          <TouchableOpacity 
+                            key={book.id} 
+                            onPress={() => { 
+                              setTempBibleData({...tempBibleData, book: displayName}); 
+                              triggerHaptic(); 
+                              fetchBiblePreview(displayName, tempBibleData.chapter, tempBibleData.verse, isEnglishBible);
+                            }} 
+                            style={[styles.pill, { backgroundColor: tempBibleData.book === displayName ? colors.primary : colors.card, borderColor: tempBibleData.book === displayName ? colors.primary : colors.border }]}
+                          >
+                            <Text style={{ color: tempBibleData.book === displayName ? '#000' : colors.text, fontFamily: 'Tamil003', includeFontPadding: false }}>{displayName}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
                     </ScrollView>
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                       <View style={{ flex: 1, marginRight: 10 }}>
                         <Text style={[styles.compactLabel, { color: colors.subtext }]}>Chp / அதிகாரம்</Text>
-                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.chapter} onChangeText={(text) => { setTempBibleData({...tempBibleData, chapter: text}); fetchBiblePreview(tempBibleData.book, text, tempBibleData.verse); }} />
+                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.chapter} onChangeText={(text) => { setTempBibleData({...tempBibleData, chapter: text}); fetchBiblePreview(tempBibleData.book, text, tempBibleData.verse, isEnglishBible); }} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.compactLabel, { color: colors.subtext }]}>Ver / வசனம்</Text>
-                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.verse} onChangeText={(text) => { setTempBibleData({...tempBibleData, verse: text}); fetchBiblePreview(tempBibleData.book, tempBibleData.chapter, text); }} />
+                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.verse} onChangeText={(text) => { setTempBibleData({...tempBibleData, verse: text}); fetchBiblePreview(tempBibleData.book, tempBibleData.chapter, text, isEnglishBible); }} />
                       </View>
                     </View>
                   </View>
@@ -624,21 +686,43 @@ ${song.lyrics}`);
                 {activeConfigType === 'song' && (
                   <View>
                     <Text style={[styles.compactLabel, { color: colors.subtext }]}>Select Songbook</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 15 }}>
+                    
+                    {/* SONG LANGUAGE TOGGLE */}
+                    <View style={{ alignItems: 'center', marginBottom: 15 }}>
+                      <TouchableOpacity 
+                        activeOpacity={0.9} 
+                        onPress={() => {
+                          triggerHaptic();
+                          const next = !isThanglishSong;
+                          setIsThanglishSong(next);
+                          Animated.spring(songToggleAnim, { toValue: next ? 1 : 0, useNativeDriver: true }).start();
+                        }}
+                        style={[styles.toggleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      >
+                        <Animated.View style={[styles.toggleThumb, { backgroundColor: colors.primary, transform: [{ translateX: songToggleAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 108] }) }] }]} />
+                        <View style={styles.toggleOption}><Text style={{ color: !isThanglishSong ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>தமிழ்</Text></View>
+                        <View style={styles.toggleOption}><Text style={{ color: isThanglishSong ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>Thanglish</Text></View>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* NEW 2x2 GRID FOR SONGBOOKS */}
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 15 }}>
                       {SONGBOOKS.map(book => (
                         <TouchableOpacity 
                           key={book.id} 
                           onPress={() => { 
                             setTempSongData({...tempSongData, book: book.id}); 
                             triggerHaptic(); 
-                            fetchSongPreview(book.id, tempSongData.number);
+                            fetchSongPreview(book.id, tempSongData.number, isThanglishSong);
                           }} 
-                          style={[styles.pill, { backgroundColor: tempSongData.book === book.id ? colors.primary : colors.border }]}
+                          style={[styles.gridPill, { backgroundColor: tempSongData.book === book.id ? colors.primary : colors.card, borderColor: tempSongData.book === book.id ? colors.primary : colors.border }]}
                         >
-                          <Text style={{ color: tempSongData.book === book.id ? '#000' : colors.text, fontWeight: 'bold', fontSize: 13 }}>{book.name}</Text>
+                          <Text style={{ color: tempSongData.book === book.id ? '#000' : colors.text, fontFamily: 'Tamil003', fontSize: 13, textAlign: 'center', includeFontPadding: false }}>
+                            {isThanglishSong ? book.en : book.ta}
+                          </Text>
                         </TouchableOpacity>
                       ))}
-                    </ScrollView>
+                    </View>
 
                     <Text style={[styles.compactLabel, { color: colors.subtext }]}>Search by Number or Name</Text>
                     <TextInput 
@@ -648,7 +732,7 @@ ${song.lyrics}`);
                       value={tempSongData.number} 
                       onChangeText={(text) => { 
                         setTempSongData({...tempSongData, number: text}); 
-                        fetchSongPreview(tempSongData.book, text); 
+                        fetchSongPreview(tempSongData.book, text, isThanglishSong); 
                       }} 
                     />
                   </View>
@@ -661,7 +745,7 @@ ${song.lyrics}`);
                       {isSearching ? 'SEARCHING...' : 'LIVE PREVIEW'}
                     </Text>
                     <ScrollView style={{ maxHeight: 120 }} nestedScrollEnabled={true}>
-                      <Text style={{ color: colors.text, fontStyle: 'italic', fontFamily: activeConfigType === 'song' ? 'Tamil003' : undefined, fontSize: appFontSize - 2 }}>
+                      <Text style={{ color: colors.text, fontStyle: 'italic', fontFamily: 'Tamil003', fontSize: appFontSize - 2, includeFontPadding: false }}>
                         {livePreviewText || 'Type a number or verse above to see the preview here.'}
                       </Text>
                     </ScrollView>
@@ -686,7 +770,7 @@ ${song.lyrics}`);
 
                 {/* ALWAYS ENABLED BUTTON! */}
                 <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={confirmAndAddBlock}>
-                  <Text style={{ color: '#000', fontSize: 16, fontWeight: 'bold', textAlign: 'center' }}>
+                  <Text style={{ color: '#000', fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tamil003', includeFontPadding: false }}>
                     {editingBlockId ? "Save Changes" : "Add to Service"}
                   </Text>
                 </TouchableOpacity>
@@ -727,6 +811,11 @@ const styles = StyleSheet.create({
   compactLabel: { fontSize: 12, fontWeight: 'bold', marginBottom: 5 },
   compactInput: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 15 },
   pill: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: 'transparent' },
+  gridPill: { width: '48%', paddingVertical: 12, paddingHorizontal: 5, borderRadius: 12, borderWidth: 1, marginBottom: 10, justifyContent: 'center', alignItems: 'center' },
   previewBox: { padding: 15, borderRadius: 12, borderWidth: 1, marginVertical: 10 },
   saveBtn: { padding: 16, borderRadius: 15, marginTop: 15 },
+
+  toggleContainer: { width: 220, height: 36, borderRadius: 18, flexDirection: 'row', alignItems: 'center', borderWidth: 1, position: 'relative' },
+  toggleThumb: { position: 'absolute', width: 108, height: 30, borderRadius: 15 },
+  toggleOption: { flex: 1, alignItems: 'center', justifyContent: 'center', zIndex: 1 },
 });

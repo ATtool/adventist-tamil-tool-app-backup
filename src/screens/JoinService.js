@@ -41,15 +41,19 @@ export default function JoinService() {
 
   // --- DOWNLOAD DATA FROM FIREBASE ---
   const processInvitationData = async (dataString) => {
+    if (!dataString) return;
     setIsProcessing(true);
     try {
+      let raw = String(dataString).trim();
       let extractedId = '';
-      
-      // If it's the full URL, get the ID at the end. Otherwise, assume they typed the ID directly.
-      if (dataString.includes('id=')) {
-        extractedId = dataString.split('id=')[1].trim();
+
+      // 1. Check if it contains 'id=' (from deep link or URL)
+      const idMatch = raw.match(/[?&]id=([a-zA-Z0-9]{6})/i);
+      if (idMatch && idMatch[1]) {
+        extractedId = idMatch[1].toUpperCase();
       } else {
-        extractedId = dataString.trim();
+        // 2. Otherwise clean alphanumeric characters (6-char ID)
+        extractedId = raw.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
       }
 
       // Fetch from Firebase Realtime Database

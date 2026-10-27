@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Modal, ActivityIndicator, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
@@ -9,6 +9,9 @@ import * as Sharing from 'expo-sharing';
 import ViewShot from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
 import { useSettings } from '../context/SettingsContext';
+
+import { ref, set } from "firebase/database";
+import { db } from "../../firebaseSetup";
 
 const formatServiceDate = (date) => {
   return new Date(date).toLocaleDateString('en-US', {
@@ -23,14 +26,19 @@ export default function SavedServices() {
   
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [shareTarget, setShareTarget] = useState(null);
-  const viewShotRef = useRef(null);
+
+  // Invite Modal State
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [activeService, setActiveService] = useState(null);
+  const [shareId, setShareId] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSharingImage, setIsSharingImage] = useState(false);
+  const inviteCardRef = useRef(null);
 
   const triggerHaptic = (style = Haptics.ImpactFeedbackStyle.Light) => {
     if (hapticsEnabled) Haptics.impactAsync(style);
   };
 
-  // Fetch services whenever the screen comes into focus
   useEffect(() => {
     if (isFocused) {
       loadSavedServices();
@@ -43,7 +51,6 @@ export default function SavedServices() {
       const storedServices = await AsyncStorage.getItem('@saved_services');
       if (storedServices) {
         let parsed = JSON.parse(storedServices);
-        // Sort by newest date first
         parsed.sort((a, b) => new Date(b.date) - new Date(a.date));
         setServices(parsed);
       } else {
@@ -90,38 +97,92 @@ export default function SavedServices() {
     navigation.navigate('ViewService', { service });
   };
 
-  // --- SHARE: builds one invite image (QR + ID + note) and opens the native share sheet ---
-  const handleShare = (item) => {
-    triggerHaptic();
-    setShareTarget(item);
+  const editService = (service) => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+    navigation.navigate('CreateService', { editService: service });
   };
 
-  useEffect(() => {
-    if (!shareTarget) return;
+  // --- UPLOAD TO FIREBASE & OPEN SHARE MODAL ---
+  const handleShare = async (item) => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+    setActiveService(item);
+    setShowInviteModal(true);
+    setIsUploading(true);
 
-    // Wait one tick so the hidden invite card re-renders with the new service before capturing it
-    const timer = setTimeout(async () => {
-      try {
-        const uri = await viewShotRef.current.capture();
-        const canShare = await Sharing.isAvailableAsync();
-        if (canShare) {
-          await Sharing.shareAsync(uri, {
-            mimeType: 'image/png',
-            dialogTitle: `Invite - ${shareTarget.name}`,
-          });
-        } else {
-          Alert.alert("Sharing Unavailable", "Sharing isn't available on this device.");
-        }
-      } catch (error) {
-        console.error("SHARE ERROR:", error);
-        Alert.alert("Error", "Could not create the invite to share.");
-      } finally {
-        setShareTarget(null);
+    try {
+      // Reuse existing 6-char shareId if already generated, or create a new one
+      const code = item.shareId || Math.random().toString(36).substring(2, 8).toUpperCase();
+      const updatedItem = { ...item, shareId: code };
+
+      // Clean undefined fields and upload to Firebase
+      const sanitizedService = JSON.parse(JSON.stringify(updatedItem));
+      await set(ref(db, 'services/' + code), sanitizedService);
+
+      setShareId(code);
+
+      // Save the shareId locally so future edits update the same cloud service
+      const updatedList = services.map(s => s.id === item.id ? updatedItem : s);
+      setServices(updatedList);
+      await AsyncStorage.setItem('@saved_services', JSON.stringify(updatedList));
+    } catch (error) {
+      console.error("FIREBASE UPLOAD ERROR:", error);
+      Alert.alert("Connection Error", "Please check your internet connection to share this service.");
+      setShowInviteModal(false);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const buildShareMessage = (srv, code) => {
+    const formatted = srv ? formatServiceDate(srv.date) : '';
+    return (
+      `🙏 *You're Invited to "${srv?.name || 'Worship Service'}"*\n` +
+      `📅 Date: ${formatted}\n\n` +
+      `🔑 *SERVICE ID:* ${code}\n\n` +
+      `📲 *Open Directly in App:*\n` +
+      `adventisttamil://join?id=${code}\n\n` +
+      `(Copy this message or enter ID *${code}* in Adventist Tamil Tool -> Join Service)\n\n` +
+      `📥 *Don't have the app? Download on Play Store:*\n` +
+      `https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool`
+    );
+  };
+
+  // Option 1: Share Link + ID + Play Store as Text
+  const handleShareTextInvite = async () => {
+    if (!shareId || !activeService) return;
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await Share.share({
+        message: buildShareMessage(activeService, shareId),
+      });
+    } catch (error) {
+      console.error("TEXT SHARE ERROR:", error);
+    }
+  };
+
+  // Option 2: Share Uncut QR Code Image
+  const handleShareQRImage = async () => {
+    if (!shareId || !activeService || isSharingImage) return;
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+    setIsSharingImage(true);
+    try {
+      const uri = await inviteCardRef.current.capture();
+      const canShare = await Sharing.isAvailableAsync();
+      if (canShare) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: `Invite - ${activeService.name}`,
+        });
+      } else {
+        Alert.alert("Sharing Unavailable", "Sharing isn't available on this device.");
       }
-    }, 250);
-
-    return () => clearTimeout(timer);
-  }, [shareTarget]);
+    } catch (error) {
+      console.error("QR SHARE ERROR:", error);
+      Alert.alert("Error", "Could not capture the QR image.");
+    } finally {
+      setIsSharingImage(false);
+    }
+  };
 
   const renderServiceCard = ({ item }) => {
     const formattedDate = formatServiceDate(item.date);
@@ -149,17 +210,24 @@ export default function SavedServices() {
 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity 
-              style={styles.shareBtn} 
+              style={[styles.actionBtn, { backgroundColor: 'rgba(0, 122, 255, 0.1)' }]} 
               onPress={() => handleShare(item)}
             >
               <Ionicons name="share-social-outline" size={20} color={colors.primary} />
             </TouchableOpacity>
 
             <TouchableOpacity 
-              style={styles.deleteBtn} 
+              style={[styles.actionBtn, { backgroundColor: 'rgba(52, 199, 89, 0.1)' }]} 
+              onPress={() => editService(item)}
+            >
+              <Ionicons name="pencil" size={20} color="#34C759" />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.actionBtn, { backgroundColor: 'rgba(255, 59, 48, 0.1)', marginRight: 0 }]} 
               onPress={() => confirmDelete(item.id, item.name)}
             >
-              <Ionicons name="trash-outline" size={22} color="#FF3B30" />
+              <Ionicons name="trash-outline" size={20} color="#FF3B30" />
             </TouchableOpacity>
           </View>
         </View>
@@ -185,7 +253,6 @@ export default function SavedServices() {
             <Text style={{ color: colors.primary, fontSize: 17 }}>Back</Text>
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: colors.text }]}>My Services</Text>
-          {/* Empty view for balance */}
           <View style={styles.headerBtn} /> 
         </View>
 
@@ -201,7 +268,7 @@ export default function SavedServices() {
         ) : (
           <FlatList
             data={services}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             renderItem={renderServiceCard}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
@@ -210,169 +277,111 @@ export default function SavedServices() {
 
       </SafeAreaView>
 
-      {/* Hidden invite card used only to render the shareable image. Kept off-screen. */}
-      <View style={styles.offscreenWrapper} pointerEvents="none">
-        <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
-          <View style={styles.inviteCard}>
-            <Text style={styles.inviteHeader}>You're Invited!</Text>
-            <Text style={styles.inviteServiceName}>{shareTarget?.name || ''}</Text>
-            <Text style={styles.inviteDate}>{shareTarget ? formatServiceDate(shareTarget.date) : ''}</Text>
-
-            <View style={styles.qrWrapper}>
-              <QRCode value={shareTarget?.id ? String(shareTarget.id) : 'x'} size={190} />
+      {/* VISIBLE INVITE MODAL (Captures QR directly from the visible card so it NEVER cuts off!) */}
+      <Modal visible={showInviteModal} transparent={true} animationType="fade" onRequestClose={() => setShowInviteModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.qrModalContainer, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
+            
+            <View style={styles.qrHeader}>
+              <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>Share Service</Text>
+              <TouchableOpacity onPress={() => setShowInviteModal(false)} style={styles.closeBtn}>
+                <Ionicons name="close" size={20} color={colors.text} />
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
-            <Text style={styles.inviteId}>{shareTarget?.id || ''}</Text>
+            {isUploading ? (
+              <View style={{ padding: 40, alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Text style={{ color: colors.text, marginTop: 15 }}>Syncing service to cloud...</Text>
+              </View>
+            ) : (
+              <>
+                <ViewShot ref={inviteCardRef} collapsable={false} options={{ format: 'png', quality: 1 }}>
+                  <View style={styles.inviteCard} collapsable={false}>
+                    <Text style={styles.inviteHeader}>You're Invited!</Text>
+                    <Text style={styles.inviteServiceName}>{activeService?.name || ''}</Text>
+                    <Text style={styles.inviteDate}>{activeService ? formatServiceDate(activeService.date) : ''}</Text>
 
-            <Text style={styles.inviteNote}>Your friend is asking you to join the service. Scan the QR code or enter the ID above in the app to join.</Text>
+                    <View style={styles.qrWrapper}>
+                      <QRCode 
+                        value={shareId ? `adventisttamil://join?id=${shareId}` : 'x'} 
+                        size={180} 
+                        color="#000000" 
+                        backgroundColor="#FFFFFF" 
+                      />
+                    </View>
+
+                    <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
+                    <Text style={styles.inviteId}>{shareId}</Text>
+
+                    <Text style={styles.inviteNote}>Scan the QR code or enter the ID in Adventist Tamil Tool to join.</Text>
+                  </View>
+                </ViewShot>
+
+                <View style={{ marginTop: 18 }}>
+                  <TouchableOpacity 
+                    onPress={handleShareTextInvite} 
+                    style={[styles.shareLinkBtn, { backgroundColor: colors.primary, marginBottom: 10 }]}
+                  >
+                    <Ionicons name="link" size={20} color="#000" style={{ marginRight: 8 }} />
+                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>Share Link, ID & Store Link</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    onPress={handleShareQRImage} 
+                    style={[styles.shareLinkBtn, { backgroundColor: isSharingImage ? colors.border : '#FFCC00' }]}
+                    disabled={isSharingImage}
+                  >
+                    {isSharingImage ? (
+                      <ActivityIndicator color="#000" />
+                    ) : (
+                      <>
+                        <Ionicons name="qr-code" size={20} color="#000" style={{ marginRight: 8 }} />
+                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>Share QR Code Image</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
           </View>
-        </ViewShot>
-      </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 10, 
-    paddingVertical: 12, 
-    borderBottomWidth: 1 
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 12, borderBottomWidth: 1 },
   headerBtn: { flexDirection: 'row', alignItems: 'center', padding: 5, width: 80 },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   listContainer: { padding: 15, paddingBottom: 100 },
-  
-  card: {
-    borderRadius: 16,
-    borderWidth: 1,
-    marginBottom: 15,
-    overflow: 'hidden',
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  cardDate: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  shareBtn: {
-    padding: 10,
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
-    borderRadius: 10,
-    marginRight: 8,
-  },
-  deleteBtn: {
-    padding: 10,
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
-    borderRadius: 10,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.01)',
-  },
-  
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 15,
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 15,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
+  card: { borderRadius: 16, borderWidth: 1, marginBottom: 15, overflow: 'hidden' },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  iconBadge: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  cardTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 4 },
+  cardDate: { fontSize: 13, fontWeight: '600' },
+  actionBtn: { padding: 10, borderRadius: 10, marginRight: 8, justifyContent: 'center', alignItems: 'center' },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, borderTopWidth: 1, backgroundColor: 'rgba(0,0,0,0.01)' },
+  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
+  emptyStateTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 15, marginBottom: 8 },
+  emptyStateText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
 
-  // Off-screen invite card (captured as an image, never shown to the user directly)
-  offscreenWrapper: {
-    position: 'absolute',
-    top: 0,
-    left: -9999,
-  },
-  inviteCard: {
-    width: 300,
-    backgroundColor: '#FFFFFF',
-    padding: 24,
-    alignItems: 'center',
-  },
-  inviteHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#0A1929',
-    marginBottom: 6,
-  },
-  inviteServiceName: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#0A1929',
-    textAlign: 'center',
-  },
-  inviteDate: {
-    fontSize: 14,
-    color: '#666666',
-    marginTop: 4,
-    marginBottom: 18,
-  },
-  qrWrapper: {
-    padding: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  inviteIdLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#999999',
-    letterSpacing: 1,
-  },
-  inviteId: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#0A1929',
-    letterSpacing: 2,
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  inviteNote: {
-    fontSize: 13,
-    color: '#444444',
-    textAlign: 'center',
-    lineHeight: 19,
-  },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(4,6,12,0.82)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  qrModalContainer: { width: '100%', maxWidth: 380, borderRadius: 26, padding: 22, borderWidth: 1, elevation: 14 },
+  qrHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(128,128,128,0.15)', justifyContent: 'center', alignItems: 'center' },
+  shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 13, borderRadius: 12 },
+
+  inviteCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 20, alignItems: 'center' },
+  inviteHeader: { fontSize: 19, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
+  inviteServiceName: { fontSize: 16, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
+  inviteDate: { fontSize: 13, color: '#666666', marginTop: 4, marginBottom: 14 },
+  qrWrapper: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#EEEEEE' },
+  inviteIdLabel: { fontSize: 11, fontWeight: '700', color: '#999999', letterSpacing: 1 },
+  inviteId: { fontSize: 20, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 10 },
+  inviteNote: { fontSize: 12, color: '#444444', textAlign: 'center', lineHeight: 17 },
 });

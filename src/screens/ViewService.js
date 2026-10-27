@@ -1,30 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions, Modal, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions, Modal, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
 import * as SQLite from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
 import Slider from '@react-native-community/slider';
 import QRCode from 'react-native-qrcode-svg';
-import * as Sharing from 'expo-sharing';
 import ViewShot from 'react-native-view-shot';
 
 import { ref, set } from "firebase/database";
 import { db } from "../../firebaseSetup"; 
 
 import booksData from '../data/books.json';
-import { getCustomSongs } from '../utils/UserDataDB';
 
-const { height, width } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 const NEWLINE = String.fromCharCode(10);
 const NEON_BLUE = '#00F0FF';
 
+// SMART PARSER: Strips [Chorus], numbers [Verse X], and prevents Chorus repeats
 const parseLyricStanzas = (text) => {
   if (!text) return [];
   const rawLines = text.split(NEWLINE);
-  const numberPattern = /^\s*(\d{1,3}[.)])\s*(.*)$/;
+  const stanzas = [];
+  let currentNumber = null;
+  let currentLines = [];
+  
+  let seenChorusText = null;
+  let isCurrentBlockChorus = false;
 
   const isRefrainLine = (line, nextLine) => {
     const trimmed = line.trim();
@@ -33,32 +38,70 @@ const parseLyricStanzas = (text) => {
     return nextLine.trim() === '';
   };
 
-  const stanzas = [];
-  let currentNumber = null;
-  let currentLines = [];
-
   const flush = () => {
     while (currentLines.length > 0 && currentLines[currentLines.length - 1].content.trim() === '') currentLines.pop();
     while (currentLines.length > 0 && currentLines[0].content.trim() === '') currentLines.shift();
-    if (currentLines.length > 0) stanzas.push({ number: currentNumber, lines: currentLines });
+
+    if (currentLines.length > 0) {
+      const blockText = currentLines.map(l => l.content).join('\n').trim();
+      
+      if (isCurrentBlockChorus) {
+        if (!seenChorusText) {
+          seenChorusText = blockText; 
+          stanzas.push({ number: currentNumber, lines: currentLines });
+        } else if (seenChorusText !== blockText) {
+          stanzas.push({ number: currentNumber, lines: currentLines }); 
+        }
+      } else {
+        stanzas.push({ number: currentNumber, lines: currentLines });
+      }
+    }
+    
+    currentLines = [];
+    currentNumber = null;
+    isCurrentBlockChorus = false;
   };
 
   for (let i = 0; i < rawLines.length; i++) {
     const line = rawLines[i];
-    const nextLine = rawLines[i + 1];
-    const match = line.match(numberPattern);
-    if (match) {
-      flush();
-      currentNumber = match[1];
-      const rest = match[2];
-      currentLines = [{ content: rest, isRefrain: isRefrainLine(rest, nextLine) }];
-    } else {
-      currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
-    }
-  }
-  flush();
+    const trimmed = line.trim();
 
-  return stanzas.length > 0 ? stanzas : [{ number: null, lines: [{ content: text.trim(), isRefrain: false }] }];
+    if (trimmed.toLowerCase() === '[chorus]') {
+      flush();
+      isCurrentBlockChorus = true;
+      continue;
+    }
+
+    const verseMatch = trimmed.match(/^\[Verse\s+(\d+)\]$/i);
+    if (verseMatch) {
+      flush();
+      currentNumber = verseMatch[1] + ".";
+      continue;
+    }
+
+    const numMatch = trimmed.match(/^\s*(\d{1,3}[.)])\s*(.*)$/);
+    if (numMatch && !isCurrentBlockChorus) {
+      flush();
+      currentNumber = numMatch[1];
+      const rest = line.substring(line.indexOf(numMatch[1]) + numMatch[1].length).trim();
+      const nextLine = rawLines[i + 1];
+      if (rest) {
+        currentLines.push({ content: rest, isRefrain: isRefrainLine(rest, nextLine) });
+      }
+      continue;
+    }
+
+    if (trimmed === '') {
+      flush();
+      continue;
+    }
+
+    const nextLine = rawLines[i + 1];
+    currentLines.push({ content: line, isRefrain: isRefrainLine(line, nextLine) });
+  }
+  flush(); 
+
+  return stanzas;
 };
 
 export default function ViewService() {
@@ -75,9 +118,9 @@ export default function ViewService() {
   const [showTextSettings, setShowTextSettings] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
-  const [shareId, setShareId] = useState(null);
+  const [shareId, setShareId] = useState(service?.shareId || null);
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
+  const [isSharingImage, setIsSharingImage] = useState(false);
   const inviteCardRef = useRef(null);
   
   const settingsSlideAnim = useRef(new Animated.Value(height)).current;
@@ -105,49 +148,59 @@ export default function ViewService() {
   const handleOpenInviteModal = async () => {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     setShowInviteModal(true);
-    
-    if (!shareId) {
-      setIsGeneratingLink(true);
-      try {
-        const shortId = Math.random().toString(36).substring(2, 8).toUpperCase(); 
-        const serviceRef = ref(db, 'services/' + shortId);
-        
-        await set(serviceRef, service); 
-        setShareId(shortId);
-        
-      } catch (error) {
-        console.error("Firebase Error:", error);
-        Alert.alert("Connection Error", "Ensure you have internet access to generate a sharing link.");
-        setShowInviteModal(false);
-      } finally {
-        setIsGeneratingLink(false);
-      }
+    setIsGeneratingLink(true);
+
+    try {
+      const shortId = shareId || Math.random().toString(36).substring(2, 8).toUpperCase(); 
+      const serviceRef = ref(db, 'services/' + shortId);
+      
+      const sanitizedService = JSON.parse(JSON.stringify({ ...service, shareId: shortId }));
+      await set(serviceRef, sanitizedService); 
+      setShareId(shortId);
+    } catch (error) {
+      console.error("Firebase Error:", error);
+      Alert.alert("Connection Error", "Ensure you have internet access to generate a sharing link.");
+      setShowInviteModal(false);
+    } finally {
+      setIsGeneratingLink(false);
     }
   };
 
-  // Captures the QR + ID invite card as one image and opens the native share sheet.
-  // No link is generated or shared — only the QR code image and ID number.
-  const handleShareInvite = async () => {
-    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
-    if (!shareId || isSharing) return;
+  const formattedDate = new Date(service.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
-    setIsSharing(true);
+  // 3-IN-1 MASTER SHARE: Captures the card (QR + ID + Link) AND shares the text message
+  const handleShareAllInOne = async () => {
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+    if (!shareId || isSharingImage) return;
+
+    const message =
+      `🙏 *You're Invited to "${service.name}"*\n` +
+      `📅 Date: ${formattedDate}\n\n` +
+      `🔑 *SERVICE ID:* ${shareId}\n\n` +
+      `📲 *Click to Open Directly in App:*\n` +
+      `https://adventisttamil.app/join?id=${shareId}\n\n` +
+      `📥 *Don't have the app? Download on Play Store:*\n` +
+      `https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool`;
+
+    setIsSharingImage(true);
     try {
       const uri = await inviteCardRef.current.capture();
-      const canShare = await Sharing.isAvailableAsync();
-      if (canShare) {
-        await Sharing.shareAsync(uri, {
-          mimeType: 'image/png',
+      // Share both the QR image and the text message together
+      await Share.share(
+        {
+          title: `Invite - ${service.name}`,
+          message: message,
+          url: uri,
+        },
+        {
           dialogTitle: `Invite - ${service.name}`,
-        });
-      } else {
-        Alert.alert("Sharing Unavailable", "Sharing isn't available on this device.");
-      }
+        }
+      );
     } catch (error) {
       console.error("SHARE ERROR:", error);
-      Alert.alert("Error", "Could not create the invite to share.");
+      Alert.alert("Error", "Could not share the invite.");
     } finally {
-      setIsSharing(false);
+      setIsSharingImage(false);
     }
   };
 
@@ -155,24 +208,26 @@ export default function ViewService() {
     triggerHaptic();
     if (expandedId === block.id) { setExpandedId(null); return; }
     setExpandedId(block.id);
-    if (fetchedContent[block.id] || (!block.data.number && !block.data.chapter)) return;
+    if (fetchedContent[block.id] || (!block.data.number && !block.data.chapter && !block.data.lyrics)) return;
 
     setIsLoadingContent(true);
     let content = '';
     
     try {
-      if (block.category === 'song' && block.data.book && block.data.number) {
-        if (block.data.book === 'Custom') {
-          // SNAPSHOT FIX: Read the lyrics directly from the saved service block!
-          // This prevents breaking if the user deleted or re-indexed the song later.
-          content = block.data.lyrics ? block.data.lyrics : "Custom song lyrics not found in saved service.";
+      if (block.category === 'song' && block.data.book && (block.data.number || block.data.lyrics)) {
+        if (block.data.lyrics) {
+          content = block.data.lyrics;
         } else {
           let dbName = block.data.book === 'Zion' ? 'zion.db' : 'Thirumarai.db';
           const sqliteDb = await SQLite.openDatabaseAsync(dbName);
+          
+          const tableRes = await sqliteDb.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
+          const tableName = tableRes && tableRes.length > 0 ? tableRes.find(t => t.name === 'songs' || t.name === 'SongListTable')?.name || tableRes[0].name : 'SongListTable';
+          
           let query = '';
-          if (block.data.book === 'Zion') query = `SELECT lyrics FROM songs WHERE song_number = ? LIMIT 1`;
-          else if (block.data.book === 'Hope') query = `SELECT lyrics FROM SongListTable WHERE Song_number_by_Nambikaiyen_Geethagal = ? LIMIT 1`;
-          else if (block.data.book === 'Old') query = `SELECT lyrics FROM SongListTable WHERE song_number = ? LIMIT 1`;
+          if (block.data.book === 'Zion') query = `SELECT lyrics FROM "${tableName}" WHERE song_number = ? LIMIT 1`;
+          else if (block.data.book === 'Hope') query = `SELECT lyrics FROM "${tableName}" WHERE Song_number_by_Nambikaiyen_Geethagal = ? LIMIT 1`;
+          else if (block.data.book === 'Old') query = `SELECT lyrics FROM "${tableName}" WHERE song_number = ? LIMIT 1`;
           
           const result = await sqliteDb.getAllAsync(query, [block.data.number]);
           if (result && result.length > 0) content = result[0].lyrics; else content = "Lyrics not found.";
@@ -180,14 +235,19 @@ export default function ViewService() {
         }
       } 
       else if ((block.category === 'bible' || block.category === 'tithe') && block.data.book && block.data.chapter && block.data.verse) {
-        const bookObj = booksData.find(b => b.name_ta === block.data.book);
+        const isEnglishBible = /^[0-9a-zA-Z\s]+$/.test(block.data.book);
+        const dbName = isEnglishBible ? 'KJV.db' : 'TAMIL.db';
+
+        const bookObj = booksData.find(b => b.name_ta === block.data.book || b.name_en === block.data.book);
         if (bookObj) {
-          const sqliteDb = await SQLite.openDatabaseAsync('TAMIL.db');
+          const sqliteDb = await SQLite.openDatabaseAsync(dbName);
           const tableRes = await sqliteDb.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
-          const query = `SELECT text FROM "${tableRes[0].name}" WHERE book_id = ? AND chapter = ? AND verse = ? LIMIT 1`;
           
-          const result = await sqliteDb.getAllAsync(query, [bookObj.id, parseInt(block.data.chapter), parseInt(block.data.verse)]);
-          if (result && result.length > 0) content = result[0].text; else content = "Verse not found.";
+          if (tableRes && tableRes.length > 0) {
+            const query = `SELECT text FROM "${tableRes[0].name}" WHERE book_id = ? AND chapter = ? AND verse = ? LIMIT 1`;
+            const result = await sqliteDb.getAllAsync(query, [bookObj.id, parseInt(block.data.chapter), parseInt(block.data.verse)]);
+            if (result && result.length > 0) content = result[0].text; else content = "Verse not found.";
+          }
           await sqliteDb.closeAsync().catch(() => {});
         }
       }
@@ -196,8 +256,6 @@ export default function ViewService() {
     if (content) setFetchedContent(prev => ({ ...prev, [block.id]: content }));
     setIsLoadingContent(false);
   };
-
-  const formattedDate = new Date(service.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -244,19 +302,18 @@ export default function ViewService() {
                     <View style={{ flex: 1, marginLeft: 15 }}>
                       <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>{block.title}</Text>
                       
-                      {/* Unified Formatting Logic */}
                       {block.category === 'person' && block.data?.ledBy ? (
                         <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text>
                       ) : null}
                       
                       {block.category === 'song' && block.data?.book && block.data?.number ? (
-                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
-                          {block.data.book} #{block.data.number} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
+                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
+                          {block.data.book} #{block.data.number} {block.data?.title ? `- ${block.data.title}` : ''} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
                         </Text>
                       ) : null}
                       
                       {block.category === 'bible' && block.data?.book && block.data?.chapter ? (
-                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
                           {block.data.book} {block.data.chapter}:{block.data.verse} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
                         </Text>
                       ) : null}
@@ -264,7 +321,7 @@ export default function ViewService() {
                       {block.category === 'tithe' && (
                         <View>
                           {block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
-                          {block.data?.book && block.data?.chapter ? <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
+                          {block.data?.book && block.data?.chapter ? <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
                         </View>
                       )}
                       
@@ -283,22 +340,34 @@ export default function ViewService() {
                             <View key={sIdx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                               <View style={{ width: 34 }}>
                                 {stanza.number && (
-                                  <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight }}>
+                                  <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                                     {stanza.number}
                                   </Text>
                                 )}
                               </View>
-                              <Text style={{ flex: 1, color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                              <View style={{ flex: 1 }}>
                                 {stanza.lines.map((line, lineIdx) => (
-                                  <Text key={lineIdx} style={line.isRefrain ? { color: NEON_BLUE, fontWeight: 'normal' } : null}>
-                                    {line.content}{lineIdx < stanza.lines.length - 1 ? NEWLINE : ''}
+                                  // Pure white text for both Tamil and Thanglish, locked to Tamil003
+                                  <Text
+                                    key={lineIdx}
+                                    style={{
+                                      color: line.isRefrain ? NEON_BLUE : colors.text,
+                                      fontSize: lyricsSize,
+                                      fontFamily: 'Tamil003',
+                                      lineHeight: lyricsLineHeight,
+                                      letterSpacing: lyricsSpacing,
+                                      includeFontPadding: false,
+                                    }}
+                                  >
+                                    {line.content.trim() === '' ? ' ' : line.content}
                                   </Text>
                                 ))}
-                              </Text>
+                              </View>
                             </View>
                           ))
                         ) : (
-                          <Text style={{ color: colors.text, fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing }}>
+                          // Bible verses (both Tamil and English) locked to Tamil003
+                          <Text style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
                             {fetchedContent[block.id]}
                           </Text>
                         )
@@ -312,7 +381,7 @@ export default function ViewService() {
         </ScrollView>
       </SafeAreaView>
 
-      <Modal visible={showInviteModal} transparent={true} animationType="fade">
+      <Modal visible={showInviteModal} transparent={true} animationType="fade" onRequestClose={() => setShowInviteModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.qrModalContainer, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
             
@@ -330,20 +399,20 @@ export default function ViewService() {
               </View>
             ) : (
               <>
-                <Text style={{ color: colors.subtext, textAlign: 'center', marginBottom: 18, fontSize: 14.5 }}>
-                  Share this QR code and ID so a friend can join instantly.
+                <Text style={{ color: colors.subtext, textAlign: 'center', marginBottom: 14, fontSize: 14 }}>
+                  Share the Link, ID, or QR Code so your friends can sync this agenda.
                 </Text>
 
-                <ViewShot ref={inviteCardRef} options={{ format: 'png', quality: 1 }}>
-                  <View style={styles.inviteCard}>
+                <ViewShot ref={inviteCardRef} collapsable={false} options={{ format: 'png', quality: 1 }}>
+                  <View style={styles.inviteCard} collapsable={false}>
                     <Text style={styles.inviteHeader}>You're Invited!</Text>
                     <Text style={styles.inviteServiceName}>{service.name}</Text>
                     <Text style={styles.inviteDate}>{formattedDate}</Text>
 
                     <View style={styles.qrWrapper}>
                       <QRCode 
-                        value={shareId ? String(shareId) : 'x'} 
-                        size={200} 
+                        value={shareId ? `adventisttamil://join?id=${shareId}` : 'x'} 
+                        size={185} 
                         color="#000000" 
                         backgroundColor="#FFFFFF" 
                       />
@@ -352,24 +421,30 @@ export default function ViewService() {
                     <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
                     <Text style={styles.inviteId}>{shareId}</Text>
 
-                    <Text style={styles.inviteNote}>Your friend is asking you to join the service. Scan the QR code or enter the ID above in the app to join.</Text>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#0A84FF', marginBottom: 6 }}>
+                      https://adventisttamil.app/join?id={shareId}
+                    </Text>
+
+                    <Text style={styles.inviteNote}>Scan the QR code, click the link, or enter the ID in the Adventist Tamil app to join.</Text>
                   </View>
                 </ViewShot>
 
-                <TouchableOpacity 
-                  onPress={handleShareInvite} 
-                  style={[styles.shareLinkBtn, { backgroundColor: isSharing ? colors.border : '#FFCC00' }]}
-                  disabled={isSharing}
-                >
-                  {isSharing ? (
-                    <ActivityIndicator color="#000" />
-                  ) : (
-                    <>
-                      <Ionicons name="share-social-outline" size={20} color="#000" style={{ marginRight: 8 }} />
-                      <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>Share Invite</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                <View style={{ marginTop: 18 }}>
+                  <TouchableOpacity 
+                    onPress={handleShareAllInOne} 
+                    style={[styles.shareLinkBtn, { backgroundColor: isSharingImage ? colors.border : colors.primary }]}
+                    disabled={isSharingImage}
+                  >
+                    {isSharingImage ? (
+                      <ActivityIndicator color="#000" />
+                    ) : (
+                      <>
+                        <Ionicons name="share-social" size={20} color="#000" style={{ marginRight: 8 }} />
+                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>Share Invite (QR + ID + Link)</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </>
             )}
 
@@ -433,21 +508,20 @@ const styles = StyleSheet.create({
   expandedContent: { padding: 20, borderTopWidth: 1 },
   
   modalOverlay: { flex: 1, backgroundColor: 'rgba(4,6,12,0.82)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  qrModalContainer: { width: '100%', maxWidth: 380, borderRadius: 26, padding: 24, borderWidth: 1, elevation: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.35, shadowRadius: 20 },
-  qrHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  qrModalContainer: { width: '100%', maxWidth: 380, borderRadius: 26, padding: 22, borderWidth: 1, elevation: 14 },
+  qrHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(128,128,128,0.15)', justifyContent: 'center', alignItems: 'center' },
-  shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 15, borderRadius: 14, marginTop: 18 },
+  shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 13, borderRadius: 12 },
 
-  // Capturable invite card (QR + ID + note) shared as one image
-  inviteCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 22, alignItems: 'center' },
+  inviteCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 20, alignItems: 'center' },
   inviteHeader: { fontSize: 19, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
   inviteServiceName: { fontSize: 16, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
-  inviteDate: { fontSize: 13, color: '#666666', marginTop: 4, marginBottom: 16 },
-  qrWrapper: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 14, borderWidth: 1, borderColor: '#EEEEEE' },
+  inviteDate: { fontSize: 13, color: '#666666', marginTop: 4, marginBottom: 14 },
+  qrWrapper: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#EEEEEE' },
   inviteIdLabel: { fontSize: 11, fontWeight: '700', color: '#999999', letterSpacing: 1 },
-  inviteId: { fontSize: 20, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 14 },
-  inviteNote: { fontSize: 12.5, color: '#444444', textAlign: 'center', lineHeight: 18 },
-  
+  inviteId: { fontSize: 20, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 10 },
+  inviteNote: { fontSize: 12, color: '#444444', textAlign: 'center', lineHeight: 17 },
+
   settingsCard: { position: 'absolute', bottom: 0, width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, borderWidth: 1 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },
   settingLabel: { fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 15 },
