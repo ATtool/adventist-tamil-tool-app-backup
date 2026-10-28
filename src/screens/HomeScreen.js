@@ -825,19 +825,8 @@ export default function HomeScreen() {
                 <TouchableOpacity onPress={() => setIsMenuOpen(false)}><Ionicons name="close" size={28} color={colors.text} /></TouchableOpacity>
               </View>
               <ScrollView style={{ padding: 20 }}>
-                <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('TodaysManna')}>
-                  <Ionicons name="sunny" size={24} color={colors.text} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>Daily Devotion</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); openSabbathSchoolLink(); }}>
-                  <Ionicons name="library" size={24} color={colors.text} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>Sabbath School Lesson</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('Study')}>
-                  <Ionicons name="library" size={24} color={colors.text} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>Bible Tools & Study</Text>
-                </TouchableOpacity>
-                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
+                {/* Removed redundant shortcuts for Devotion, Sabbath School, and Study */}
+                
                 <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('Settings')}>
                   <Ionicons name="settings" size={24} color={colors.text} style={{ marginRight: 15 }} />
                   <Text style={{ color: colors.text, fontSize: 18 }}>Settings</Text>
@@ -864,6 +853,14 @@ export default function HomeScreen() {
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p'); }}>
                   <Image source={require('../../assets/whatsapp.png')} style={{ width: 48, height: 48, marginRight: 15 }} resizeMode="contain" />
                   <Text style={{ color: colors.text, fontSize: 18 }}>Join our WhatsApp Channel</Text>
+                </TouchableOpacity>
+
+                {/* Added visual spacer and new SDA Hymn Link */}
+                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
+                
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://sdahymn.app/'); }}>
+                  <Image source={require('../../assets/sdahymn.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
+                  <Text style={{ color: colors.text, fontSize: 18 }}>SDA Hymn</Text>
                 </TouchableOpacity>
               </ScrollView>
             </SafeAreaView>
