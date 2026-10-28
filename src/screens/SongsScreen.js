@@ -46,8 +46,7 @@ export default function SongsScreen() {
   const [isThanglish, setIsThanglish] = useState(false);
   const toggleSlideAnim = useRef(new Animated.Value(0)).current; // 0 = Tamil, 1 = Thanglish
 
-  // --- SMOOTH SINGLE-DRIVER ENTRANCE ANIMATION ---
-  const screenAnim = useRef(new Animated.Value(0)).current;
+  // Removed custom screenAnim to stop it from fighting the Native screen transition
 
   // --- GLOBAL SEARCH STATE ---
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -78,19 +77,6 @@ export default function SongsScreen() {
       useNativeDriver: true,
     }).start();
   };
-
-  // Ultra-smooth 60fps hardware-accelerated entrance animation
-  useFocusEffect(
-    useCallback(() => {
-      screenAnim.setValue(0);
-      Animated.timing(screenAnim, {
-        toValue: 1,
-        duration: 380,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }, [screenAnim])
-  );
 
   useEffect(() => {
     if (activeGlobalSong !== null) activateKeepAwakeAsync(); else deactivateKeepAwake();
@@ -385,23 +371,11 @@ export default function SongsScreen() {
     outputRange: [2, (TOGGLE_WIDTH / 2) - 2]
   });
 
-  // Helper to generate smooth staggered slide-up style from single Animated.Value
-  const getCardAnimStyle = (index) => {
-    const translateY = screenAnim.interpolate({
-      inputRange: [0, 1],
-      outputRange: [24 + index * 10, 0]
-    });
-    return {
-      opacity: screenAnim,
-      transform: [{ translateY }]
-    };
-  };
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
       
       {/* Main Header */}
-      <Animated.View style={[styles.headerContainer, { opacity: screenAnim }]}>
+      <View style={styles.headerContainer}>
         <View style={{ flex: 1 }}>
           <Text style={[styles.headerTitle, { color: colors.text }]} allowFontScaling={false}>பாடல் புத்தகங்கள்</Text>
           <Text style={[styles.headerSubtitle, { color: colors.subtext }]} allowFontScaling={false}>Song Books</Text>
@@ -409,12 +383,12 @@ export default function SongsScreen() {
         <ScalePressable onPress={openGlobalSearch} style={styles.searchIconBtn}>
           <Ionicons name="search" size={26} color={colors.primary} />
         </ScalePressable>
-      </Animated.View>
+      </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
         {/* Box 1: Zion */}
-        <Animated.View style={getCardAnimStyle(0)}>
+        <View style={{ marginBottom: 12 }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_ZION }]} onPress={() => openScreen('ZionSongs')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_ZION + '22' }]}><Ionicons name="musical-notes" size={22} color={ACCENT_ZION} /></View>
             <View style={styles.textContainer}>
@@ -424,10 +398,10 @@ export default function SongsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         {/* Box 2: Thirumarai Hope */}
-        <Animated.View style={getCardAnimStyle(1)}>
+        <View style={{ marginBottom: 12 }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_HOPE }]} onPress={() => openScreen('ThirumaraiHope')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_HOPE + '22' }]}><Ionicons name="star" size={22} color={ACCENT_HOPE} /></View>
             <View style={styles.textContainer}>
@@ -440,10 +414,10 @@ export default function SongsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         {/* Box 3: Thirumarai Old */}
-        <Animated.View style={getCardAnimStyle(2)}>
+        <View style={{ marginBottom: 12 }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_OLD }]} onPress={() => openScreen('ThirumaraiOld')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_OLD + '22' }]}><Ionicons name="book" size={22} color={colors.primary} /></View>
             <View style={styles.textContainer}>
@@ -456,10 +430,10 @@ export default function SongsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         {/* Box 4: Other Songs */}
-        <Animated.View style={getCardAnimStyle(3)}>
+        <View style={{ marginBottom: 12 }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_OTHER }]} onPress={() => openScreen('OtherSongs')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_OTHER + '22' }]}><Ionicons name="library" size={22} color={ACCENT_OTHER} /></View>
             <View style={styles.textContainer}>
@@ -469,10 +443,10 @@ export default function SongsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
         {/* Box 5: Custom Songs */}
-        <Animated.View style={getCardAnimStyle(4)}>
+        <View style={{ marginBottom: 12 }}>
           <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: ACCENT_CUSTOM }]} onPress={() => openScreen('CustomSongs')}>
             <View style={[styles.iconContainer, { backgroundColor: ACCENT_CUSTOM + '22' }]}><Ionicons name="create" size={22} color={ACCENT_CUSTOM} /></View>
             <View style={styles.textContainer}>
@@ -485,7 +459,7 @@ export default function SongsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
-        </Animated.View>
+        </View>
 
       </ScrollView>
 

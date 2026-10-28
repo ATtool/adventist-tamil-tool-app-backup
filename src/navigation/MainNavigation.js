@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, DefaultTheme } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -140,11 +140,13 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
 }
 
 function TabNavigator() {
+  const { colors } = useSettings(); // Bring in your colors here!
   return (
     <Tab.Navigator
       initialRouteName="Home"
       backBehavior="history" 
       safeAreaInsets={{ left: 0, right: 0 }}
+      sceneContainerStyle={{ backgroundColor: colors.background }} // Paint the Tab floor!
       tabBar={(props) => <CustomTabBar {...props} />}
       screenOptions={{ headerShown: false }}
     >
@@ -158,11 +160,28 @@ function TabNavigator() {
 }
 
 export default function MainNavigation() {
+  const { colors } = useSettings(); 
+
+  // Overriding the global React Navigation theme to kill the white floor!
+  const navTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: colors.background, // Forces the deepest background to match your app theme
+    },
+  };
+
   return (
-    <NavigationContainer ref={navigationRef} linking={linking}>
-       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        
-        <Stack.Screen name="MainTabs" component={TabNavigator} />
+    // Wrap the entire app in a dark container so the Android system window never bleeds through
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme}>
+         <Stack.Navigator screenOptions={{ 
+             headerShown: false, 
+             contentStyle: { backgroundColor: colors.background }, 
+             animation: 'slide_from_right' 
+         }}>
+          
+          <Stack.Screen name="MainTabs" component={TabNavigator} />
 
         <Stack.Screen name="EGWBooksList" component={EGWBooksListScreen} />
         <Stack.Screen name="Settings" component={SettingsScreen} />
@@ -189,5 +208,6 @@ export default function MainNavigation() {
 
       </Stack.Navigator>
     </NavigationContainer>
+    </View>
   );
 }
