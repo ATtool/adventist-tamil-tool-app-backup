@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, FlatList, ActivityIndicator, Share, TouchableOpacity } from 'react-native';
+// Added 'Text' to the import list below!
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Share, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +43,9 @@ export default function BibleScreen() {
   const [showHighlightPalette, setShowHighlightPalette] = useState(false);
   const [showLeftMenu, setShowLeftMenu] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+
+  // NEW: History stack to remember locations before a Cross-Reference jump
+  const [jumpHistory, setJumpHistory] = useState([]);
 
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [pickerStep, setPickerStep] = useState('book');
@@ -94,12 +98,14 @@ export default function BibleScreen() {
 
   function handleNextChapter() {
     triggerHaptic();
+    setJumpHistory([]); // Clear history on manual navigation
     if (activeChapter < maxChaptersForActiveBook) setActiveChapter(prev => prev + 1);
     else if (activeBookId < 66) { setActiveBookId(prev => prev + 1); setActiveChapter(1); }
   }
 
   function handlePrevChapter() {
     triggerHaptic();
+    setJumpHistory([]); // Clear history on manual navigation
     if (activeChapter > 1) setActiveChapter(prev => prev - 1);
     else if (activeBookId > 1) { setActiveBookId(prev => prev - 1); setActiveChapter(1); }
   }
@@ -285,7 +291,7 @@ export default function BibleScreen() {
         onClose={() => { triggerHaptic(); setIsPickerVisible(false); }}
         onBack={() => { triggerHaptic(); setPickerStep(pickerStep === 'verse' ? 'chapter' : 'book'); }}
         onTestamentSelect={setSelectedTestament} onBookSelect={handleBookSelect} onChapterSelect={handleChapterSelect}
-        onVerseSelect={(v) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setActiveBookId(tempBookId); setActiveChapter(tempChapterRef.current); setTargetVerse(v); setIsPickerVisible(false); }}
+        onVerseSelect={(v) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setJumpHistory([]); setActiveBookId(tempBookId); setActiveChapter(tempChapterRef.current); setTargetVerse(v); setIsPickerVisible(false); }}
       />
 
       <BibleLeftMenu
@@ -295,9 +301,56 @@ export default function BibleScreen() {
         onJumpToVerse={jumpToLocation}
       />
       
-      <BibleSearch visible={showSearch} onClose={() => setShowSearch(false)} onJumpToVerse={jumpToLocation} />
+      <BibleSearch visible={showSearch} onClose={() => setShowSearch(false)} onJumpToVerse={(b, c, v) => { setJumpHistory([]); jumpToLocation(b, c, v); }} />
       
-      <CrossRefModal visible={showCrossRefs} colors={colors} isDark={isDark} appFontSize={appFontSize} bibleLanguage={bibleLanguage} crossRefsList={crossRefsList} getBookName={getBookName} onJump={jumpToLocation} onClose={() => setShowCrossRefs(false)} />
+      <CrossRefModal visible={showCrossRefs} colors={colors} isDark={isDark} appFontSize={appFontSize} bibleLanguage={bibleLanguage} crossRefsList={crossRefsList} getBookName={getBookName} 
+        onJump={(book, chapter, verse) => {
+          // Push current location to the stack BEFORE jumping
+          setJumpHistory(prev => [...prev, {
+            bookId: activeBookId,
+            chapter: activeChapter,
+            verse: selectedVerses[0]?.verse || 1
+          }]);
+          jumpToLocation(book, chapter, verse);
+        }} 
+        onClose={() => setShowCrossRefs(false)} 
+      />
+
+      {/* NEW: Floating 'Go Back' Split-Pill Button for Cross-Refs */}
+      {jumpHistory.length > 0 && (
+        <View style={[styles.jumpBackContainer, { backgroundColor: colors.primary }]}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            style={styles.jumpBackMainBtn}
+            onPress={() => {
+              triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+              const lastLoc = jumpHistory[jumpHistory.length - 1];
+              setJumpHistory(prev => prev.slice(0, -1)); 
+              jumpToLocation(lastLoc.bookId, lastLoc.chapter, lastLoc.verse);
+            }}
+          >
+            <Ionicons name="arrow-undo" size={20} color={isDark ? '#000' : '#FFF'} />
+            <Text style={{ color: isDark ? '#000' : '#FFF', fontWeight: 'bold', marginLeft: 8, fontSize: 14 }}>
+              Back to {getBookName(jumpHistory[jumpHistory.length - 1].bookId)} {jumpHistory[jumpHistory.length - 1].chapter}:{jumpHistory[jumpHistory.length - 1].verse}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Vertical Divider */}
+          <View style={{ width: 1, backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)', marginVertical: 8 }} />
+
+          {/* Close (X) Button */}
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            style={styles.jumpBackCloseBtn}
+            onPress={() => {
+              triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+              setJumpHistory([]); // Setting this to empty completely hides the pill
+            }}
+          >
+            <Ionicons name="close" size={22} color={isDark ? '#000' : '#FFF'} />
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -307,4 +360,8 @@ const styles = StyleSheet.create({
   bodyCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   navButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, paddingHorizontal: 10 },
   navBtn: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
+  // Changed bottom from 85 to 160 so it floats perfectly above the Action Bar!
+  jumpBackContainer: { position: 'absolute', bottom: 160, alignSelf: 'center', flexDirection: 'row', alignItems: 'stretch', borderRadius: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
+  jumpBackMainBtn: { flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 12, paddingVertical: 12 },
+  jumpBackCloseBtn: { justifyContent: 'center', alignItems: 'center', paddingLeft: 12, paddingRight: 18 }
 });
