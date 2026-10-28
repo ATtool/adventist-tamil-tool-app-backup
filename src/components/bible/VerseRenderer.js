@@ -28,7 +28,9 @@ const VerseRenderer = React.memo(({
     const regex = new RegExp(`(${safeQuery})`, 'gi');
     const parts = text.split(regex);
     return parts.map((part, index) => 
-      regex.test(part) ? <Text key={index} style={{ color: '#FF3B30', fontWeight: 'bold' }}>{part}</Text> : <Text key={index}>{part}</Text>
+      // Removed fontWeight: 'bold' to stop Tamil letters from clipping.
+      // Added an underline so the highlighted search word still pops!
+      regex.test(part) ? <Text key={index} style={{ color: '#FF3B30', textDecorationLine: 'underline' }}>{part}</Text> : <Text key={index}>{part}</Text>
     );
   };
 
@@ -50,13 +52,15 @@ const VerseRenderer = React.memo(({
 
       <View style={{ flex: 1 }}>
         {(bibleLanguage === 'tamil' || bibleLanguage === 'both') && item.text_ta ? (
-          <Text style={{ color: colors.text, fontSize: bibleFontSize, lineHeight: bibleLineHeight, letterSpacing: bibleLetterSpacing, fontFamily: 'Tamil003', marginBottom: bibleLanguage === 'both' ? 10 : 0 }}>
+          // Forced 20px font and 32px line height for beautiful, readable Tamil003 text with zero clipping
+          <Text style={{ color: colors.text, fontSize: 20, lineHeight: 32, letterSpacing: bibleLetterSpacing, fontFamily: 'Tamil003', marginBottom: bibleLanguage === 'both' ? 10 : 0 }}>
             {renderHighlightedText(item.text_ta, highlightedWord)}
           </Text>
         ) : null}
         
         {(bibleLanguage === 'english' || bibleLanguage === 'both') && item.text_en ? (
-          <Text style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: bibleFontSize - 2, lineHeight: bibleLineHeight - 2, letterSpacing: bibleLetterSpacing }}>
+          // English text set to 18px to visually match the weight of 20px Tamil text
+          <Text style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: 18, lineHeight: 28, letterSpacing: bibleLetterSpacing }}>
             {renderHighlightedText(item.text_en, highlightedWord)}
           </Text>
         ) : null}
