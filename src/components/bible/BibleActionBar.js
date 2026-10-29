@@ -11,7 +11,9 @@ export default function BibleActionBar({
   onCancel,
   onFavorite,
   onCrossRef,
-  onShare
+  onShare,
+  onConcordance,
+  onExplanations
 }) {
   const slideAnim = useRef(new Animated.Value(100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -62,7 +64,11 @@ export default function BibleActionBar({
       />
       
       {selectedVerses.length === 1 && (
-        <ActionBtn icon="git-network-outline" text="Cross-Ref" onPress={onCrossRef} />
+        <>
+          <ActionBtn icon="git-network-outline" text="Cross-Ref" onPress={onCrossRef} />
+          <ActionBtn icon="search-outline" text="Concordance" onPress={onConcordance} />
+          <ActionBtn icon="library-outline" text="Explanations" onPress={onExplanations} />
+        </>
       )}
       
       <ActionBtn icon="share-social-outline" text="Share" onPress={onShare} />
@@ -81,5 +87,5 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 5, elevation: 10,
     zIndex: 100
   },
-  actionBtn: { alignItems: 'center', flex: 1, zIndex: 1 },
+  actionBtn: { alignItems: 'center', flex: 1, zIndex: 1, paddingHorizontal: 2 },
 });

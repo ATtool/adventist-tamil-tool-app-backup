@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-// Added 'Text' to the import list below!
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Share, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useNavigation } from '@react-navigation/native'; // Added to allow screen jumping!
 
 import { useSettings } from '../context/SettingsContext';
 import booksData from '../data/books.json';
@@ -20,6 +20,7 @@ import BibleLeftMenu from '../components/bible/BibleLeftMenu';
 import BibleSearch from '../components/bible/BibleSearch';
 
 export default function BibleScreen() {
+  const navigation = useNavigation(); // Hooking up navigation so we can jump to Concordance & Explanations
   const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion, bibleFontSize, bibleLineHeight, bibleLetterSpacing } = useSettings();
 
   const [activeBookId, setActiveBookId] = useState(1);
@@ -180,33 +181,22 @@ export default function BibleScreen() {
     } catch (e) {}
   }
 
-  // --- CHANGED: This is the updated Share Function! ---
   async function handleShare() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     let shareText = `${getBookName(activeBookId)} ${activeChapter}\n\n`;
     
-    // Sort verses numerically and pull the correct text (text_ta and text_en)
     [...selectedVerses].sort((a, b) => a.verse - b.verse).forEach(v => { 
       let verseContent = '';
-      
-      if (v.text_ta) {
-        verseContent += v.text_ta;
-      }
-      
-      if (v.text_en) {
-        verseContent += (v.text_ta ? '\n' : '') + v.text_en;
-      }
-
+      if (v.text_ta) verseContent += v.text_ta;
+      if (v.text_en) verseContent += (v.text_ta ? '\n' : '') + v.text_en;
       shareText += `[${v.verse}] ${verseContent}\n\n`; 
     });
     
-    // Added the WhatsApp Channel Link
-    shareText += `Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p\n\n✨join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p \n\n📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool`;
+    shareText += `Join our WhatsApp channel:\nhttps://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p\n\n📲Download our APP in Play Store : https://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool`;
     
     try { await Share.share({ message: shareText }); } catch (e) {}
     setSelectedVerses([]);
   }
-  // ---------------------------------------------------
 
   function openCrossRefs() {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
@@ -281,6 +271,32 @@ export default function BibleScreen() {
           onFavorite={saveFavorite} 
           onToggleHighlightPalette={() => { triggerHaptic(); setShowHighlightPalette(!showHighlightPalette); }} onSaveHighlight={saveHighlight}
           onCrossRef={openCrossRefs} onShare={handleShare}
+          onConcordance={() => {
+            if (selectedVerses.length === 1) {
+              triggerHaptic();
+              const v = selectedVerses[0];
+              setSelectedVerses([]);
+              navigation.navigate('Concordance', {
+                targetBookId: activeBookId,
+                targetChapter: activeChapter,
+                targetVerse: v.verse,
+                jumpTimestamp: Date.now()
+              });
+            }
+          }}
+          onExplanations={() => {
+            if (selectedVerses.length === 1) {
+              triggerHaptic();
+              const v = selectedVerses[0];
+              setSelectedVerses([]);
+              navigation.navigate('StudyExplanations', {
+                targetBookId: activeBookId,
+                targetChapter: activeChapter,
+                targetVerse: v.verse,
+                jumpTimestamp: Date.now()
+              });
+            }
+          }}
         />
       </SafeAreaView>
 
@@ -305,7 +321,6 @@ export default function BibleScreen() {
       
       <CrossRefModal visible={showCrossRefs} colors={colors} isDark={isDark} appFontSize={appFontSize} bibleLanguage={bibleLanguage} crossRefsList={crossRefsList} getBookName={getBookName} 
         onJump={(book, chapter, verse) => {
-          // Push current location to the stack BEFORE jumping
           setJumpHistory(prev => [...prev, {
             bookId: activeBookId,
             chapter: activeChapter,
@@ -316,7 +331,6 @@ export default function BibleScreen() {
         onClose={() => setShowCrossRefs(false)} 
       />
 
-      {/* NEW: Floating 'Go Back' Split-Pill Button for Cross-Refs */}
       {jumpHistory.length > 0 && (
         <View style={[styles.jumpBackContainer, { backgroundColor: colors.primary }]}>
           <TouchableOpacity 
@@ -335,16 +349,14 @@ export default function BibleScreen() {
             </Text>
           </TouchableOpacity>
 
-          {/* Vertical Divider */}
           <View style={{ width: 1, backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)', marginVertical: 8 }} />
 
-          {/* Close (X) Button */}
           <TouchableOpacity 
             activeOpacity={0.8}
             style={styles.jumpBackCloseBtn}
             onPress={() => {
               triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-              setJumpHistory([]); // Setting this to empty completely hides the pill
+              setJumpHistory([]); 
             }}
           >
             <Ionicons name="close" size={22} color={isDark ? '#000' : '#FFF'} />
@@ -360,7 +372,6 @@ const styles = StyleSheet.create({
   bodyCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   navButtonsContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30, paddingHorizontal: 10 },
   navBtn: { width: 60, height: 60, borderRadius: 30, borderWidth: 1, justifyContent: 'center', alignItems: 'center' },
-  // Changed bottom from 85 to 160 so it floats perfectly above the Action Bar!
   jumpBackContainer: { position: 'absolute', bottom: 160, alignSelf: 'center', flexDirection: 'row', alignItems: 'stretch', borderRadius: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 8 },
   jumpBackMainBtn: { flexDirection: 'row', alignItems: 'center', paddingLeft: 20, paddingRight: 12, paddingVertical: 12 },
   jumpBackCloseBtn: { justifyContent: 'center', alignItems: 'center', paddingLeft: 12, paddingRight: 18 }

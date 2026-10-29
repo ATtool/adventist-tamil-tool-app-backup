@@ -121,7 +121,7 @@ const MAP_FILES = [
   { name: '167.jpg', url: 'https://www.dropbox.com/scl/fi/jiqyk40wh0f062qx1kl4p/167.jpg?rlkey=tkytzjtpg5mz2tgzs7gnruxu5&st=we4jtfql&dl=1' }
 ];
 
-export default function StudyExplanationsScreen({ navigation }) {
+export default function StudyExplanationsScreen({ navigation, route }) {
   const { colors, isDark, appFontSize, hapticsEnabled } = useSettings();
 
   // Download States
@@ -166,6 +166,15 @@ export default function StudyExplanationsScreen({ navigation }) {
   const [browserUrl, setBrowserUrl] = useState('');
   const [browserTitle, setBrowserTitle] = useState('');
   const [fullScreenMap, setFullScreenMap] = useState(null);
+
+  // Auto-Jump Logic when routed from BibleScreen
+  useEffect(() => {
+    if (route.params?.jumpTimestamp && isDownloaded) {
+      setActiveBookId(route.params.targetBookId);
+      setActiveChapter(route.params.targetChapter);
+      setActiveVerse(route.params.targetVerse);
+    }
+  }, [route.params?.jumpTimestamp, isDownloaded]);
 
   useEffect(() => { checkInstallation(); }, []);
   useEffect(() => {

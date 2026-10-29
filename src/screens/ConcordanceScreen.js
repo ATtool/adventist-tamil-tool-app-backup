@@ -34,7 +34,7 @@ const getBookName = (bookId, language) => {
   return SHORT_BOOKS[id - 1] || book.name_en;
 };
 
-export default function ConcordanceScreen({ navigation }) {
+export default function ConcordanceScreen({ navigation, route }) {
   const {
     colors, isDark, appFontSize, bibleLanguage,
     bibleFontSize: globalBibleFontSize,
@@ -51,7 +51,11 @@ export default function ConcordanceScreen({ navigation }) {
   const [isEngineDownloaded, setIsEngineDownloaded] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
+  
   const [db, setDb] = useState(null);
+  const dbRef = useRef(null); // The Lock to prevent double-opening DB
+  const isOpeningDbRef = useRef(false); // Prevents two opens racing each other
+  const isMountedRef = useRef(true); // Tracks whether this screen instance is still mounted
 
   const [hasLoadedState, setHasLoadedState] = useState(false);
   const [activeBookId, setActiveBookId] = useState(1);
@@ -82,6 +86,16 @@ export default function ConcordanceScreen({ navigation }) {
   const [strongsRawRefs, setStrongsRawRefs] = useState('');
   const [strongsVerses, setStrongsVerses] = useState([]);
   const [isLoadingSheet, setIsLoadingSheet] = useState(false);
+
+  // Auto-Jump Logic when routed from BibleScreen
+  useEffect(() => {
+    // Note the ?. to safely check if params exist
+    if (route?.params?.jumpTimestamp && isEngineDownloaded) {
+      pendingJumpVerseRef.current = route.params.targetVerse;
+      setActiveBookId(route.params.targetBookId);
+      setActiveChapter(route.params.targetChapter);
+    }
+  }, [route?.params?.jumpTimestamp, isEngineDownloaded]);
 
   // ── Swipe-down-to-close for the Strong's bottom sheet ──
   const sheetPanY = useRef(new Animated.Value(0)).current;
@@ -126,7 +140,8 @@ export default function ConcordanceScreen({ navigation }) {
     const initApp = async () => {
       try {
         const savedLoc = await AsyncStorage.getItem('@concordance_last_loc');
-        if (savedLoc) {
+        // Ignore saved location if we are jumping from a specific Bible verse safely
+        if (savedLoc && !route?.params?.jumpTimestamp) {
           const { b, c } = JSON.parse(savedLoc);
           setActiveBookId(b);
           setActiveChapter(c);
@@ -140,16 +155,32 @@ export default function ConcordanceScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => checkEngineInstallation());
+    const unsubscribe = navigation.addListener('focus', () => {
+      if (!dbRef.current) checkEngineInstallation();
+    });
     return unsubscribe;
   }, [navigation]);
+
+  // Close the native connection when this screen unmounts (navigated away from).
+  // Without this, every re-entry into Concordance leaks another open DB handle.
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (dbRef.current) {
+        const dbToClose = dbRef.current;
+        dbRef.current = null;
+        dbToClose.closeAsync().catch(() => {});
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (hasLoadedState) {
       AsyncStorage.setItem('@concordance_last_loc', JSON.stringify({ b: activeBookId, c: activeChapter }));
-      if (db && isEngineDownloaded) loadVerses(db, activeBookId, activeChapter);
+      // Using dbRef.current to make sure we use the active lock
+      if (dbRef.current && isEngineDownloaded) loadVerses(dbRef.current, activeBookId, activeChapter);
     }
-  }, [activeBookId, activeChapter, hasLoadedState, db, isEngineDownloaded]);
+  }, [activeBookId, activeChapter, hasLoadedState, isEngineDownloaded]);
 
   const triggerHaptic = (style = Haptics.ImpactFeedbackStyle.Medium) => {
     if (hapticsEnabled) Haptics.impactAsync(style);
@@ -159,14 +190,32 @@ export default function ConcordanceScreen({ navigation }) {
     try {
       const info = await FileSystem.getInfoAsync(DB_PATH);
       if (info.exists && info.size > 13000000) {
-        const database = await SQLite.openDatabaseAsync(DB_FILENAME);
-        setDb(database);
+        // LOCK CHECK: Only open the DB if it's not already open AND nobody else is opening it right now!
+        if (!dbRef.current && !isOpeningDbRef.current) {
+          isOpeningDbRef.current = true;
+          try {
+            const newConnection = await SQLite.openDatabaseAsync(DB_FILENAME);
+            if (!isMountedRef.current) {
+              newConnection.closeAsync().catch(() => {});
+              return;
+            }
+            dbRef.current = newConnection;
+            setDb(dbRef.current);
+          } finally {
+            isOpeningDbRef.current = false;
+          }
+        }
+        if (!isMountedRef.current) return;
         setIsEngineDownloaded(true);
-        if (hasLoadedState) loadVerses(database, activeBookId, activeChapter);
+        if (hasLoadedState && dbRef.current) loadVerses(dbRef.current, activeBookId, activeChapter);
       } else {
         if (info.exists) await FileSystem.deleteAsync(DB_PATH, { idempotent: true });
         setIsEngineDownloaded(false);
-        if (db) { await db.closeAsync(); setDb(null); }
+        if (dbRef.current) { 
+          await dbRef.current.closeAsync(); 
+          dbRef.current = null;
+        }
+        setDb(null);
       }
     } catch (e) {
       setIsEngineDownloaded(false);
@@ -216,9 +265,15 @@ export default function ConcordanceScreen({ navigation }) {
       if (result && result.status === 200) {
         setIsDownloading(false);
         setIsEngineDownloaded(true);
-        const database = await SQLite.openDatabaseAsync(DB_FILENAME);
-        setDb(database);
-        loadVerses(database, activeBookId, activeChapter);
+        // Using the ref lock here too!
+        const newConnection = await SQLite.openDatabaseAsync(DB_FILENAME);
+        if (!isMountedRef.current) {
+          newConnection.closeAsync().catch(() => {});
+          return;
+        }
+        dbRef.current = newConnection;
+        setDb(dbRef.current);
+        loadVerses(dbRef.current, activeBookId, activeChapter);
       } else {
         throw new Error('Download execution failure');
       }
@@ -246,9 +301,6 @@ export default function ConcordanceScreen({ navigation }) {
     }
   };
 
-  // FIX: normalise Strong's ID from verse tags like H430 → H0430 correctly
-  // The verse text uses <H430> but the DB stores H0430 (zero-padded to 4 digits).
-  // We also handle cases where verses use H0430 already — both must match.
   const normalizeStrongs = (id) => id ? id.trim().toUpperCase().replace(/\s+/g, '') : '';
 
   const padStrongs = (id) => {
@@ -257,11 +309,9 @@ export default function ConcordanceScreen({ navigation }) {
     const letter = clean.charAt(0);
     const num = clean.slice(1);
     if (isNaN(num) || num === '') return clean;
-    // pad to 4 digits for Hebrew (H) and 4 digits for Greek (G)
     return `${letter}${num.padStart(4, '0')}`;
   };
 
-  // Also try without padding — some DBs store H430 not H0430
   const tryBothFormats = async (database, id, isGreek) => {
     const padded = padStrongs(id);
     const unpadded = normalizeStrongs(id);
@@ -271,7 +321,6 @@ export default function ConcordanceScreen({ navigation }) {
     if (!result || result.length === 0) {
       result = await database.getAllAsync(`SELECT * FROM ${table} WHERE strongs_id = ? LIMIT 1;`, [unpadded]);
     }
-    // also try stripping leading zeros: H0430 → H430
     if (!result || result.length === 0) {
       const stripped = `${unpadded.charAt(0)}${parseInt(unpadded.slice(1), 10)}`;
       result = await database.getAllAsync(`SELECT * FROM ${table} WHERE strongs_id = ? LIMIT 1;`, [stripped]);
@@ -314,8 +363,23 @@ export default function ConcordanceScreen({ navigation }) {
     });
   };
 
-  const openStrongsSheet = async (rawId) => {
-    if (!db) return;
+  const reopenConcordanceDb = async () => {
+    try {
+      if (dbRef.current) {
+        try { await dbRef.current.closeAsync(); } catch (e) {}
+      }
+      dbRef.current = null;
+      dbRef.current = await SQLite.openDatabaseAsync(DB_FILENAME);
+      setDb(dbRef.current);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const openStrongsSheet = async (rawId, isRetry = false) => {
+    // Use dbRef.current to make sure it's valid before querying!
+    if (!dbRef.current) return;
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     const isGreek = rawId.toUpperCase().startsWith('G');
     const displayId = padStrongs(rawId);
@@ -328,7 +392,7 @@ export default function ConcordanceScreen({ navigation }) {
     setShowBottomSheet(true);
 
     try {
-      const mappingResult = await tryBothFormats(db, rawId, isGreek);
+      const mappingResult = await tryBothFormats(dbRef.current, rawId, isGreek);
 
       if (mappingResult && mappingResult.length > 0) {
         const row = mappingResult[0];
@@ -355,8 +419,6 @@ export default function ConcordanceScreen({ navigation }) {
             if (refStr.startsWith('[')) {
               parsedRefs = JSON.parse(refStr);
             } else {
-              // format: "42;1;5, 44;7;40" — split by comma or semicolons
-              // detect if it's "book;chapter;verse" comma-separated groups
               const groups = refStr.split(',').map(s => s.trim()).filter(Boolean);
               for (const g of groups) {
                 const parts = g.split(';');
@@ -370,7 +432,7 @@ export default function ConcordanceScreen({ navigation }) {
           const limitedRefs = parsedRefs.filter(r => !isNaN(r.b) && !isNaN(r.c) && !isNaN(r.v)).slice(0, 60);
           const fetchedVerses = [];
           for (const ref of limitedRefs) {
-            const vRes = await db.getAllAsync(
+            const vRes = await dbRef.current.getAllAsync(
               'SELECT book_id, chapter, verse, tagged_text FROM bible_verses WHERE book_id = ? AND chapter = ? AND verse = ? LIMIT 1;',
               [ref.b, ref.c, ref.v]
             );
@@ -386,8 +448,17 @@ export default function ConcordanceScreen({ navigation }) {
       }
     } catch (e) {
       console.error(e);
+      const crashMsg = String(e?.message || e);
+      const isNativeDbCrash = crashMsg.includes('prepareAsync') || crashMsg.includes('NullPointerException') || crashMsg.includes('NativeDatabase');
+      if (isNativeDbCrash && !isRetry) {
+        const reopened = await reopenConcordanceDb();
+        if (reopened) {
+          await openStrongsSheet(rawId, true);
+          return;
+        }
+      }
       try {
-        const tables = await db.getAllAsync("SELECT name FROM sqlite_master WHERE type='table'");
+        const tables = await dbRef.current.getAllAsync("SELECT name FROM sqlite_master WHERE type='table'");
         Alert.alert('Database Error', 'Missing mapped tables. Tables:\n' + tables.map(t => t.name).join(', '));
       } catch (err) {}
       setShowBottomSheet(false);
@@ -397,7 +468,7 @@ export default function ConcordanceScreen({ navigation }) {
   };
 
   const executeSearch = async (text) => {
-    if (!db || !text.trim()) return;
+    if (!dbRef.current || !text.trim()) return;
     setIsSearching(true);
     setSelectedLetter(null);
     try {
@@ -428,13 +499,13 @@ export default function ConcordanceScreen({ navigation }) {
         params = [`%${cleanText}%`, `%${cleanText}%`];
       }
 
-      const rows = await db.getAllAsync(query, params);
+      const rows = await dbRef.current.getAllAsync(query, params);
       setSearchResults(rows || []);
     } catch (e) { console.error(e); } finally { setIsSearching(false); }
   };
 
   const handleLetterSelect = async (letter) => {
-    if (!db) return;
+    if (!dbRef.current) return;
     triggerHaptic();
     setSelectedLetter(letter);
     setSearchQuery('');
@@ -446,7 +517,7 @@ export default function ConcordanceScreen({ navigation }) {
         SELECT strongs_id, kjv_translations as word_use FROM hebrew_concordance_mappings WHERE SUBSTR(LTRIM(kjv_translations), 1, 1) = ?
         LIMIT 200;
       `;
-      const rows = await db.getAllAsync(query, [letter.toUpperCase(), letter.toUpperCase()]);
+      const rows = await dbRef.current.getAllAsync(query, [letter.toUpperCase(), letter.toUpperCase()]);
       setBrowseWords(rows || []);
     } catch (e) { console.error(e); } finally { setIsSearching(false); }
   };
@@ -459,7 +530,6 @@ export default function ConcordanceScreen({ navigation }) {
     const sameChapter = bookId === activeBookId && chapter === activeChapter;
 
     if (sameChapter) {
-      // Already viewing this chapter — scroll + highlight right away, no need to wait for a reload.
       requestAnimationFrame(() => {
         setHighlightedVerse(verse);
         if (flatListRef.current) {
@@ -468,17 +538,12 @@ export default function ConcordanceScreen({ navigation }) {
         setTimeout(() => setHighlightedVerse(null), 1000);
       });
     } else {
-      // Jumping to a different chapter — the verse list has to load first.
-      // Stash the target verse; the effect below fires once loading finishes.
       pendingJumpVerseRef.current = verse;
       setActiveBookId(bookId);
       setActiveChapter(chapter);
     }
   };
 
-  // Completes a cross-reference jump into a different chapter: waits for the
-  // freshly-loaded verse list to be ready, then scrolls to and highlights the
-  // target verse — same behaviour as picking a verse from the verse picker.
   useEffect(() => {
     if (pendingJumpVerseRef.current != null && !isLoadingVerses && verses.length > 0) {
       const verse = pendingJumpVerseRef.current;
@@ -493,20 +558,12 @@ export default function ConcordanceScreen({ navigation }) {
     }
   }, [verses, isLoadingVerses]);
 
-  const SHORT_BOOKS = ["Gen","Exo","Lev","Num","Deut","Josh","Judg","Ruth","1Sam","2Sam","1Kgs","2Kgs","1Chron","2Chron","Ezra","Neh","Esth","Job","Ps","Prov","Eccles","Song","Isa","Jer","Lam","Ezek","Dan","Hos","Joel","Amos","Obad","Jonah","Mic","Nah","Hab","Zeph","Hag","Zech","Mal","Matt","Mark","Luke","John","Acts","Rom","1Cor","2Cor","Gal","Eph","Phil","Col","1Thess","2Thess","1Tim","2Tim","Titus","Philem","Heb","Jas","1Pet","2Pet","1John","2John","3John","Jude","Rev"];
-
-  const getBookName = (id) => {
-    // Forces the short English name (Gen, Exo, etc.) regardless of app language settings
-    return SHORT_BOOKS[id - 1] || 'Unknown';
-  };
-
   const availableChapters = useMemo(() => {
     const book = booksData.find(b => b.id === activeBookId);
     const count = book?.chapters || 50;
     return Array.from({ length: count }, (_, i) => i + 1);
   }, [activeBookId]);
 
-  // Parse references_list string into array of {b,c,v} objects
   const parseRefsString = (refsStr) => {
     if (!refsStr) return [];
     try {
@@ -522,7 +579,6 @@ export default function ConcordanceScreen({ navigation }) {
     } catch (e) { return []; }
   };
 
-  // Format references_list as human-readable string: "book chapter:verse, ..."
   const formatRefsDisplay = (refsStr) => {
     const refs = parseRefsString(refsStr);
     if (!refs.length) return refsStr || '—';
@@ -717,9 +773,9 @@ export default function ConcordanceScreen({ navigation }) {
           triggerHaptic();
           setActiveChapter(ch);
           setPickerStep('verse');
-          if (db) {
+          if (dbRef.current) {
             try {
-              const res = await db.getAllAsync(
+              const res = await dbRef.current.getAllAsync(
                 'SELECT MAX(verse) as maxVerse FROM bible_verses WHERE book_id = ? AND chapter = ?',
                 [activeBookId, ch]
               );
