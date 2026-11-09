@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsContext = createContext();
@@ -8,19 +8,18 @@ export const SettingsProvider = ({ children }) => {
   
   const [timeZone, setTimeZone] = useState('India (IST)');
   
-  // Notice we changed this to _setAppFontSize. The underscore is a standard naming trick 
-  // to say "this is the raw, internal state setter".
-  const [appFontSize, _setAppFontSize] = useState(14); 
+  // Base scale for the entire app UI (default: 15)
+  const [appFontSize, _setAppFontSize] = useState(15); 
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
-  // --- SONG SETTINGS ---
-  const [titleSize, setTitleSize] = useState(18);
+  // --- SONG READING PREFERENCES ---
+  const [titleSize, setTitleSize] = useState(20);
   const [titleSpacing, setTitleSpacing] = useState(0);
   const [lyricsSize, setLyricsSize] = useState(18); 
   const [lyricsSpacing, setLyricsSpacing] = useState(0);
-  const [lyricsLineHeight, setLyricsLineHeight] = useState(30);
+  const [lyricsLineHeight, setLyricsLineHeight] = useState(32);
 
-  // --- BIBLE SETTINGS ---
+  // --- BIBLE READING PREFERENCES ---
   const [bibleLanguage, _setBibleLanguage] = useState('both'); 
   const [activeEnglishVersion, _setActiveEnglishVersion] = useState('KJV');
 
@@ -28,18 +27,19 @@ export const SettingsProvider = ({ children }) => {
   const [bibleLineHeight, setBibleLineHeight] = useState(32);
   const [bibleLetterSpacing, setBibleLetterSpacing] = useState(0);
 
-  // Load saved settings on startup (Reading the "Notebook")
+  // Load saved preferences on startup
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const savedLang = await AsyncStorage.getItem('@bible_language');
         if (savedLang !== null) _setBibleLanguage(savedLang);
 
-        // NEW: Load the saved font size from the phone's hard drive!
         const savedAppFontSize = await AsyncStorage.getItem('@app_font_size');
         if (savedAppFontSize !== null) {
-          // AsyncStorage saves everything as text (strings), so we must convert it back to a number
-          _setAppFontSize(parseInt(savedAppFontSize, 10)); 
+          const parsedSize = parseInt(savedAppFontSize, 10);
+          if (!isNaN(parsedSize) && parsedSize >= 12 && parsedSize <= 24) {
+            _setAppFontSize(parsedSize);
+          }
         }
 
         const savedVersion = await AsyncStorage.getItem('@active_english_version');
@@ -51,13 +51,13 @@ export const SettingsProvider = ({ children }) => {
             _setActiveEnglishVersion(savedVersion);
           }
         }
-      } catch (e) { console.error("Failed to load settings", e); }
+      } catch (e) { 
+        console.error("Failed to load settings", e); 
+      }
     };
     loadSettings();
   }, []);
 
-  // NEW: This is the function SettingsScreen will call. 
-  // It updates the screen instantly, AND writes it down in the "Notebook".
   const setAppFontSize = async (size) => {
     _setAppFontSize(size);
     await AsyncStorage.setItem('@app_font_size', size.toString());
@@ -73,14 +73,16 @@ export const SettingsProvider = ({ children }) => {
     await AsyncStorage.setItem('@active_english_version', version);
   };
 
-  // We also make sure the reset button clears the hard drive memory back to 16
   const restoreDefaultTextSettings = async () => {
-    _setAppFontSize(14);
-    await AsyncStorage.setItem('@app_font_size', '14');
-
-    setTitleSize(18); setTitleSpacing(0);
-    setLyricsSize(18); setLyricsSpacing(0); setLyricsLineHeight(30);
-    setBibleFontSize(18); setBibleLineHeight(32); setBibleLetterSpacing(0);
+    await setAppFontSize(15);
+    setTitleSize(20); 
+    setTitleSpacing(0);
+    setLyricsSize(18); 
+    setLyricsSpacing(0); 
+    setLyricsLineHeight(32);
+    setBibleFontSize(18); 
+    setBibleLineHeight(32); 
+    setBibleLetterSpacing(0);
   };
 
   const colors = {
@@ -90,12 +92,65 @@ export const SettingsProvider = ({ children }) => {
     subtext: '#8E94A3',                  
     primary: '#00F0FF',                  
     border: 'rgba(255, 255, 255, 0.08)', 
-    glow: 'rgba(0, 240, 255, 0.15)' 
+    glow: 'rgba(0, 240, 255, 0.15)',
+    accent: '#FFD700',
+    danger: '#FF3B30',
+    success: '#30D158'
   };
+
+  // Uniform Typography System
+  // Uses Tamil008 for headings/titles and Tamil003 for body/content without bold conflicts on Android
+  const typography = useMemo(() => {
+    const base = appFontSize;
+    return {
+      h1: {
+        fontFamily: 'Tamil008',
+        fontSize: base + 8, // ~23px
+        lineHeight: (base + 8) * 1.3,
+        includeFontPadding: false,
+      },
+      h2: {
+        fontFamily: 'Tamil008',
+        fontSize: base + 5, // ~20px
+        lineHeight: (base + 5) * 1.3,
+        includeFontPadding: false,
+      },
+      title: {
+        fontFamily: 'Tamil008',
+        fontSize: base + 2, // ~17px
+        lineHeight: (base + 2) * 1.35,
+        includeFontPadding: false,
+      },
+      body: {
+        fontFamily: 'Tamil003',
+        fontSize: base, // ~15px
+        lineHeight: base * 1.5,
+        includeFontPadding: false,
+      },
+      bodyBold: {
+        fontFamily: 'Tamil008',
+        fontSize: base, // ~15px
+        lineHeight: base * 1.5,
+        includeFontPadding: false,
+      },
+      subtext: {
+        fontFamily: 'Tamil003',
+        fontSize: Math.max(11, base - 2), // ~13px
+        lineHeight: Math.max(11, base - 2) * 1.4,
+        includeFontPadding: false,
+      },
+      caption: {
+        fontFamily: 'Tamil003',
+        fontSize: Math.max(10, base - 4), // ~11px
+        lineHeight: Math.max(10, base - 4) * 1.3,
+        includeFontPadding: false,
+      },
+    };
+  }, [appFontSize]);
 
   return (
     <SettingsContext.Provider value={{ 
-      timeZone, setTimeZone, colors, isDark,
+      timeZone, setTimeZone, colors, typography, isDark,
       appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled,
       titleSize, setTitleSize, titleSpacing, setTitleSpacing,
       lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight,
