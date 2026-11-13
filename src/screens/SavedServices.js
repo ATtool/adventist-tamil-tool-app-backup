@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Modal, ActivityIndicator, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,7 +23,8 @@ const formatServiceDate = (date) => {
 export default function SavedServices() {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
-  const { colors, isDark, hapticsEnabled } = useSettings();
+  const { colors, isDark, hapticsEnabled, typography } = useSettings();
+  const styles = createStyles(typography);
   
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -199,12 +201,12 @@ export default function SavedServices() {
               <Ionicons name="calendar" size={20} color={colors.primary} />
             </View>
             <View style={{ marginLeft: 12, flex: 1 }}>
-              <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+              <MixedText style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
                 {item.name}
-              </Text>
-              <Text style={[styles.cardDate, { color: colors.primary }]}>
+              </MixedText>
+              <MixedText style={[styles.cardDate, { color: colors.primary }]}>
                 {formattedDate}
-              </Text>
+              </MixedText>
             </View>
           </View>
 
@@ -233,9 +235,9 @@ export default function SavedServices() {
         </View>
 
         <View style={[styles.cardFooter, { borderTopColor: colors.border }]}>
-          <Text style={{ color: colors.subtext, fontSize: 13, fontWeight: '500' }}>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: '500' }}>
             <Ionicons name="list" size={14} color={colors.subtext} /> {item.agenda?.length || 0} Agenda Items
-          </Text>
+          </MixedText>
           <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
         </View>
       </TouchableOpacity>
@@ -250,9 +252,9 @@ export default function SavedServices() {
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontSize: 17 }}>Back</Text>
+            <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize }}>Back</MixedText>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>My Services</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text }]}>My Services</MixedText>
           <View style={styles.headerBtn} /> 
         </View>
 
@@ -260,10 +262,10 @@ export default function SavedServices() {
         {!isLoading && services.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons name="albums-outline" size={60} color={colors.border} />
-            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>No Services Yet</Text>
-            <Text style={[styles.emptyStateText, { color: colors.subtext }]}>
+            <MixedText style={[styles.emptyStateTitle, { color: colors.text }]}>No Services Yet</MixedText>
+            <MixedText style={[styles.emptyStateText, { color: colors.subtext }]}>
               Services you create in the Builder will appear here.
-            </Text>
+            </MixedText>
           </View>
         ) : (
           <FlatList
@@ -283,7 +285,7 @@ export default function SavedServices() {
           <View style={[styles.qrModalContainer, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
             
             <View style={styles.qrHeader}>
-              <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>Share Service</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: '800' }}>Share Service</MixedText>
               <TouchableOpacity onPress={() => setShowInviteModal(false)} style={styles.closeBtn}>
                 <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
@@ -292,15 +294,15 @@ export default function SavedServices() {
             {isUploading ? (
               <View style={{ padding: 40, alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ color: colors.text, marginTop: 15 }}>Syncing service to cloud...</Text>
+                <MixedText style={{ color: colors.text, marginTop: 15 }}>Syncing service to cloud...</MixedText>
               </View>
             ) : (
               <>
                 <ViewShot ref={inviteCardRef} collapsable={false} options={{ format: 'png', quality: 1 }}>
                   <View style={styles.inviteCard} collapsable={false}>
-                    <Text style={styles.inviteHeader}>You're Invited!</Text>
-                    <Text style={styles.inviteServiceName}>{activeService?.name || ''}</Text>
-                    <Text style={styles.inviteDate}>{activeService ? formatServiceDate(activeService.date) : ''}</Text>
+                    <MixedText style={styles.inviteHeader}>You're Invited!</MixedText>
+                    <MixedText style={styles.inviteServiceName}>{activeService?.name || ''}</MixedText>
+                    <MixedText style={styles.inviteDate}>{activeService ? formatServiceDate(activeService.date) : ''}</MixedText>
 
                     <View style={styles.qrWrapper}>
                       <QRCode 
@@ -311,10 +313,10 @@ export default function SavedServices() {
                       />
                     </View>
 
-                    <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
-                    <Text style={styles.inviteId}>{shareId}</Text>
+                    <MixedText style={styles.inviteIdLabel}>SERVICE ID</MixedText>
+                    <MixedText style={styles.inviteId}>{shareId}</MixedText>
 
-                    <Text style={styles.inviteNote}>Scan the QR code or enter the ID in Adventist Tamil Tool to join.</Text>
+                    <MixedText style={styles.inviteNote}>Scan the QR code or enter the ID in Adventist Tamil Tool to join.</MixedText>
                   </View>
                 </ViewShot>
 
@@ -324,7 +326,7 @@ export default function SavedServices() {
                     style={[styles.shareLinkBtn, { backgroundColor: colors.primary, marginBottom: 10 }]}
                   >
                     <Ionicons name="link" size={20} color="#000" style={{ marginRight: 8 }} />
-                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>Share Link, ID & Store Link</Text>
+                    <MixedText style={{ color: '#000', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Share Link, ID & Store Link</MixedText>
                   </TouchableOpacity>
 
                   <TouchableOpacity 
@@ -337,7 +339,7 @@ export default function SavedServices() {
                     ) : (
                       <>
                         <Ionicons name="qr-code" size={20} color="#000" style={{ marginRight: 8 }} />
-                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>Share QR Code Image</Text>
+                        <MixedText style={{ color: '#000', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Share QR Code Image</MixedText>
                       </>
                     )}
                   </TouchableOpacity>
@@ -352,23 +354,23 @@ export default function SavedServices() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (typography) => StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 12, borderBottomWidth: 1 },
   headerBtn: { flexDirection: 'row', alignItems: 'center', padding: 5, width: 80 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: typography.h1.fontSize, fontWeight: 'bold' },
   listContainer: { padding: 15, paddingBottom: 100 },
   card: { borderRadius: 16, borderWidth: 1, marginBottom: 15, overflow: 'hidden' },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15 },
   titleRow: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconBadge: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  cardTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 4 },
-  cardDate: { fontSize: 13, fontWeight: '600' },
+  cardTitle: { fontSize: typography.title.fontSize, fontWeight: 'bold', marginBottom: 4 },
+  cardDate: { fontSize: typography.subtext.fontSize, fontWeight: '600' },
   actionBtn: { padding: 10, borderRadius: 10, marginRight: 8, justifyContent: 'center', alignItems: 'center' },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, borderTopWidth: 1, backgroundColor: 'rgba(0,0,0,0.01)' },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  emptyStateTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 15, marginBottom: 8 },
-  emptyStateText: { fontSize: 15, textAlign: 'center', lineHeight: 22 },
+  emptyStateTitle: { fontSize: typography.h2.fontSize, fontWeight: 'bold', marginTop: 15, marginBottom: 8 },
+  emptyStateText: { fontSize: typography.body.fontSize, textAlign: 'center', lineHeight: 22 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(4,6,12,0.82)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   qrModalContainer: { width: '100%', maxWidth: 380, borderRadius: 26, padding: 22, borderWidth: 1, elevation: 14 },
@@ -377,11 +379,11 @@ const styles = StyleSheet.create({
   shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 13, borderRadius: 12 },
 
   inviteCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 20, alignItems: 'center' },
-  inviteHeader: { fontSize: 19, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
-  inviteServiceName: { fontSize: 16, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
-  inviteDate: { fontSize: 13, color: '#666666', marginTop: 4, marginBottom: 14 },
+  inviteHeader: { fontSize: typography.h2.fontSize, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
+  inviteServiceName: { fontSize: typography.title.fontSize, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
+  inviteDate: { fontSize: typography.subtext.fontSize, color: '#666666', marginTop: 4, marginBottom: 14 },
   qrWrapper: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#EEEEEE' },
-  inviteIdLabel: { fontSize: 11, fontWeight: '700', color: '#999999', letterSpacing: 1 },
-  inviteId: { fontSize: 20, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 10 },
-  inviteNote: { fontSize: 12, color: '#444444', textAlign: 'center', lineHeight: 17 },
+  inviteIdLabel: { fontSize: typography.caption.fontSize, fontWeight: '700', color: '#999999', letterSpacing: 1 },
+  inviteId: { fontSize: typography.h2.fontSize, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 10 },
+  inviteNote: { fontSize: typography.subtext.fontSize, color: '#444444', textAlign: 'center', lineHeight: 17 },
 });

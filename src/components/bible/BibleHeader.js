@@ -1,13 +1,11 @@
+import MixedText from '../MixedText.js';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useSettings } from '../../context/SettingsContext'; // We imported the tailor!
 
 export default function BibleHeader({ 
-  colors, 
-  isDark, 
-  appFontSize, 
-  bibleLanguage, 
   bookName, 
   chapter, 
   onMenuPress, 
@@ -15,6 +13,8 @@ export default function BibleHeader({
   onChapterPress, 
   onSearchPress 
 }) {
+  const { colors, isDark, bibleLanguage, typography } = useSettings();
+
   return (
     <View style={styles.headerWrapper}>
       <BlurView intensity={isDark ? 40 : 80} tint={isDark ? "dark" : "light"} style={[styles.actionHeader, { borderColor: colors.border }]}>
@@ -24,18 +24,18 @@ export default function BibleHeader({
         </TouchableOpacity>
         
         <View style={styles.centerPickersContainer}>
-          <TouchableOpacity onPress={onBookPress} style={[styles.pickerBtn, { borderRightWidth: 1, borderRightColor: colors.border, flexDirection: 'row' }]}>
-            <Text style={{ color: colors.primary, fontSize: appFontSize, fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }} numberOfLines={1}>
+          <TouchableOpacity onPress={onBookPress} style={[styles.pickerBtn, { borderRightWidth: 1, borderRightColor: colors.border, flexDirection: 'row', flex: 1 }]}>
+            <MixedText numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primary, fontSize: typography.body.fontSize, fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008', flexShrink: 1, includeFontPadding: false }}>
               {bookName}
-            </Text>
-            <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
+            </MixedText>
+            <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4, flexShrink: 0 }} />
           </TouchableOpacity>
           
-          <TouchableOpacity onPress={onChapterPress} style={[styles.pickerBtn, { flexDirection: 'row' }]}>
-            <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '900' }}>
+          <TouchableOpacity onPress={onChapterPress} style={[styles.pickerBtn, { flexDirection: 'row', flexShrink: 1 }]}>
+            <MixedText numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: '900', flexShrink: 1, includeFontPadding: false }}>
               {chapter}
-            </Text>
-            <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
+            </MixedText>
+            <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4, flexShrink: 0 }} />
           </TouchableOpacity>
         </View>
         

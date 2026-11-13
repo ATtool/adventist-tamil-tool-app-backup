@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   View, Text, StyleSheet, TouchableOpacity, Alert, Dimensions, ScrollView, 
@@ -122,7 +123,7 @@ const MAP_FILES = [
 ];
 
 export default function StudyExplanationsScreen({ navigation, route }) {
-  const { colors, isDark, appFontSize, hapticsEnabled } = useSettings();
+  const { colors, isDark, appFontSize, typography, hapticsEnabled } = useSettings();
 
   // Download States
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -297,15 +298,15 @@ export default function StudyExplanationsScreen({ navigation, route }) {
     // 3. Render the correctly colored & clickable links
     return parts.map((part, i) => {
       if (part.type === 'verse') {
-        return <Text key={i} style={{ color: '#FFD700', fontWeight: 'bold' }} onPress={() => handleVerseJump(part.value)}>{part.value}</Text>;
+        return <MixedText key={i} style={{ color: '#FFD700', fontWeight: 'bold' }} onPress={() => handleVerseJump(part.value)}>{part.value}</MixedText>;
       }
       if (part.type === 'egw') {
-        return <Text key={i} style={{ color: '#4A90E2', fontWeight: 'bold', textDecorationLine: 'underline' }} onPress={() => handleEgwJump(part.value)}>{part.value}</Text>;
+        return <MixedText key={i} style={{ color: '#4A90E2', fontWeight: 'bold', textDecorationLine: 'underline' }} onPress={() => handleEgwJump(part.value)}>{part.value}</MixedText>;
       }
       if (part.type === 'originalLang') {
-        return <Text key={i} style={{ color: '#2ECC71', fontWeight: 'bold', fontSize: readingFontSize + 2 }}>{part.value}</Text>;
+        return <MixedText key={i} style={{ color: '#2ECC71', fontWeight: 'bold', fontSize: readingFontSize + 2 }}>{part.value}</MixedText>;
       }
-      return <Text key={i}>{part.value}</Text>;
+      return <MixedText key={i}>{part.value}</MixedText>;
     });
   };
 
@@ -320,21 +321,21 @@ export default function StudyExplanationsScreen({ navigation, route }) {
       if (index % 2 === 1) { 
         // It is a Verse - Render Yellow with double spaces
         return (
-          <Text key={index}>
-            <Text style={{ color: '#FFD700', fontWeight: 'bold' }} onPress={() => handleVerseJump(part)}>
+          <MixedText key={index}>
+            <MixedText style={{ color: '#FFD700', fontWeight: 'bold' }} onPress={() => handleVerseJump(part)}>
               {part}
-            </Text>
+            </MixedText>
             {"   "}
-          </Text>
+          </MixedText>
         );
       } else { 
         // It is a Main Word (e.g. "generation" or "the son of David")
         const cleanWord = part.trim();
         if (!cleanWord) return null;
         return (
-          <Text key={index} style={{ color: colors.primary, fontWeight: 'bold', fontSize: readingFontSize + 2 }}>
+          <MixedText key={index} style={{ color: colors.primary, fontWeight: 'bold', fontSize: readingFontSize + 2 }}>
             {index > 0 ? `\n\n${cleanWord}\n` : `${cleanWord}\n`}
-          </Text>
+          </MixedText>
         );
       }
     });
@@ -468,42 +469,42 @@ export default function StudyExplanationsScreen({ navigation, route }) {
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.headerRow}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}><Ionicons name="arrow-back" size={28} color={colors.text} /></TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Verse Explanations</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Verse Explanations</MixedText>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.centerContent}>
           <Ionicons name="library" size={80} color={colors.primary} style={{ marginBottom: 20 }} />
-          <Text style={[styles.downloadPrompt, { color: colors.text, fontSize: appFontSize + 4 }]}>
+          <MixedText style={[styles.downloadPrompt, { color: colors.text, fontSize: typography.h2.fontSize }]}>
             Download Study Package
-          </Text>
-          <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold', marginBottom: 10 }}>
+          </MixedText>
+          <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold', marginBottom: 10 }}>
             வேதாகம விளக்க உரை பதிவிறக்கம்
-          </Text>
+          </MixedText>
 
-          <Text style={[styles.downloadSub, { color: colors.subtext, fontSize: appFontSize, marginBottom: 5, textAlign: 'center' }]}>
+          <MixedText style={[styles.downloadSub, { color: colors.subtext, fontSize: typography.subtext.fontSize, marginBottom: 5, textAlign: 'center' }]}>
             Includes full verse-by-verse commentaries and offline maps.
-          </Text>
-          <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, textAlign: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
+          </MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, textAlign: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
             வசனங்களுக்கான விளக்க உரைகள் மற்றும் வரைபடங்கள் அடங்கியுள்ளது.
-          </Text>
+          </MixedText>
 
           <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 15, borderRadius: 10, marginBottom: 25, marginHorizontal: 20 }}>
-            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
+            <MixedText style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
               ⚠️ WARNING: Do not close the app or go back while downloading!
-            </Text>
-            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>
+            </MixedText>
+            <MixedText style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', fontSize: typography.subtext.fontSize }}>
               எச்சரிக்கை: பதிவிறக்கம் செய்யும் போது செயலியை மூடவோ அல்லது பின்னால் செல்லவோ கூடாது!
-            </Text>
+            </MixedText>
           </View>
 
           {isDownloading ? (
             <View style={styles.progressContainer}>
-              <Text style={{ color: colors.primary, marginBottom: 8, fontWeight: 'bold' }}>{downloadStatusText}</Text>
+              <MixedText style={{ color: colors.primary, marginBottom: 8, fontWeight: 'bold' }}>{downloadStatusText}</MixedText>
               <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}><View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} /></View>
             </View>
           ) : (
-            <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: colors.primary }]} onPress={startDownload}><Text style={styles.downloadBtnText}>Download Package</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.downloadBtn, { backgroundColor: colors.primary }]} onPress={startDownload}><MixedText style={[styles.downloadBtnText, { fontSize: typography.body.fontSize }]}>Download Package</MixedText></TouchableOpacity>
           )}
         </View>
       </SafeAreaView>
@@ -522,32 +523,32 @@ export default function StudyExplanationsScreen({ navigation, route }) {
         <View style={{ flex: 1, alignItems: 'center' }}>
           <View style={styles.triSplitHeader}>
             <TouchableOpacity style={[styles.triSplitBtn, { borderColor: colors.primary, backgroundColor: colors.glow }]} onPress={openBookPicker}>
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold' }}>{getBookNameEn(activeBookId)}</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>{getBookNameEn(activeBookId)}</MixedText>
               <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
             
             <TouchableOpacity style={[styles.triSplitBtn, { borderColor: colors.primary, backgroundColor: colors.glow, marginHorizontal: 6 }]} onPress={openChapterPicker}>
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold' }}>Ch {activeChapter}</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Ch {activeChapter}</MixedText>
               <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
 
             <TouchableOpacity style={[styles.triSplitBtn, { borderColor: colors.primary, backgroundColor: colors.glow }]} onPress={openVersePicker}>
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold' }}>Vs {activeVerse}</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Vs {activeVerse}</MixedText>
               <Ionicons name="caret-down" size={12} color={colors.primary} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
 
           <TouchableOpacity onPress={() => { triggerHaptic(); setBrowserUrl(`https://bibletools.info/${BT_BOOKS[activeBookId - 1]}_${activeChapter}.${activeVerse}`); setBrowserTitle("Bible Tool.info"); setBrowserVisible(true); }} style={{ marginTop: 8 }}>
-            <Text style={{ color: colors.subtext, fontSize: 12, textDecorationLine: 'underline' }}>Visit official site - Bible Tool.info</Text>
+            <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, textDecorationLine: 'underline' }}>Visit official site - Bible Tool.info</MixedText>
           </TouchableOpacity>
         </View>
 
         <View style={{ flexDirection: 'row' }}>
            <TouchableOpacity onPress={() => setReadingFontSize(Math.min(readingFontSize + 2, appFontSize + 8))} style={styles.iconBtn}>
-              <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.primary }}>A+</Text>
+              <MixedText style={{ fontSize: typography.body.fontSize, fontWeight: 'bold', color: colors.primary }}>A+</MixedText>
            </TouchableOpacity>
            <TouchableOpacity onPress={() => setReadingFontSize(Math.max(readingFontSize - 2, appFontSize - 2))} style={styles.iconBtn}>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary }}>A-</Text>
+              <MixedText style={{ fontSize: typography.body.fontSize, fontWeight: 'bold', color: colors.primary }}>A-</MixedText>
            </TouchableOpacity>
         </View>
       </View>
@@ -556,21 +557,21 @@ export default function StudyExplanationsScreen({ navigation, route }) {
         
         {/* 1. DUAL-LANGUAGE VERSE BOX */}
         <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={{ color: colors.primary, fontWeight: '900', fontSize: readingFontSize + 2, marginBottom: 10 }}>{verseData.textEn}</Text>
-          <Text style={{ color: colors.subtext, fontSize: readingFontSize, fontFamily: 'Tamil003' }}>{verseData.textTa}</Text>
+          <MixedText style={{ color: colors.primary, fontWeight: '900', fontSize: readingFontSize + 2, marginBottom: 10 }}>{verseData.textEn}</MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: readingFontSize, fontFamily: 'Tamil003' }}>{verseData.textTa}</MixedText>
         </View>
 
         {/* 2. EXPANDABLE COMMENTARY CARDS */}
         {commentaries.length === 0 ? (
           <View style={{ marginTop: 40, paddingHorizontal: 20 }}>
-            <Text style={{ color: colors.subtext, textAlign: 'center', fontSize: appFontSize }}>
+            <MixedText style={{ color: colors.subtext, textAlign: 'center', fontSize: typography.body.fontSize }}>
               No study explanations found for this verse.
-            </Text>
-            <Text style={{ color: colors.primary, textAlign: 'center', fontSize: appFontSize - 2, marginTop: 15, lineHeight: 22 }}>
+            </MixedText>
+            <MixedText style={{ color: colors.primary, textAlign: 'center', fontSize: typography.subtext.fontSize, marginTop: 15, lineHeight: 22 }}>
               {`If data failed to load, go to:
 Settings -> Manage Storage -> Delete Bible Verse Explanations
 and redownload the file fully.`}
-            </Text>
+            </MixedText>
           </View>
         ) : (
           commentaries.map((comm, index) => {
@@ -584,8 +585,8 @@ and redownload the file fully.`}
                 {/* Header Area with Toolbars */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize }}>{comm.source_title}</Text>
-                    {comm.author && <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2 }}>By {comm.author}</Text>}
+                    <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.title.fontSize }}>{comm.source_title}</MixedText>
+                    {comm.author && <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2 }}>By {comm.author}</MixedText>}
                   </View>
                   
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -593,7 +594,7 @@ and redownload the file fully.`}
                       <Ionicons name={(isSpeaking && speakingId === index) ? 'pause-circle' : 'volume-high'} size={16} color={(isSpeaking && speakingId === index) ? '#FF0000' : colors.primary} />
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleTranslate(index, comm.content)} disabled={translatingId !== null} style={[styles.tinyPill, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                      {translatingId === index ? <ActivityIndicator size="small" color={colors.primary} /> : <Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>த</Text>}
+                      {translatingId === index ? <ActivityIndicator size="small" color={colors.primary} /> : <MixedText style={{ fontSize: typography.subtext.fontSize, fontWeight: '700', color: colors.primary }}>த</MixedText>}
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleShare(comm.source_title, comm.content)} style={[styles.tinyPill, { backgroundColor: colors.background, borderColor: colors.border }]}>
                       <Ionicons name="share-social-outline" size={14} color={colors.primary} />
@@ -605,9 +606,9 @@ and redownload the file fully.`}
                 {/* Expanded Cleaned HTML Text */}
                 {isExpanded && (
                   <View style={{ marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: colors.border }}>
-                    <Text style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.6 }}>
+                    <MixedText style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.6 }}>
                       {parseTextToComponents(comm.content)}
-                    </Text>
+                    </MixedText>
                   </View>
                 )}
               </TouchableOpacity>
@@ -625,14 +626,14 @@ and redownload the file fully.`}
               style={[styles.card, { backgroundColor: colors.card, borderColor: isRefExpanded ? colors.primary : colors.border }]}
             >
                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize }}>Reference Verses</Text>
+                  <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.title.fontSize }}>Reference Verses</MixedText>
                   <Ionicons name={isRefExpanded ? "chevron-up" : "chevron-down"} size={20} color={colors.primary} />
                </View>
                {isRefExpanded && (
                  <View style={{ marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: colors.border }}>
-                   <Text style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.6 }}>
+                   <MixedText style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.6 }}>
                      {renderReferenceVerses(sb.content)}
-                   </Text>
+                   </MixedText>
                  </View>
                )}
             </TouchableOpacity>
@@ -650,7 +651,7 @@ and redownload the file fully.`}
             <View key={`map-${idx}`} style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, padding: 0, overflow: 'hidden', marginTop: 10 }]}>
               <Image source={{ uri: mapUri }} style={{ width: '100%', height: 250, resizeMode: 'cover' }} />
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, backgroundColor: colors.glow }}>
-                <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Offline Bible Map</Text>
+                <MixedText style={{ color: colors.primary, fontWeight: 'bold' }}>Offline Bible Map</MixedText>
                 
                 <View style={{ flexDirection: 'row' }}>
                   <TouchableOpacity onPress={() => setFullScreenMap(mapUri)} style={[styles.tinyPill, { width: 34, height: 34, borderColor: colors.primary, backgroundColor: colors.background }]}>
@@ -689,17 +690,17 @@ and redownload the file fully.`}
         <View style={[styles.modalOverlay, { backgroundColor: colors.background }]}>
           <View style={[styles.translationCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
             <LinearGradient colors={['#4A90E2', '#2471C8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.translationCardTop}>
-              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 16 }}>Tamil Translation</Text>
+              <MixedText style={{ color: '#fff', fontWeight: '700', fontSize: typography.h2.fontSize }}>Tamil Translation</MixedText>
               <TouchableOpacity onPress={() => setTranslationModalVisible(false)}><Ionicons name="close" size={24} color="#fff" /></TouchableOpacity>
             </LinearGradient>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-              <Text style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.8, fontFamily: 'Tamil003' }}>
+              <MixedText style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.8, fontFamily: 'Tamil003' }}>
                 {translatedText}
-              </Text>
+              </MixedText>
             </ScrollView>
             <View style={{ paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.border, paddingHorizontal: 20 }}>
               <TouchableOpacity onPress={() => setTranslationModalVisible(false)} style={{ paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#2471C8' }}>
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: appFontSize }}>Done</Text>
+                <MixedText style={{ color: '#fff', fontWeight: '700', fontSize: typography.body.fontSize }}>Done</MixedText>
               </TouchableOpacity>
             </View>
           </View>

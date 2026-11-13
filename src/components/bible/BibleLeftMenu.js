@@ -1,3 +1,4 @@
+import MixedText from '../MixedText.js';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,7 @@ const VERSIONS = [
 ];
 
 export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataChange }) {
-  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, setBibleLanguage, activeEnglishVersion, setActiveEnglishVersion, bibleFontSize, setBibleFontSize, bibleLineHeight, setBibleLineHeight, bibleLetterSpacing, setBibleLetterSpacing, restoreDefaultTextSettings } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, setBibleLanguage, activeEnglishVersion, setActiveEnglishVersion, bibleFontSize, setBibleFontSize, bibleLineHeight, setBibleLineHeight, bibleLetterSpacing, setBibleLetterSpacing, restoreDefaultTextSettings, typography } = useSettings();
 
   const [isModalVisible, setIsModalVisible] = useState(false); // Added for smooth exit animation
   const [activeView, setActiveView] = useState('main'); 
@@ -123,12 +124,16 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
     return (
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         {showBack ? (
-          <TouchableOpacity onPress={() => { triggerHaptic(); setActiveView('main'); }} style={styles.iconBtn}>
+          <TouchableOpacity onPress={() => { triggerHaptic(); setActiveView('main'); }} style={[styles.iconBtn, { width: 40 }]}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-        ) : <View style={{ width: 34 }} />}
-        <Text style={{ color: colors.primary, fontSize: appFontSize + 4, fontWeight: '900' }}>{title}</Text>
-        <TouchableOpacity onPress={closeMenu} style={styles.iconBtn}>
+        ) : <View style={{ width: 40 }} />}
+        
+        <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+          <MixedText numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primary, fontSize: typography.h1.fontSize, fontWeight: '900' }}>{title}</MixedText>
+        </View>
+
+        <TouchableOpacity onPress={closeMenu} style={[styles.iconBtn, { width: 40, alignItems: 'flex-end' }]}>
           <Ionicons name="close" size={24} color={colors.text} />
         </TouchableOpacity>
       </View>
@@ -138,7 +143,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
   function renderMenuItem(icon, title, viewTarget) {
     return (
       <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={() => { triggerHaptic(); setActiveView(viewTarget); }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}><Ionicons name={icon} size={24} color={colors.subtext} style={{ marginRight: 15 }} /><Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>{title}</Text></View>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}><Ionicons name={icon} size={24} color={colors.subtext} style={{ marginRight: 15 }} /><MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>{title}</MixedText></View>
         <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
       </TouchableOpacity>
     );
@@ -174,20 +179,20 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
           {activeView === 'language' && (
             <View style={{ flex: 1 }}>{renderHeader('Language')}
               <ScrollView contentContainerStyle={{ padding: 20 }}>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontWeight: 'bold', marginBottom: 15, textTransform: 'uppercase' }}>Reading Mode</Text>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginBottom: 15, textTransform: 'uppercase' }}>Reading Mode</MixedText>
                 {['tamil', 'english', 'both'].map((lang) => (
                   <TouchableOpacity key={lang} style={[styles.optionCard, { backgroundColor: colors.card, borderColor: bibleLanguage === lang ? colors.primary : colors.border }]} onPress={() => { triggerHaptic(); setBibleLanguage(lang); }}>
-                    <Text style={{ color: bibleLanguage === lang ? colors.primary : colors.text, fontSize: appFontSize, fontWeight: 'bold', textTransform: 'capitalize' }}>{lang === 'both' ? 'Parallel (Tamil & English)' : lang}</Text>
+                    <MixedText style={{ color: bibleLanguage === lang ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', textTransform: 'capitalize' }}>{lang === 'both' ? 'Parallel (Tamil & English)' : lang}</MixedText>
                     {bibleLanguage === lang && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
                   </TouchableOpacity>
                 ))}
 
                 {(bibleLanguage === 'english' || bibleLanguage === 'both') && (
                   <>
-                    <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Active English Version</Text>
+                    <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Active English Version</MixedText>
                     {['KJV', ...VERSIONS.map(ver => ver.id).filter(id => downloadedDBs.includes(`${id}.db`))].map((v) => (
                       <TouchableOpacity key={v} style={[styles.optionCard, { backgroundColor: colors.card, borderColor: activeEnglishVersion === v ? colors.primary : colors.border }]} onPress={() => { triggerHaptic(); setActiveEnglishVersion(v); }}>
-                        <Text style={{ color: activeEnglishVersion === v ? colors.primary : colors.text, fontSize: appFontSize, fontWeight: 'bold' }}>{v}</Text>
+                        <MixedText style={{ color: activeEnglishVersion === v ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>{v}</MixedText>
                         {activeEnglishVersion === v && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
                       </TouchableOpacity>
                     ))}
@@ -205,8 +210,8 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
                   const isDownloading = downloadingId === v.id;
                   return (
                     <View key={v.id} style={[styles.downloadCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      <View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: appFontSize, fontWeight: 'bold' }}>{v.name}</Text><Text style={{ color: colors.subtext, fontSize: appFontSize - 2 }}>{v.id}</Text></View>
-                      {isDownloading ? <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{(downloadProgress * 100).toFixed(0)}%</Text> : isDownloaded ? (
+                      <View style={{ flex: 1 }}><MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>{v.name}</MixedText><MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize }}>{v.id}</MixedText></View>
+                      {isDownloading ? <MixedText style={{ color: colors.primary, fontWeight: 'bold' }}>{(downloadProgress * 100).toFixed(0)}%</MixedText> : isDownloaded ? (
                         <TouchableOpacity onPress={() => deleteVersion(v.id)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}><Ionicons name="trash" size={20} color="#FF3B30" /></TouchableOpacity>
                       ) : (
                         <TouchableOpacity onPress={() => downloadVersion(v)} style={{ padding: 10, backgroundColor: colors.glow, borderRadius: 10 }}><Ionicons name="download" size={20} color={colors.primary} /></TouchableOpacity>
@@ -221,17 +226,17 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
           {activeView === 'display' && (
             <View style={{ flex: 1 }}>{renderHeader('Display')}
               <ScrollView contentContainerStyle={{ padding: 20 }}>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontWeight: 'bold', marginBottom: 15, textTransform: 'uppercase' }}>Text Size: {bibleFontSize}</Text>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginBottom: 15, textTransform: 'uppercase' }}>Text Size: {bibleFontSize}</MixedText>
                 <Slider minimumValue={14} maximumValue={40} step={1} value={bibleFontSize} onValueChange={setBibleFontSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
 
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Line Spacing: {bibleLineHeight}</Text>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Line Spacing: {bibleLineHeight}</MixedText>
                 <Slider minimumValue={20} maximumValue={60} step={1} value={bibleLineHeight} onValueChange={setBibleLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
 
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Letter Spacing: {bibleLetterSpacing}</Text>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginTop: 30, marginBottom: 15, textTransform: 'uppercase' }}>Letter Spacing: {bibleLetterSpacing}</MixedText>
                 <Slider minimumValue={0} maximumValue={5} step={0.5} value={bibleLetterSpacing} onValueChange={setBibleLetterSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
 
                 <TouchableOpacity style={[styles.optionCard, { justifyContent: 'center', backgroundColor: colors.glow, borderColor: colors.primary, marginTop: 40 }]} onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy); restoreDefaultTextSettings(); }}>
-                  <Ionicons name="refresh" size={20} color={colors.primary} style={{ marginRight: 10 }} /><Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold' }}>Restore Default Settings</Text>
+                  <Ionicons name="refresh" size={20} color={colors.primary} style={{ marginRight: 10 }} /><MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Restore Default Settings</MixedText>
                 </TouchableOpacity>
               </ScrollView>
             </View>
@@ -240,14 +245,14 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
           {activeView === 'favorites' && (
             <View style={{ flex: 1 }}>{renderHeader('My Favorites')}
               <ScrollView contentContainerStyle={{ padding: 20 }}>
-                {myFavorites.length === 0 && <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 20 }}>No favorites saved yet.</Text>}
+                {myFavorites.length === 0 && <MixedText style={{ color: colors.subtext, textAlign: 'center', marginTop: 20 }}>No favorites saved yet.</MixedText>}
                 {myFavorites.map(f => (
                   <View key={f.id} style={[styles.userDataCard, { backgroundColor: colors.card, borderColor: colors.border, flexDirection: 'row', alignItems: 'center' }]}>
                     <TouchableOpacity style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }} onPress={() => onJumpToVerse(f.book_id, f.chapter, f.verse)}>
                       <Ionicons name="heart" size={20} color="#FF3B30" style={{ marginRight: 10 }} />
-                      <Text style={{ color: colors.text, fontWeight: 'bold', fontSize: appFontSize }}>
+                      <MixedText style={{ color: colors.text, fontWeight: 'bold', fontSize: typography.body.fontSize }}>
                         {getBookName(f.book_id)} {f.chapter}:{f.verse}
-                      </Text>
+                      </MixedText>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => deleteFavorite(f.id)} style={{ padding: 5 }}><Ionicons name="trash" size={18} color="#FF3B30" /></TouchableOpacity>
                   </View>

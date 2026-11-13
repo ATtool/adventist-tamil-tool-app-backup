@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsContext = createContext();
@@ -38,7 +38,9 @@ export const SettingsProvider = ({ children }) => {
         if (savedAppFontSize !== null) {
           const parsedSize = parseInt(savedAppFontSize, 10);
           if (!isNaN(parsedSize) && parsedSize >= 12 && parsedSize <= 24) {
-            _setAppFontSize(parsedSize);
+            // Scale the reading areas (bible verses, song lyrics, ...) to
+            // the saved global size as well, without re-persisting it.
+            await applyAppFontSize(parsedSize, { persist: false });
           }
         }
 
@@ -58,10 +60,36 @@ export const SettingsProvider = ({ children }) => {
     loadSettings();
   }, []);
 
-  const setAppFontSize = async (size) => {
-    _setAppFontSize(size);
-    await AsyncStorage.setItem('@app_font_size', size.toString());
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  // Tracks the base size the reading areas were last scaled against, so
+  // repeated slider events during a drag never accumulate stale deltas.
+  const appliedBaseRef = useRef(15);
+
+  const shiftReadingSizes = (delta) => {
+    if (!delta) return;
+    setBibleFontSize((s) => clamp(s + delta, 14, 40));
+    setBibleLineHeight((s) => clamp(s + delta, 20, 70));
+    setTitleSize((s) => clamp(s + delta, 16, 30));
+    setLyricsSize((s) => clamp(s + delta, 12, 45));
+    setLyricsLineHeight((s) => clamp(s + delta, 20, 70));
   };
+
+  const applyAppFontSize = async (size, { persist = true } = {}) => {
+    const delta = size - appliedBaseRef.current;
+    appliedBaseRef.current = size;
+    _setAppFontSize(size);
+
+    // Shift the reading areas that keep their own sizes so the GLOBAL app
+    // font size slider also scales the bible verse rendering area and the
+    // song lyrics popups (Zion, Thirumarai, Other Songs, ...) — while each
+    // area's own slider ranges stay valid.
+    shiftReadingSizes(delta);
+
+    if (persist) await AsyncStorage.setItem('@app_font_size', size.toString());
+  };
+
+  const setAppFontSize = (size) => applyAppFontSize(size);
 
   const setBibleLanguage = async (lang) => {
     _setBibleLanguage(lang);
@@ -98,51 +126,37 @@ export const SettingsProvider = ({ children }) => {
     success: '#30D158'
   };
 
-  // Uniform Typography System
-  // Uses Tamil008 for headings/titles and Tamil003 for body/content without bold conflicts on Android
+  // Uniform Typography System (Sizes & Spacing Only)
+  // We leave fontFamily out so individual screens can keep their exact fonts!
   const typography = useMemo(() => {
     const base = appFontSize;
     return {
+      display: {
+        fontSize: base + 13, // Massive Hero headers
+        includeFontPadding: false,
+      },
       h1: {
-        fontFamily: 'Tamil008',
-        fontSize: base + 8, // ~23px
-        lineHeight: (base + 8) * 1.3,
+        fontSize: base + 10, // Big headers
         includeFontPadding: false,
       },
       h2: {
-        fontFamily: 'Tamil008',
-        fontSize: base + 5, // ~20px
-        lineHeight: (base + 5) * 1.3,
+        fontSize: base + 6, // Section headers
         includeFontPadding: false,
       },
       title: {
-        fontFamily: 'Tamil008',
-        fontSize: base + 2, // ~17px
-        lineHeight: (base + 2) * 1.35,
+        fontSize: base + 2, // Card/List titles
         includeFontPadding: false,
       },
       body: {
-        fontFamily: 'Tamil003',
-        fontSize: base, // ~15px
-        lineHeight: base * 1.5,
-        includeFontPadding: false,
-      },
-      bodyBold: {
-        fontFamily: 'Tamil008',
-        fontSize: base, // ~15px
-        lineHeight: base * 1.5,
+        fontSize: base, // Normal text
         includeFontPadding: false,
       },
       subtext: {
-        fontFamily: 'Tamil003',
-        fontSize: Math.max(11, base - 2), // ~13px
-        lineHeight: Math.max(11, base - 2) * 1.4,
+        fontSize: Math.max(11, base - 2), // Small descriptions
         includeFontPadding: false,
       },
       caption: {
-        fontFamily: 'Tamil003',
-        fontSize: Math.max(10, base - 4), // ~11px
-        lineHeight: Math.max(10, base - 4) * 1.3,
+        fontSize: Math.max(10, base - 4), // Tiny badges/dates
         includeFontPadding: false,
       },
     };

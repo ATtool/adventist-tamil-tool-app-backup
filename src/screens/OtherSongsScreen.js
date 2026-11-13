@@ -1,5 +1,6 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
@@ -9,7 +10,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'; 
 
 const GIST_RAW_URL = 'https://gist.githubusercontent.com/ATtool/cf27796976a73404f254b4bc81240f5f/raw/other_songs.json';
 
@@ -49,22 +50,25 @@ const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size =
   );
 };
 
-const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize }) => {
+const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize, typography, isThanglish }) => {
   const translateY = listAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [30 + (index % 10) * 5, 0]
   });
+
+  const displayTitle = isThanglish ? (item.title_thanglish || item.title_tamil || item.title) : (item.title_tamil || item.title);
+
   return (
     <Animated.View style={{ opacity: listAnim, transform: [{ translateY }] }}>
       <ScalePressable onPress={() => onPress(item)}>
         <View style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]}>
           <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
-            <Text style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.song_number || item.id || '?'}</Text>
+            <MixedText style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.song_number || item.id || '?'}</MixedText>
           </View>
           <View style={styles.titleContainer}>
-            <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil || 'Unknown'}</Text>
+            <MixedText style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: isThanglish ? typography.title.fontSize : typography.title.fontSize + 2 }]} numberOfLines={1}>{displayTitle || 'Unknown'}</MixedText>
             {item.category && (
-              <Text style={{ color: colors.primary, fontSize: appFontSize - 1, fontFamily: 'Tamil003', letterSpacing: 0.5, marginTop: 5, includeFontPadding: false }}>{item.category}</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', letterSpacing: 0.5, marginTop: 5, includeFontPadding: false }}>{item.category}</MixedText>
             )}
           </View>
           <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
@@ -74,13 +78,13 @@ const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onTog
   );
 });
 
-const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, appFontSize }) => {
+const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, appFontSize, typography }) => {
   const translateY = listAnim.interpolate({ inputRange: [0, 1], outputRange: [20 + (index % 5) * 5, 0] });
   return (
     <Animated.View style={{ flex: 1, margin: 5, opacity: listAnim, transform: [{ translateY }] }}>
       <ScalePressable onPress={() => onPress(letter)}>
         <View style={[styles.gridItemCompact, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize + 2 }}>{letter}</Text>
+          <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.title.fontSize }}>{letter}</MixedText>
         </View>
       </ScalePressable>
     </Animated.View>
@@ -89,8 +93,13 @@ const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, a
 
 export default function OtherSongsScreen() {
   const navigation = useNavigation();
-  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
+  const route = useRoute(); 
+  
+  const isThanglish = route.params?.isThanglish || false;
 
+  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
+
+  const [isLoading, setIsLoading] = useState(true); // <--- ADDED PROPER LOADING STATE
   const [songs, setSongs] = useState([]);
   const [isLive, setIsLive] = useState(true);
   const [search, setSearch] = useState('');
@@ -195,32 +204,57 @@ export default function OtherSongsScreen() {
     });
   }, [triggerHaptic]);
 
+  const processGistData = (result) => {
+    let fetchedSongs = [];
+    if (Array.isArray(result)) {
+      fetchedSongs = result;
+    } else if (result && typeof result === 'object') {
+      setIsLive(result.isLive === false ? false : true);
+      fetchedSongs = result.songs || [];
+    }
+    const cleanedSongs = (fetchedSongs || []).map(s => ({
+      ...s,
+      title: s.title_tamil,
+      category: s.category ? s.category.trim() : null
+    }));
+    setSongs(cleanedSongs);
+    const uniqueCats = Array.from(new Set(cleanedSongs.map(s => s.category).filter(Boolean)));
+    setCategories(['All', ...uniqueCats]);
+  };
+
   const fetchSongsFromGist = async () => {
     if (!GIST_RAW_URL || GIST_RAW_URL === 'YOUR_RAW_GIST_URL_HERE') return;
+    setIsLoading(true);
+    
     try {
+      // 1. OFFLINE FIRST ARCHITECTURE: Try to load cached songs immediately
+      const cachedData = await AsyncStorage.getItem('@othersongs_gist_cache');
+      if (cachedData) {
+        try {
+          processGistData(JSON.parse(cachedData));
+        } catch(e) {}
+      }
+
+      // 2. Fetch fresh data from GitHub
       const cacheBusterUrl = `${GIST_RAW_URL}?t=${new Date().getTime()}`;
       const response = await fetch(cacheBusterUrl, {
         headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
       });
-      const result = await response.json();
-      let fetchedSongs = [];
-      if (Array.isArray(result)) {
-        fetchedSongs = result;
-      } else if (result && typeof result === 'object') {
-        setIsLive(result.isLive === false ? false : true);
-        fetchedSongs = result.songs || [];
+      
+      if (response.ok) {
+        const rawText = await response.text(); // Get raw text to bypass strict React Native JSON errors
+        const cleanedText = rawText.replace(/^\uFEFF/, '').trim(); // Remove hidden BOM characters
+        const result = JSON.parse(cleanedText);
+        
+        // Save fresh data to local storage for offline use
+        await AsyncStorage.setItem('@othersongs_gist_cache', JSON.stringify(result));
+        
+        processGistData(result);
       }
-      const cleanedSongs = (fetchedSongs || []).map(s => ({
-        ...s,
-        title: s.title_tamil,
-        category: s.category ? s.category.trim() : null
-      }));
-      setSongs(cleanedSongs);
-      const uniqueCats = Array.from(new Set(cleanedSongs.map(s => s.category).filter(Boolean)));
-      setCategories(['All', ...uniqueCats]);
     } catch (e) {
-      console.error("Gist Fetch Error:", e);
-      setSongs([]);
+      console.warn("Gist Fetch Error:", e);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -422,10 +456,10 @@ export default function OtherSongsScreen() {
 
               <View style={[styles.inlineToggleContainer, { backgroundColor: isDark ? '#2A2D35' : '#E5E7EB' }]}>
                 <TouchableOpacity style={[styles.inlineToggleBtn, !isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(false)}>
-                  <Text style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>ABC</Text>
+                  <MixedText style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: typography.subtext.fontSize }}>ABC</MixedText>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.inlineToggleBtn, isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(true)}>
-                  <Text style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: 12 }}>123</Text>
+                  <MixedText style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontWeight: 'bold', fontSize: typography.subtext.fontSize }}>123</MixedText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -436,7 +470,7 @@ export default function OtherSongsScreen() {
               <ScalePressable onPress={clearAllFilters} style={{ marginRight: 8 }}>
                 <View style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
                   <Ionicons name="close" size={14} color="#FF3B30" />
-                  <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Clear All</Text>
+                  <MixedText style={{ color: "#FF3B30", marginLeft: 4, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Clear All</MixedText>
                 </View>
               </ScalePressable>
             )}
@@ -444,7 +478,7 @@ export default function OtherSongsScreen() {
             <ScalePressable onPress={() => { triggerHaptic(); setShowSortMenu(true); Keyboard.dismiss(); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: isAlphabetMode ? colors.primary + '20' : colors.card }]}>
                 <MaterialCommunityIcons name={sortOrder === 'number' ? "sort-numeric-ascending" : "sort-alphabetical-ascending"} size={16} color={isAlphabetMode ? colors.primary : colors.text} />
-                <Text style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Sort</Text>
+                <MixedText style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Sort</MixedText>
               </View>
             </ScalePressable>
 
@@ -452,7 +486,7 @@ export default function OtherSongsScreen() {
               <ScalePressable onPress={() => { triggerHaptic(); setShowCategoryModal(true); }} style={{ marginRight: 8 }}>
                 <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: selectedCategory !== 'All' ? colors.primary + '20' : colors.card }]}>
                   <Ionicons name="filter" size={14} color={selectedCategory !== 'All' ? colors.primary : colors.text} />
-                  <Text style={{ color: selectedCategory !== 'All' ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Category</Text>
+                  <MixedText style={{ color: selectedCategory !== 'All' ? colors.primary : colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Category</MixedText>
                 </View>
               </ScalePressable>
             )}
@@ -460,26 +494,34 @@ export default function OtherSongsScreen() {
             <ScalePressable onPress={handleToggleFavoritesList} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: showFavoritesOnly ? 'rgba(255,0,0,0.1)' : colors.card }]}>
                 <Ionicons name={showFavoritesOnly ? "heart" : "heart-outline"} size={14} color={showFavoritesOnly ? "red" : colors.text} />
-                <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Favorites</Text>
+                <MixedText style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Favorites</MixedText>
               </View>
             </ScalePressable>
 
             <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); fetchSongsFromGist(); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: colors.card }]}>
                 <Ionicons name="refresh" size={14} color={colors.text} />
-                <Text style={{ color: colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Reload</Text>
+                <MixedText style={{ color: colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Reload</MixedText>
               </View>
             </ScalePressable>
           </ScrollView>
         </Animated.View>
 
-        {!isLive ? (
+        {/* LOADING & COMING SOON SCREENS INTEGRATED HERE */}
+        {isLoading && songs.length === 0 ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <MixedText style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15, fontFamily: 'Tamil003' }}>
+              ஏற்றப்படுகிறது... (Loading...)
+            </MixedText>
+          </View>
+        ) : !isLive ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
             <Ionicons name="time" size={70} color={colors.primary} />
-            <Text style={{ color: colors.text, fontSize: appFontSize + 4, fontWeight: 'bold', marginTop: 15 }}>Coming Soon</Text>
-            <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 10, textAlign: 'center', paddingHorizontal: 30, fontFamily: 'Tamil003', lineHeight: 22 }}>
+            <MixedText style={{ color: colors.text, fontSize: typography.h2.fontSize, fontWeight: 'bold', marginTop: 15 }}>Coming Soon</MixedText>
+            <MixedText style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 10, textAlign: 'center', paddingHorizontal: 30, fontFamily: 'Tamil003', lineHeight: 22 }}>
               {'\u0BAA\u0BBE\u0B9F\u0BB2\u0BCD\u0B95\u0BB3\u0BCD \u0BB5\u0BBF\u0BB0\u0BC8\u0BB5\u0BBF\u0BB2\u0BCD \u0BAA\u0BA4\u0BBF\u0BB5\u0BC7\u0BB1\u0BCD\u0BB1\u0BAA\u0BCD\u0BAA\u0B9F\u0BC1\u0BAE\u0BCD...\n(Songs will be available soon...)'}
-            </Text>
+            </MixedText>
           </View>
         ) : isAlphabetMode ? (
           <FlatList
@@ -496,12 +538,12 @@ export default function OtherSongsScreen() {
               <ScalePressable onPress={() => { triggerHaptic(); selectNumberOrder(); }}>
                 <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary, marginHorizontal: 5 }]}>
                   <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>Back to Numbers</Text>
+                  <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginLeft: 8 }}>Back to Numbers</MixedText>
                 </View>
               </ScalePressable>
             }
             renderItem={({ item, index }) => (
-              <LetterGridItem letter={item} index={index} listAnim={listAnim} colors={colors} appFontSize={appFontSize} onPress={(letter) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setSelectedLetter(letter); setIsAlphabetMode(false); }} />
+              <LetterGridItem letter={item} index={index} listAnim={listAnim} colors={colors} appFontSize={appFontSize} typography={typography} onPress={(letter) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setSelectedLetter(letter); setIsAlphabetMode(false); }} />
             )}
           />
         ) : (
@@ -522,18 +564,18 @@ export default function OtherSongsScreen() {
                 <ScalePressable onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}>
                   <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
                     <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                    <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8 }}>{'அகர வரிசைக்குச் செல் (Back)'}</Text>
+                    <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8 }}>{'அகர வரிசைக்குச் செல் (Back)'}</MixedText>
                   </View>
                 </ScalePressable>
               ) : null
             }
             renderItem={({ item, index }) => (
-              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
+              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} typography={typography} isThanglish={isThanglish} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
             )}
             ListEmptyComponent={
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100 }}>
                 <Ionicons name="search" size={60} color={colors.border} />
-                <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15 }}>No songs found matching your search.</Text>
+                <MixedText style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15 }}>No songs found matching your search.</MixedText>
               </View>
             }
           />
@@ -550,21 +592,21 @@ export default function OtherSongsScreen() {
       <Modal visible={showSortMenu} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Sort Options</Text>
+            <MixedText style={[styles.modalHeaderTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Sort Options</MixedText>
             <ScalePressable onPress={selectNumberOrder}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>{'🔢 எண் வரிசை (Number Order)'}</Text>
+                <MixedText style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginLeft: 15 }}>{'🔢 எண் வரிசை (Number Order)'}</MixedText>
               </View>
             </ScalePressable>
             <ScalePressable onPress={selectAlphabetOrder}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15 }}>{'🔠 அகர வரிசை (Alphabetical)'}</Text>
+                <MixedText style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginLeft: 15 }}>{'🔠 அகர வரிசை (Alphabetical)'}</MixedText>
               </View>
             </ScalePressable>
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
-              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</Text>
+              <MixedText style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</MixedText>
             </TouchableOpacity>
           </View>
         </BlurView>
@@ -573,20 +615,20 @@ export default function OtherSongsScreen() {
       <Modal visible={showCategoryModal} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.categoryModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Select Category</Text>
+            <MixedText style={[styles.modalHeaderTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Select Category</MixedText>
             <FlatList
               data={categories}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
                 <ScalePressable onPress={() => handleCategorySelect(item)}>
                   <View style={[styles.categoryListItem, { borderBottomColor: colors.border }]}>
-                    <Text style={{ color: selectedCategory === item ? colors.primary : colors.text, fontSize: appFontSize + 5, fontFamily: 'Tamil003' }}>{item}</Text>
+                    <MixedText style={{ color: selectedCategory === item ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }}>{item}</MixedText>
                   </View>
                 </ScalePressable>
               )}
             />
             <TouchableOpacity onPress={() => { triggerHaptic(); setShowCategoryModal(false); }} style={{ padding: 20, alignItems: 'center' }}>
-              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Close</Text>
+              <MixedText style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Close</MixedText>
             </TouchableOpacity>
           </View>
         </BlurView>
@@ -603,14 +645,14 @@ export default function OtherSongsScreen() {
                 </View>
               </ScalePressable>
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
-                <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
+                <MixedText style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                   {activeSong?.song_number || activeSong?.id}{' - '}{activeSong?.title_tamil}
-                </Text>
+                </MixedText>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <Text style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</Text>
+                    <MixedText style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</MixedText>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeSong)}>
@@ -626,14 +668,14 @@ export default function OtherSongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
-                      </Text>
+                      </MixedText>
                     )}
                   </View>
                   <View style={{ flex: 1 }}>
                     {stanza.lines.map((line, lineIdx) => (
-                      <Text
+                      <MixedText
                         key={lineIdx}
                         style={{
                           color: line.isRefrain ? NEON_BLUE : colors.text,
@@ -645,7 +687,7 @@ export default function OtherSongsScreen() {
                         }}
                       >
                         {line.content.trim() === '' ? ' ' : line.content}
-                      </Text>
+                      </MixedText>
                     ))}
                   </View>
                 </View>
@@ -691,26 +733,26 @@ export default function OtherSongsScreen() {
               </Animated.View>
               <Animated.View style={[styles.settingsCard, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, transform: [{ translateY: settingsSlideAnim }] }]}>
                 <View style={styles.settingsHeader}>
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Reading Preferences</MixedText>
                   <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(false); }}>
                     <Ionicons name="close" size={28} color={colors.text} />
                   </ScalePressable>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Title Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</Text>
+                  <MixedText style={[styles.settingLabel, { color: colors.primary, fontSize: typography.subtext.fontSize }]}>Title Settings</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</MixedText>
                   <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2 }]}>Lyrics Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</Text>
+                  <MixedText style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: typography.subtext.fontSize }]}>Lyrics Settings</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</MixedText>
                   <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</Text>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</MixedText>
                   <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</Text>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</MixedText>
                   <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
                   <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
                     <View style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]}>
                       <Ionicons name="refresh" size={20} color={colors.primary} />
-                      <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</Text>
+                      <MixedText style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</MixedText>
                     </View>
                   </ScalePressable>
                 </ScrollView>
@@ -757,5 +799,5 @@ const styles = StyleSheet.create({
   floatLeft: { position: 'absolute', bottom: 20, left: 20, borderRadius: 25, overflow: 'hidden', borderWidth: 1 },
   floatRight: { position: 'absolute', bottom: 20, right: 20, borderRadius: 25, overflow: 'hidden', borderWidth: 1 },
   floatCenterClear: { position: 'absolute', bottom: 25, left: '20%', right: '20%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  blurBtnContent: { width: 55, height: 55, justifyContent: 'center', alignItems: 'center' },
+  blurBtnContent: { width: 55, height: 55, justifyContent: 'center', alignItems: 'center' }
 });

@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SectionList, ActivityIndicator, Alert, Image, Animated, Linking, Platform, LogBox, LayoutAnimation, UIManager, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,7 +47,7 @@ const ScalePressable = ({ children, onPress, style, scaleTo = 0.90, disabled = f
 };
 
 export default function MagazineScreen() {
-  const { colors, appFontSize, isDark } = useSettings();
+  const { colors, appFontSize, isDark, typography } = useSettings();
   const navigation = useNavigation();
 
   const [magazines, setMagazines] = useState([]);
@@ -251,27 +252,27 @@ export default function MagazineScreen() {
         <View style={styles.brandRow}>
           <Image source={require('../../assets/data/sparrow logo.png')} style={styles.logoImg} resizeMode="contain" />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: 'Tamil008', fontSize: 28, color: colors.primary }}>சிட்டுக்குருவி</Text>
-            <Text style={{ color: colors.text, fontSize: 14, marginTop: 2, letterSpacing: 1 }}>( மாத இதழ் )</Text>
-            <Text style={{ fontFamily: 'Tamil003', fontSize: 16, color: '#FFD700', marginTop: 6 }}>இது பரலோகம் செல்ல வழி</Text>
+            <MixedText style={{ fontFamily: 'Tamil008', fontSize: typography.display.fontSize, color: colors.primary }}>சிட்டுக்குருவி</MixedText>
+            <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, marginTop: 2, letterSpacing: 1 }}>( மாத இதழ் )</MixedText>
+            <MixedText style={{ fontFamily: 'Tamil003', fontSize: typography.body.fontSize, color: '#FFD700', marginTop: 6 }}>இது பரலோகம் செல்ல வழி</MixedText>
             {totalIssueCount > 0 && (
               <View style={styles.issueCountPill}>
                 <Ionicons name="library-outline" size={12} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700', marginLeft: 4 }}>{totalIssueCount} issues archived</Text>
+                <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, fontWeight: '700', marginLeft: 4 }}>{totalIssueCount} issues archived</MixedText>
               </View>
             )}
           </View>
         </View>
         <View style={[styles.authorBlock, { borderTopColor: colors.border }]}>
-          <Text style={{ fontFamily: 'Tamil003', color: colors.text, fontSize: 15, marginBottom: 8 }}>ஆசிரியர் : ஆலன் அன்பரசன்</Text>
-          <Text style={{ color: colors.subtext, fontSize: 11, lineHeight: 18 }}>
+          <MixedText style={{ fontFamily: 'Tamil003', color: colors.text, fontSize: typography.body.fontSize, marginBottom: 8 }}>ஆசிரியர் : ஆலன் அன்பரசன்</MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, lineHeight: 18 }}>
             Published by{"\n"}Danny’s Publications on behalf of{"\n"}God is Judge Ministries{"\n"}
             18/9B1-5, Citadel, 2nd floor, Mahatma Gandhi road,{"\n"}Municipal colony, Punnai nagar,{"\n"}Nagercoil – 629004.{"\n"}Ph : 8904072759
-          </Text>
+          </MixedText>
           <ScalePressable onPress={() => Linking.openURL('https://api.whatsapp.com/send/?phone=918904072759&text&type=phone_number&app_absent=0')}>
             <View style={styles.whatsappBtn}>
               <Ionicons name="logo-whatsapp" size={20} color="#fff" />
-              <Text style={{ fontFamily: 'Tamil003', color: '#fff', marginLeft: 8 }}>தொடர்பு கொள்ள</Text>
+              <MixedText style={{ fontFamily: 'Tamil003', color: '#fff', marginLeft: 8 }}>தொடர்பு கொள்ள</MixedText>
             </View>
           </ScalePressable>
         </View>
@@ -281,7 +282,7 @@ export default function MagazineScreen() {
         <View style={{ marginHorizontal: 15, marginBottom: 20 }}>
           <View style={styles.latestLabelRow}>
             <View style={styles.latestDot} />
-            <Text style={[styles.latestLabel, { color: colors.subtext }]}>LATEST ISSUE</Text>
+            <MixedText style={[styles.latestLabel, { color: colors.subtext, fontSize: typography.caption.fontSize }]}>LATEST ISSUE</MixedText>
           </View>
           <ScalePressable
             scaleTo={0.97}
@@ -298,20 +299,20 @@ export default function MagazineScreen() {
                 </LinearGradient>
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={{ color: colors.text, fontSize: appFontSize + 3, fontFamily: 'Tamil003' }} numberOfLines={1}>{latestMag.title_tamil}</Text>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 3, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }} numberOfLines={1}>{latestMag.title_english}</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.h2.fontSize, fontFamily: 'Tamil003' }} numberOfLines={1}>{latestMag.title_tamil}</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }} numberOfLines={1}>{latestMag.title_english}</MixedText>
 
                 {downloadingId === latestMag.id ? (
                   <View style={{ marginTop: 10 }}>
                     <ProgressBar progress={downloadProgress[latestMag.id] || 0} color={colors.primary} />
-                    <Text style={{ color: colors.primary, fontSize: 11, marginTop: 4, fontWeight: '700' }}>{downloadProgress[latestMag.id] || 0}% downloaded</Text>
+                    <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, marginTop: 4, fontWeight: '700' }}>{downloadProgress[latestMag.id] || 0}% downloaded</MixedText>
                   </View>
                 ) : (
                   <View style={[styles.featuredCta, { backgroundColor: colors.primary }]}>
                     <Ionicons name={downloadedFiles[latestMag.id] ? "book-outline" : "cloud-download-outline"} size={14} color={isDark ? '#000' : '#FFF'} />
-                    <Text style={{ color: isDark ? '#000' : '#FFF', fontSize: 12, fontWeight: '700', marginLeft: 6 }}>
+                    <MixedText style={{ color: isDark ? '#000' : '#FFF', fontSize: typography.subtext.fontSize, fontWeight: '700', marginLeft: 6 }}>
                       {downloadedFiles[latestMag.id] ? 'Read Now' : 'Download Now'}
-                    </Text>
+                    </MixedText>
                   </View>
                 )}
               </View>
@@ -321,7 +322,7 @@ export default function MagazineScreen() {
       )}
 
       {magazines.length > 0 && (
-        <Text style={[styles.archiveLabel, { color: colors.subtext }]}>FULL ARCHIVE</Text>
+        <MixedText style={[styles.archiveLabel, { color: colors.subtext, fontSize: typography.caption.fontSize }]}>FULL ARCHIVE</MixedText>
       )}
     </Animated.View>
   );
@@ -347,16 +348,16 @@ export default function MagazineScreen() {
             { backgroundColor: isExpanded ? 'rgba(0, 240, 255, 0.06)' : colors.card, borderColor: isExpanded ? colors.primary : colors.border }
           ]}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={[styles.yearText, { color: isExpanded ? colors.primary : colors.text }]}>{title} ஆம் ஆண்டு</Text>
+              <MixedText style={[styles.yearText, { color: isExpanded ? colors.primary : colors.text, fontSize: typography.title.fontSize }]}>{title} ஆம் ஆண்டு</MixedText>
               {isCurrentYear && (
                 <View style={styles.currentYearTag}>
-                  <Text style={styles.currentYearTagText}>NOW</Text>
+                  <MixedText style={[styles.currentYearTagText, { fontSize: typography.caption.fontSize }]}>NOW</MixedText>
                 </View>
               )}
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <View style={[styles.yearCountBadge, { backgroundColor: isExpanded ? colors.primary + '22' : 'rgba(127,127,127,0.15)' }]}>
-                <Text style={{ color: isExpanded ? colors.primary : colors.subtext, fontSize: 11, fontWeight: '700' }}>{count}</Text>
+                <MixedText style={{ color: isExpanded ? colors.primary : colors.subtext, fontSize: typography.caption.fontSize, fontWeight: '700' }}>{count}</MixedText>
               </View>
               <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} style={{ marginLeft: 8 }} />
             </View>
@@ -380,7 +381,7 @@ export default function MagazineScreen() {
           <View style={[styles.climateIconWrapper, { backgroundColor: colors.background }]}>
             <Ionicons name={climate.name} size={16} color={isDownloaded ? '#4CAF50' : climate.color} />
           </View>
-          <Text style={[styles.monthLabel, { color: colors.subtext }]}>{MONTH_ABBR[monthIndex] || ''}</Text>
+          <MixedText style={[styles.monthLabel, { color: colors.subtext, fontSize: typography.caption.fontSize }]}>{MONTH_ABBR[monthIndex] || ''}</MixedText>
         </View>
 
         <View style={styles.treeItemContent}>
@@ -396,8 +397,8 @@ export default function MagazineScreen() {
                 </LinearGradient>
               </View>
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }}>{item.title_tamil}</Text>
-                <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }}>{item.title_english}</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontFamily: 'Tamil003' }}>{item.title_tamil}</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2, textTransform: 'uppercase', letterSpacing: 1 }}>{item.title_english}</MixedText>
               </View>
             </View>
 
@@ -407,7 +408,7 @@ export default function MagazineScreen() {
                   <ScalePressable style={{ flex: 1 }} onPress={() => handleOpenPdf(item.id)}>
                     <View style={[styles.actionBtn, { backgroundColor: '#4CAF50', justifyContent: 'center' }]}>
                       <Ionicons name="book" size={16} color="#fff" />
-                      <Text style={[styles.btnText, { color: '#fff' }]}>Read</Text>
+                      <MixedText style={[styles.btnText, { color: '#fff', fontSize: typography.subtext.fontSize }]}>Read</MixedText>
                     </View>
                   </ScalePressable>
                   <ScalePressable onPress={() => handleShare(item.id)}>
@@ -424,8 +425,8 @@ export default function MagazineScreen() {
               ) : isDownloading ? (
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>Downloading…</Text>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>{progress}%</Text>
+                    <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Downloading…</MixedText>
+                    <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>{progress}%</MixedText>
                   </View>
                   <ProgressBar progress={progress} color={colors.primary} />
                 </View>
@@ -433,7 +434,7 @@ export default function MagazineScreen() {
                 <ScalePressable style={{ flex: 1 }} onPress={() => handleDownload(item)}>
                   <View style={[styles.actionBtn, { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary, justifyContent: 'center' }]}>
                     <Ionicons name="cloud-download-outline" size={18} color={colors.primary} />
-                    <Text style={[styles.btnText, { color: colors.primary }]}>Download</Text>
+                    <MixedText style={[styles.btnText, { color: colors.primary, fontSize: typography.subtext.fontSize }]}>Download</MixedText>
                   </View>
                 </ScalePressable>
               )}
@@ -458,8 +459,8 @@ export default function MagazineScreen() {
           </View>
         </ScalePressable>
         <View style={{ alignItems: 'center' }}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Monthly Magazine</Text>
-          <Text style={{ color: colors.subtext, fontSize: 11, fontFamily: 'Tamil003', marginTop: 1 }}>சிட்டுக்குருவி இதழ்கள்</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Monthly Magazine</MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, fontFamily: 'Tamil003', marginTop: 1 }}>சிட்டுக்குருவி இதழ்கள்</MixedText>
         </View>
         <View style={{ width: 36 }} />
       </View>
@@ -467,7 +468,7 @@ export default function MagazineScreen() {
       {isLoading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={{ color: colors.subtext, marginTop: 15 }}>Loading archive...</Text>
+          <MixedText style={{ color: colors.subtext, marginTop: 15 }}>Loading archive...</MixedText>
         </View>
       ) : (
         <Animated.View style={{ flex: 1, opacity: listFadeAnim }}>
@@ -486,8 +487,8 @@ export default function MagazineScreen() {
             ListEmptyComponent={
               <View style={{ alignItems: 'center', marginTop: 40, paddingHorizontal: 30 }}>
                 <Ionicons name="newspaper-outline" size={40} color={colors.subtext} />
-                <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 12 }}>No magazines available yet.</Text>
-                <Text style={{ color: colors.subtext, textAlign: 'center', marginTop: 4, fontSize: 12 }}>Pull down to refresh</Text>
+                <MixedText style={{ color: colors.subtext, textAlign: 'center', marginTop: 12 }}>No magazines available yet.</MixedText>
+                <MixedText style={{ color: colors.subtext, textAlign: 'center', marginTop: 4, fontSize: typography.caption.fontSize }}>Pull down to refresh</MixedText>
               </View>
             }
           />

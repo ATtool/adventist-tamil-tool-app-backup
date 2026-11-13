@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useRef, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Platform, LayoutAnimation, UIManager } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -82,7 +83,7 @@ const ScalePressable = ({ children, onPress, style, scaleTo = 0.95, disabled = f
 };
 
 export default function AboutScreen({ navigation }) {
-  const { colors, appFontSize } = useSettings();
+  const { colors, appFontSize, typography } = useSettings();
   
   // States
   const [lang, setLang] = useState('en');
@@ -139,7 +140,7 @@ export default function AboutScreen({ navigation }) {
           <View style={styles.cardHeader}>
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
               <Ionicons name={icon} size={24} color={color || colors.primary} />
-              <Text style={[styles.cardTitle, { color: color || colors.text }]} numberOfLines={1}>{title}</Text>
+              <MixedText style={[styles.cardTitle, { color: color || colors.text, fontSize: typography.h2.fontSize }]} numberOfLines={1}>{title}</MixedText>
             </View>
             <View style={[styles.iconCircle, { backgroundColor: color ? `${color}20` : 'rgba(0, 240, 255, 0.1)' }]}>
               <Ionicons name={isExpanded ? 'chevron-up' : 'chevron-down'} size={18} color={color || colors.primary} />
@@ -160,13 +161,13 @@ export default function AboutScreen({ navigation }) {
     <View style={styles.attrItem}>
       <View style={styles.attrDot} />
       <View style={{ flex: 1 }}>
-        <Text style={[styles.attrTitle, { color: colors.text }]}>{title}</Text>
-        {desc && <Text style={[styles.attrDesc, { color: colors.subtext }]}>{desc}</Text>}
+        <MixedText style={[styles.attrTitle, { color: colors.text, fontSize: typography.title.fontSize }]}>{title}</MixedText>
+        {desc && <MixedText style={[styles.attrDesc, { color: colors.subtext, fontSize: typography.subtext.fontSize }]}>{desc}</MixedText>}
         {url && (
           <TouchableOpacity onPress={() => openWebLink(url, title)} style={{ marginTop: 6, alignSelf: 'flex-start' }}>
             <View style={[styles.sourceBtn, { borderColor: colors.primary }]}>
               <Ionicons name="link" size={14} color={colors.primary} />
-              <Text style={{ color: colors.primary, fontSize: 12, marginLeft: 4, fontWeight: 'bold' }}>{text.viewSource}</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, marginLeft: 4, fontWeight: 'bold' }}>{text.viewSource}</MixedText>
             </View>
           </TouchableOpacity>
         )}
@@ -184,12 +185,12 @@ export default function AboutScreen({ navigation }) {
             <Ionicons name="arrow-back" size={26} color={colors.text} />
           </View>
         </ScalePressable>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>{text.header}</Text>
+        <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>{text.header}</MixedText>
         
         <ScalePressable onPress={toggleLanguage}>
           <View style={[styles.langBtn, { borderColor: colors.primary }]}>
             <Ionicons name="language" size={14} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 12, marginLeft: 4 }}>{text.langToggle}</Text>
+            <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.caption.fontSize, marginLeft: 4 }}>{text.langToggle}</MixedText>
           </View>
         </ScalePressable>
       </View>
@@ -199,62 +200,62 @@ export default function AboutScreen({ navigation }) {
           
           {/* SECTION 1: MISSION & WELCOME */}
           <AccordionCard id="welcome" title={text.missionTitle} icon="leaf">
-            <Text style={[styles.motoText, { color: colors.primary, fontSize: appFontSize + 2 }]}>{text.moto}</Text>
-            <Text style={[styles.bodyText, { color: colors.text, fontSize: appFontSize }]}>{text.body1}</Text>
+            <MixedText style={[styles.motoText, { color: colors.primary, fontSize: typography.title.fontSize }]}>{text.moto}</MixedText>
+            <MixedText style={[styles.bodyText, { color: colors.text, fontSize: typography.body.fontSize }]}>{text.body1}</MixedText>
 
             <View style={[styles.quoteBox, { backgroundColor: 'rgba(76, 175, 80, 0.1)', borderLeftColor: '#4CAF50' }]}>
-              <Text style={[styles.quoteText, { color: colors.text, fontSize: appFontSize - 1 }]}>{text.isaiah}</Text>
-              <Text style={[styles.quoteRef, { color: '#4CAF50' }]}>{text.isaiahRef}</Text>
+              <MixedText style={[styles.quoteText, { color: colors.text, fontSize: typography.body.fontSize }]}>{text.isaiah}</MixedText>
+              <MixedText style={[styles.quoteRef, { color: '#4CAF50', fontSize: typography.subtext.fontSize }]}>{text.isaiahRef}</MixedText>
             </View>
 
             <View style={[styles.quoteBox, { backgroundColor: 'rgba(0, 240, 255, 0.1)', borderLeftColor: colors.primary }]}>
-              <Text style={[styles.quoteText, { color: colors.text, fontSize: appFontSize - 1 }]}>{text.egw}</Text>
-              <Text style={[styles.quoteRef, { color: colors.primary }]}>{text.egwRef}</Text>
+              <MixedText style={[styles.quoteText, { color: colors.text, fontSize: typography.body.fontSize }]}>{text.egw}</MixedText>
+              <MixedText style={[styles.quoteRef, { color: colors.primary, fontSize: typography.subtext.fontSize }]}>{text.egwRef}</MixedText>
             </View>
 
-            <Text style={[styles.bodyText, { color: colors.text, fontSize: appFontSize, marginTop: 15 }]}>{text.body2}</Text>
+            <MixedText style={[styles.bodyText, { color: colors.text, fontSize: typography.body.fontSize, marginTop: 15 }]}>{text.body2}</MixedText>
           </AccordionCard>
 
           {/* SECTION 2: DISCLAIMER */}
           <AccordionCard id="disclaimer" title={text.humbleTitle} icon="information-circle" color="#FF9800" bgColor="rgba(255, 152, 0, 0.05)">
-            <Text style={[styles.bodyText, { color: colors.text, fontSize: appFontSize }]}>{text.humbleBody}</Text>
+            <MixedText style={[styles.bodyText, { color: colors.text, fontSize: typography.body.fontSize }]}>{text.humbleBody}</MixedText>
             <View style={{ height: 1, backgroundColor: 'rgba(255, 152, 0, 0.2)', marginVertical: 15 }} />
-            <Text style={[styles.disclaimerText, { color: '#FF5252' }]}>
+            <MixedText style={[styles.disclaimerText, { color: '#FF5252', fontSize: typography.subtext.fontSize }]}>
               <Ionicons name="warning" size={16} color="#FF5252" /> {text.warn1}
-            </Text>
-            <Text style={[styles.disclaimerText, { color: colors.subtext, marginTop: 8 }]}>{text.warn2}</Text>
+            </MixedText>
+            <MixedText style={[styles.disclaimerText, { color: colors.subtext, marginTop: 8, fontSize: typography.subtext.fontSize }]}>{text.warn2}</MixedText>
           </AccordionCard>
 
           {/* SECTION 3: CONTRIBUTORS */}
           <AccordionCard id="contributors" title={text.contribTitle} icon="people">
             
             <View style={styles.contributorBox}>
-              <Text style={[styles.contributorRole, { color: colors.subtext }]}>{text.dev}</Text>
-              <Text style={[styles.contributorName, { color: colors.text }]}>Pr. KSM</Text>
+              <MixedText style={[styles.contributorRole, { color: colors.subtext, fontSize: typography.subtext.fontSize }]}>{text.dev}</MixedText>
+              <MixedText style={[styles.contributorName, { color: colors.text, fontSize: typography.title.fontSize }]}>Pr. KSM</MixedText>
               <ScalePressable onPress={() => openWebLink('mailto:adventisttamiltool@gmail.com', 'Contact Us')}>
                 <View style={[styles.contactBtn, { backgroundColor: 'rgba(0, 240, 255, 0.1)' }]}>
                   <Ionicons name="mail" size={16} color={colors.primary} />
-                  <Text style={[styles.contactBtnText, { color: colors.primary }]}>adventisttamiltool@gmail.com</Text>
+                  <MixedText style={[styles.contactBtnText, { color: colors.primary, fontSize: typography.subtext.fontSize }]}>adventisttamiltool@gmail.com</MixedText>
                 </View>
               </ScalePressable>
             </View>
 
             <View style={styles.contributorBox}>
-              <Text style={[styles.contributorRole, { color: colors.subtext }]}>{text.mag}</Text>
-              <Text style={[styles.contributorName, { color: colors.text }]}>Mr. Allan Anbarasan</Text>
-              <Text style={[styles.contributorDesc, { color: colors.subtext }]}>{text.magDesc}</Text>
+              <MixedText style={[styles.contributorRole, { color: colors.subtext }]}>{text.mag}</MixedText>
+              <MixedText style={[styles.contributorName, { color: colors.text, fontSize: typography.title.fontSize }]}>Mr. Allan Anbarasan</MixedText>
+              <MixedText style={[styles.contributorDesc, { color: colors.subtext, fontSize: typography.subtext.fontSize }]}>{text.magDesc}</MixedText>
               <ScalePressable onPress={() => openWebLink('https://api.whatsapp.com/send/?phone=918904072759&text&type=phone_number&app_absent=0', 'WhatsApp Chat')}>
                 <View style={[styles.contactBtn, { backgroundColor: 'rgba(37, 211, 102, 0.1)' }]}>
                   <Ionicons name="logo-whatsapp" size={16} color="#25D366" />
-                  <Text style={[styles.contactBtnText, { color: "#25D366" }]}>WhatsApp: +91 89040 72759</Text>
+                  <MixedText style={[styles.contactBtnText, { color: "#25D366", fontSize: typography.subtext.fontSize }]}>WhatsApp: +91 89040 72759</MixedText>
                 </View>
               </ScalePressable>
             </View>
 
             <View style={[styles.contributorBox, { borderBottomWidth: 0, paddingBottom: 0, marginBottom: 0 }]}>
-              <Text style={[styles.contributorRole, { color: colors.subtext }]}>{text.thanglish}</Text>
-              <Text style={[styles.contributorName, { color: colors.text }]}>Mr. Lokesh Richardz</Text>
-              <Text style={[styles.contributorDesc, { color: colors.subtext }]}>{text.thanglishDesc}</Text>
+              <MixedText style={[styles.contributorRole, { color: colors.subtext }]}>{text.thanglish}</MixedText>
+              <MixedText style={[styles.contributorName, { color: colors.text, fontSize: typography.title.fontSize }]}>Mr. Lokesh Richardz</MixedText>
+              <MixedText style={[styles.contributorDesc, { color: colors.subtext, fontSize: typography.subtext.fontSize }]}>{text.thanglishDesc}</MixedText>
             </View>
 
           </AccordionCard>
@@ -274,16 +275,16 @@ export default function AboutScreen({ navigation }) {
               title="Tamil Sabbath School" 
               url="https://github.com/Adventech/sabbath-school-lessons"
             >
-              <Text style={[styles.attrDesc, { color: colors.subtext, marginTop: 4 }]}>
+              <MixedText style={[styles.attrDesc, { color: colors.subtext, marginTop: 4, fontSize: typography.subtext.fontSize }]}>
                 MIT license: The MIT License (MIT) Copyright (c) 2016. Adventech
-              </Text>
+              </MixedText>
 
               {/* READ MORE BUTTON */}
               <TouchableOpacity onPress={toggleLicenseExpand} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
                 <View style={[styles.readMoreBtn, { backgroundColor: 'rgba(0, 240, 255, 0.08)', borderColor: colors.primary }]}>
-                  <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold' }}>
+                  <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, fontWeight: 'bold' }}>
                     {showSabbathLicense ? text.showLess : text.readMore}
-                  </Text>
+                  </MixedText>
                   <Ionicons 
                     name={showSabbathLicense ? 'chevron-up' : 'chevron-down'} 
                     size={14} 
@@ -296,11 +297,11 @@ export default function AboutScreen({ navigation }) {
               {/* EXPANDABLE FULL LICENSE TEXT */}
               {showSabbathLicense && (
                 <View style={[styles.licenseBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Text style={[styles.licenseText, { color: colors.subtext }]}>
+                  <MixedText style={[styles.licenseText, { color: colors.subtext }]}>
                     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:{"\n\n"}
                     The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.{"\n\n"}
                     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-                  </Text>
+                  </MixedText>
                 </View>
               )}
             </AttributionItem>
@@ -323,13 +324,13 @@ export default function AboutScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15, borderBottomWidth: 1 },
-  headerTitle: { fontSize: 20, fontWeight: 'bold' },
+  headerTitle: { fontWeight: 'bold' },
   langBtn: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   scrollContent: { padding: 15, paddingBottom: 50 },
 
   card: { borderRadius: 16, borderWidth: 1, marginBottom: 15, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 10, elevation: 4, overflow: 'hidden' },
   cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20 },
-  cardTitle: { fontSize: 16, fontWeight: 'bold', marginLeft: 10, flex: 1 },
+  cardTitle: { fontWeight: 'bold', marginLeft: 10, flex: 1 },
   iconCircle: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
   cardContent: { padding: 20, paddingTop: 0 },
 
@@ -338,12 +339,12 @@ const styles = StyleSheet.create({
 
   quoteBox: { marginTop: 15, padding: 15, borderRadius: 10, borderLeftWidth: 4 },
   quoteText: { fontStyle: 'italic', lineHeight: 22 },
-  quoteRef: { marginTop: 10, fontWeight: 'bold', fontSize: 13, textAlign: 'right' },
+  quoteRef: { marginTop: 10, fontWeight: 'bold', textAlign: 'right' },
 
-  disclaimerText: { fontSize: 13, lineHeight: 20, fontWeight: '600' },
+  disclaimerText: { lineHeight: 20, fontWeight: '600' },
 
   contributorBox: { paddingBottom: 15, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', marginBottom: 15 },
-  contributorRole: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
+  contributorRole: { textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 },
   contributorName: { fontSize: 18, fontWeight: 'bold' },
   contributorDesc: { fontSize: 13, marginTop: 4, lineHeight: 20 },
   contactBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, marginTop: 10 },

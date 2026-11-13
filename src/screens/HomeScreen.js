@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Image, ScrollView, Linking } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
@@ -12,7 +13,6 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Notifications from 'expo-notifications';
 import InAppBrowser from '../components/InAppBrowser';
 
-// Import app.json to get current app version safely
 import appConfig from '../../app.json'; 
 
 const { width, height } = Dimensions.get('window');
@@ -27,7 +27,6 @@ const COUNTRIES = [
   { name: 'United Kingdom', flag: '🇬🇧' }, { name: 'United States', flag: '🇺🇸' }
 ];
 
-// --- CRITICAL: Tell Android/iOS how to handle notifications when app is open ---
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -41,7 +40,8 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const { isDark, colors, appFontSize, hapticsEnabled } = useSettings();
+  // We added `typography` here to pull in our global sizes!
+  const { isDark, colors, hapticsEnabled, typography } = useSettings();
   
   const [isChecking, setIsChecking] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -63,7 +63,6 @@ export default function HomeScreen() {
   const [tempCountry, setTempCountry] = useState({ name: 'India', flag: '🇮🇳' });
   const [todayVerse, setTodayVerse] = useState('');
 
-  // NEW: Read status state
   const [hasReadToday, setHasReadToday] = useState(false);
 
   const [updates, setUpdates] = useState([]);
@@ -86,7 +85,6 @@ export default function HomeScreen() {
   const cardOpacities = useRef([...Array(3)].map(() => new Animated.Value(0))).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  // NEW: Listen for when a user taps a notification
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
 
   useEffect(() => {
@@ -179,7 +177,6 @@ export default function HomeScreen() {
     ]).start();
   }, [isMenuOpen]);
 
-  // --- Smooth open/close animation for the Sabbath School options sheet ---
   useEffect(() => {
     if (showSabbathOptions) {
       setSabbathSheetRendered(true);
@@ -187,7 +184,7 @@ export default function HomeScreen() {
         Animated.timing(sabbathSlideAnim, {
           toValue: 0,
           duration: 380,
-          easing: Easing.bezier(0.16, 1, 0.3, 1), // eases out gently, like a native bottom sheet settling
+          easing: Easing.bezier(0.16, 1, 0.3, 1),
           useNativeDriver: true,
         }),
         Animated.timing(sabbathBackdropAnim, {
@@ -202,7 +199,7 @@ export default function HomeScreen() {
         Animated.timing(sabbathSlideAnim, {
           toValue: height,
           duration: 300,
-          easing: Easing.bezier(0.4, 0, 1, 1), // eases in, accelerating downward on close
+          easing: Easing.bezier(0.4, 0, 1, 1),
           useNativeDriver: true,
         }),
         Animated.timing(sabbathBackdropAnim, {
@@ -217,14 +214,12 @@ export default function HomeScreen() {
     }
   }, [showSabbathOptions]);
 
-  // --- NEW: Check if user read today's manna ---
   const checkReadStatus = async () => {
     const today = new Date().toLocaleDateString('en-US');
     const lastRead = await AsyncStorage.getItem('@last_read_manna_date');
     setHasReadToday(lastRead === today);
   };
 
-  // --- CRITICAL FIX: Setup 5:00 AM Daily Notification with Android VIP Channel ---
   const setupDailyNotification = async () => {
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
     let finalStatus = existingStatus;
@@ -236,7 +231,6 @@ export default function HomeScreen() {
     
     if (finalStatus !== 'granted') return;
 
-    // This creates the VIP Channel for Android devices so it never blocks the alarm
     if (Platform.OS === 'android') {
       await Notifications.setNotificationChannelAsync('daily-manna', {
         name: 'Daily Devotion',
@@ -245,7 +239,6 @@ export default function HomeScreen() {
       });
     }
 
-    // Check if we already scheduled it so we don't create duplicates
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
     const hasDaily = scheduled.some(n => n.content.data?.type === 'daily_manna');
 
@@ -282,7 +275,6 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      // Re-check read status every time they return to the home screen
       checkReadStatus();
       
       if (!isChecking && !showOnboarding && userName) {
@@ -318,7 +310,6 @@ export default function HomeScreen() {
       if (data.length > 0) {
         const latestId = String(data[0].id);
         
-        // NEW: Trigger a push notification if there is a new update we haven't notified them about yet
         if (latestId !== storedNotifiedId) {
           const updateTitle = isUpdatesTamil ? data[0].titleTa : data[0].titleEn;
           
@@ -337,7 +328,7 @@ export default function HomeScreen() {
               data: { screen: 'Updates' },
               sound: true,
             },
-            trigger: null, // trigger immediately
+            trigger: null, 
           });
           await AsyncStorage.setItem('@last_notified_update_id', latestId);
         }
@@ -421,7 +412,6 @@ export default function HomeScreen() {
       setUserName(tempName.trim());
       setShowOnboarding(false);
       
-      // Request notifications immediately after they finish setting up
       setupDailyNotification();
       
       startHomeAnimations();
@@ -458,21 +448,21 @@ export default function HomeScreen() {
     return (
       <View key={item.id || index} style={[styles.updateItem, { borderBottomColor: index === updates.length - 1 ? 'transparent' : colors.border }]}>
         <View style={{ flex: 1, paddingRight: 10 }}>
-          <Text style={{ color: colors.text, fontSize: appFontSize, fontWeight: isUpdatesTamil ? 'normal' : 'bold', fontFamily: isUpdatesTamil ? 'Tamil003' : undefined }}>
+          <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontWeight: isUpdatesTamil ? 'normal' : 'bold', fontFamily: isUpdatesTamil ? 'Tamil003' : undefined }}>
             {isUpdatesTamil ? item.titleTa : item.titleEn}
-          </Text>
-          <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 4, fontFamily: isUpdatesTamil ? 'Tamil003' : undefined }}>
+          </MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 4, fontFamily: isUpdatesTamil ? 'Tamil003' : undefined }}>
             {isUpdatesTamil ? item.descTa : item.descEn}
-          </Text>
+          </MixedText>
         </View>
         <TouchableOpacity 
           style={[styles.updateBtn, { backgroundColor: (isStoreUpdate && !needsUpdate) ? 'transparent' : colors.primary + '20' }]} 
           onPress={() => handleUpdateAction(item)}
           disabled={isStoreUpdate && !needsUpdate} 
         >
-          <Text style={{ color: (isStoreUpdate && !needsUpdate) ? colors.subtext : colors.primary, fontSize: appFontSize - 3, fontWeight: isUpdatesTamil ? 'normal' : 'bold', fontFamily: isUpdatesTamil ? 'Tamil003' : undefined }}>
+          <MixedText style={{ color: (isStoreUpdate && !needsUpdate) ? colors.subtext : colors.primary, fontSize: typography.caption.fontSize, fontWeight: isUpdatesTamil ? 'normal' : 'bold', fontFamily: isUpdatesTamil ? 'Tamil003' : undefined }}>
             {isUpdatesTamil ? buttonLabelTa : buttonLabelEn}
-          </Text>
+          </MixedText>
         </TouchableOpacity>
       </View>
     );
@@ -484,18 +474,18 @@ export default function HomeScreen() {
         
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View>
-              <Text style={[styles.greeting, { color: colors.subtext, fontSize: 14 }]} allowFontScaling={false}>
+            <View style={{ flex: 1, paddingRight: 15 }}>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.greeting, { color: colors.subtext, fontSize: typography.body.fontSize }]} allowFontScaling={false}>
                 {greeting}{userName ? ', ' : ''}
                 {userName && (
-                  <Text style={{ color: colors.primary, fontFamily: isTamilText(userName) ? 'Tamil003' : undefined, fontSize: isTamilText(userName) ? 18 : 14 }} allowFontScaling={false}>
+                  <MixedText style={{ color: colors.primary, fontFamily: isTamilText(userName) ? 'Tamil003' : undefined, fontSize: isTamilText(userName) ? typography.title.fontSize : typography.body.fontSize }} allowFontScaling={false}>
                     {userName}
-                  </Text>
+                  </MixedText>
                 )}
-              </Text>
-              <Text style={[styles.title, { color: colors.text, fontSize: 13 }]} allowFontScaling={false}>
+              </MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.title, { color: colors.text, fontSize: typography.caption.fontSize }]} allowFontScaling={false}>
                 Welcome to Adventist Tamil Tool
-              </Text>
+              </MixedText>
             </View>
             
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -526,7 +516,6 @@ export default function HomeScreen() {
           <AnimatedTouchableOpacity 
             style={[styles.mannaCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 15, opacity: cardOpacities[0], transform: [{ scale: cardScales[0] }] }]} 
             onPress={async () => {
-              // Mark as read immediately when they click!
               const today = new Date().toLocaleDateString('en-US');
               await AsyncStorage.setItem('@last_read_manna_date', today);
               setHasReadToday(true);
@@ -536,17 +525,15 @@ export default function HomeScreen() {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: todayVerse ? 12 : 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={[styles.iconContainerSmall, { backgroundColor: hasReadToday ? 'rgba(48, 209, 88, 0.1)' : 'rgba(255, 159, 10, 0.1)' }]}>
-                  {/* The magic Read / Unread icon changes here! */}
                   <Ionicons name={hasReadToday ? "checkmark-circle" : "sunny"} size={24} color={hasReadToday ? "#30D158" : "#FF9F0A"} />
                 </View>
                 <View style={{ marginLeft: 15 }}>
-                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2, includeFontPadding: false }} allowFontScaling={false}>
-                    <Text style={{ fontFamily: 'Tamil003', fontSize: 16 }}>இன்றைய மன்னா</Text> • {currentDateStr}
-                  </Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold', includeFontPadding: false }} allowFontScaling={false}>Today's Manna</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2, includeFontPadding: false }} allowFontScaling={false}>
+                    <MixedText style={{ fontFamily: 'Tamil003', fontSize: typography.title.fontSize }}>இன்றைய மன்னா</MixedText> • {currentDateStr}
+                  </MixedText>
                 </View>
               </View>
-              {/* Optional: Add a small pulsing dot if unread */}
               {!hasReadToday && (
                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#FF9F0A', marginRight: 10 }} />
               )}
@@ -555,13 +542,13 @@ export default function HomeScreen() {
 
             {!!todayVerse && (
               <View style={{ marginTop: 2, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
-                <Text 
-                  style={{ color: '#00F0FF', fontSize: appFontSize, fontFamily: 'Tamil003', lineHeight: 22, textAlign: 'center' }} 
+                <MixedText 
+                  style={{ color: '#00F0FF', fontSize: typography.body.fontSize, fontFamily: 'Tamil003', lineHeight: 22, textAlign: 'center' }} 
                   numberOfLines={3}
                   allowFontScaling={false}
                 >
                   {todayVerse}
-                </Text>
+                </MixedText>
               </View>
             )}
           </AnimatedTouchableOpacity>
@@ -569,14 +556,14 @@ export default function HomeScreen() {
           <View style={styles.grid}>
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[1], transform: [{ scale: cardScales[1] }] }]} onPress={openSabbathSchoolLink}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(48, 209, 88, 0.1)' }]}><Ionicons name="library" size={32} color="#30D158" /></View>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Sabbath School</Text>
-              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003', fontWeight: 'normal' }]} allowFontScaling={false}>ஓய்வுநாள் பள்ளி</Text>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.title.fontSize }]} allowFontScaling={false}>Sabbath School</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', fontWeight: 'normal' }]} allowFontScaling={false}>ஓய்வுநாள் பள்ளி</MixedText>
             </AnimatedTouchableOpacity>
 
             <AnimatedTouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, opacity: cardOpacities[2], transform: [{ scale: cardScales[2] }] }]} onPress={() => navigation.navigate('Magazine')}>
               <View style={[styles.iconContainer, { backgroundColor: 'rgba(191, 90, 242, 0.1)' }]}><Ionicons name="newspaper" size={32} color="#BF5AF2" /></View>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Monthly Magazine</Text>
-              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>மாதாந்திர இதழ்</Text>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.title.fontSize }]} allowFontScaling={false}>Monthly Magazine</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>மாதாந்திர இதழ்</MixedText>
             </AnimatedTouchableOpacity>
           </View>
         </Animated.ScrollView>
@@ -605,12 +592,12 @@ export default function HomeScreen() {
           <View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border, height: '75%' }]}>
             <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
               <View>
-                <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>All Updates</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003', marginTop: 2 }}>அனைத்து அறிவிப்புகள்</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>All Updates</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginTop: 2 }}>அனைத்து அறிவிப்புகள்</MixedText>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <TouchableOpacity style={[styles.langToggleBtn, { borderColor: colors.primary, marginRight: 15 }]} onPress={() => setIsUpdatesTamil(!isUpdatesTamil)}>
-                  <Text style={{ color: colors.primary, fontSize: 14, fontWeight: 'bold' }}>{isUpdatesTamil ? 'A' : 'த'}</Text>
+                  <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>{isUpdatesTamil ? 'A' : 'த'}</MixedText>
                 </TouchableOpacity>
                 <TouchableOpacity onPress={() => setShowAllUpdates(false)}>
                   <Ionicons name="close-circle" size={32} color={colors.subtext} />
@@ -621,7 +608,7 @@ export default function HomeScreen() {
             {updates.length === 0 ? (
               <View style={{ padding: 30, alignItems: 'center' }}>
                 <Ionicons name="checkmark-done-circle" size={50} color={colors.subtext} />
-                <Text style={{ color: colors.subtext, marginTop: 15, fontSize: 16 }}>You are all caught up!</Text>
+                <MixedText style={{ color: colors.subtext, marginTop: 15, fontSize: typography.title.fontSize }}>You are all caught up!</MixedText>
               </View>
             ) : (
               <ScrollView contentContainerStyle={{ padding: 15, paddingBottom: 40 }}>
@@ -638,13 +625,13 @@ export default function HomeScreen() {
             <View style={[styles.iconContainer, { backgroundColor: 'rgba(0, 240, 255, 0.1)', alignSelf: 'center', marginBottom: 20 }]}>
               <Ionicons name="cloud-download" size={32} color={colors.primary} />
             </View>
-            <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 }}>Update Required</Text>
-            <Text style={{ color: colors.subtext, fontSize: 16, textAlign: 'center', marginBottom: 5 }}>
+            <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 }}>Update Required</MixedText>
+            <MixedText style={{ color: colors.subtext, fontSize: typography.title.fontSize, textAlign: 'center', marginBottom: 5 }}>
               Please go to the Store and update the app for more new features.
-            </Text>
-            <Text style={{ color: colors.subtext, fontSize: 14, textAlign: 'center', fontFamily: 'Tamil003', marginBottom: 25 }}>
+            </MixedText>
+            <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, textAlign: 'center', fontFamily: 'Tamil003', marginBottom: 25 }}>
               புதிய அம்சங்களைப் பெற செயலியைப் புதுப்பிக்கவும்.
-            </Text>
+            </MixedText>
             
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
               <TouchableOpacity 
@@ -657,10 +644,10 @@ export default function HomeScreen() {
                   setShowStorePopup(false);
                 }}
               >
-                <Text style={{ color: colors.text, fontWeight: 'bold' }}>Later / பிறகு</Text>
+                <MixedText style={{ color: colors.text, fontWeight: 'bold' }}>Later / பிறகு</MixedText>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={openAppStore}>
-                <Text style={{ color: isDark ? '#000' : '#FFF', fontWeight: 'bold' }}>Update Now</Text>
+                <MixedText style={{ color: isDark ? '#000' : '#FFF', fontWeight: 'bold' }}>Update Now</MixedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -672,32 +659,32 @@ export default function HomeScreen() {
           <View style={[styles.meetingSheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
             <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
               <View>
-                <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Fellowship Services</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003', marginTop: 2 }}>ஐக்கிய ஆராதனைகள்</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Fellowship Services</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil003', marginTop: 2 }}>ஐக்கிய ஆராதனைகள்</MixedText>
               </View>
               <TouchableOpacity onPress={() => setShowMeetingMenu(false)}><Ionicons name="close-circle" size={32} color={colors.subtext} /></TouchableOpacity>
             </View>
             <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('CreateService'); }}>
               <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(0, 240, 255, 0.1)', marginRight: 15 }]}><Ionicons name="add" size={24} color={colors.primary} /></View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Create Service</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>புதிய ஆராதனை</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>Create Service</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }}>புதிய ஆராதனை</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.border} />
             </TouchableOpacity>
             <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('SavedServices'); }}>
               <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255, 159, 10, 0.1)', marginRight: 15 }]}><Ionicons name="bookmark" size={24} color="#FF9F0A" /></View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Saved Services</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>சேமிக்கப்பட்டவை</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>Saved Services</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }}>சேமிக்கப்பட்டவை</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.border} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.meetingOption} onPress={() => { setShowMeetingMenu(false); navigation.navigate('JoinService'); }}>
               <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(48, 209, 88, 0.1)', marginRight: 15 }]}><Ionicons name="qr-code" size={24} color="#30D158" /></View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Join Service</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003' }}>ஆராதனையில் இணைய</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>Join Service</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }}>ஆராதனையில் இணைய</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.border} />
             </TouchableOpacity>
@@ -711,8 +698,8 @@ export default function HomeScreen() {
             
             <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
               <View>
-                <Text style={{ color: colors.text, fontSize: 20, fontWeight: 'bold' }}>Sabbath School</Text>
-                <Text style={{ color: colors.subtext, fontSize: 14, fontFamily: 'Tamil003', fontWeight: 'normal', marginTop: 2 }}>ஓய்வுநாள் பள்ளி</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Sabbath School</MixedText>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil003', fontWeight: 'normal', marginTop: 2 }}>ஓய்வுநாள் பள்ளி</MixedText>
               </View>
               <TouchableOpacity onPress={() => setShowSabbathOptions(false)}>
                 <Ionicons name="close-circle" size={32} color={colors.subtext} />
@@ -721,16 +708,14 @@ export default function HomeScreen() {
 
             <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: Platform.OS === 'ios' ? 30 : 20 }} showsVerticalScrollIndicator={false}>
               
-              <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 15, marginBottom: 10, fontSize: appFontSize - 2 }]}>IN-APP READER (OFFLINE)</Text>
+              <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 15, marginBottom: 10, fontSize: typography.caption.fontSize }]}>IN-APP READER (OFFLINE)</MixedText>
 
-              {/* SINGLE OFFLINE OPTION: Read Today */}
               <TouchableOpacity
                 style={[styles.sabbathPrimaryCard, { borderColor: '#00F0FF' }]}
                 activeOpacity={0.85}
                 onPress={() => {
                   if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowSabbathOptions(false);
-                  // Navigate to the new unified screen
                   setTimeout(() => navigation.navigate('SabbathSchool'), 200);
                 }}
               >
@@ -740,14 +725,13 @@ export default function HomeScreen() {
                       <Ionicons name="today" size={22} color="#FFFFFF" />
                     </View>
                   </View>
-                  <Text style={styles.sabbathPrimaryTitle} allowFontScaling={false}>Today's Sabbath School Lesson</Text>
-                  <Text style={styles.sabbathPrimaryTamil} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம்</Text>
+                  <MixedText style={[styles.sabbathPrimaryTitle, { fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Today's Sabbath School Lesson</MixedText>
+                  <MixedText style={[styles.sabbathPrimaryTamil, { fontSize: typography.body.fontSize }]} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம்</MixedText>
                 </LinearGradient>
               </TouchableOpacity>
 
-              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: appFontSize - 2 }]}>OTHER WEB SOURCES ( Internet Requied )</Text>
+              <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: typography.caption.fontSize }]}>OTHER WEB SOURCES ( Internet Requied )</MixedText>
 
-              {/* EXTERNAL OPTION 1: Fustero */}
               <TouchableOpacity
                 style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 activeOpacity={0.8}
@@ -757,15 +741,14 @@ export default function HomeScreen() {
                   <Ionicons name="globe-outline" size={20} color="#30D158" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Tamil Sabbath School</Text>
-                  <Text style={{ color: colors.subtext, fontFamily: 'Tamil003', fontSize: 12, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }} allowFontScaling={false}>Tamil Sabbath School</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, marginTop: 3, lineHeight: 16 }} allowFontScaling={false}>
                     ஒய்வுநாள் பள்ளி பாடம், ஊழிய அறிக்கை மற்றும் சிறுவர் ஒய்வுநாள் பள்ளி பாடம் ( PDF, PPT )
-                  </Text>
+                  </MixedText>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
               </TouchableOpacity>
 
-              {/* EXTERNAL OPTION 2: Official GC */}
               <TouchableOpacity
                 style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 activeOpacity={0.8}
@@ -775,15 +758,14 @@ export default function HomeScreen() {
                   <Ionicons name="globe-outline" size={20} color="#0A84FF" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Official GC Website</Text>
-                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, fontFamily: 'Tamil003', fontWeight: 'normal', lineHeight: 16 }} allowFontScaling={false}>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }} allowFontScaling={false}>Official GC Website</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 3, fontFamily: 'Tamil003', fontWeight: 'normal', lineHeight: 16 }} allowFontScaling={false}>
                     ஒய்வுநாள் பள்ளி பாடம் மட்டும்
-                  </Text>
+                  </MixedText>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
               </TouchableOpacity>
 
-              {/* EXTERNAL OPTION 3: Backup */}
               <TouchableOpacity
                 style={[styles.sabbathSmallCard, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}
                 activeOpacity={0.8}
@@ -793,10 +775,10 @@ export default function HomeScreen() {
                   <Ionicons name="archive-outline" size={20} color="#FF9F0A" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.text, fontSize: 15, fontWeight: 'bold' }} allowFontScaling={false}>Backup</Text>
-                  <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 3, fontFamily: 'Tamil003', fontWeight: 'normal' }} allowFontScaling={false}>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }} allowFontScaling={false}>Backup</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 3, fontFamily: 'Tamil003', fontWeight: 'normal' }} allowFontScaling={false}>
                     பழைய பாட தொகுப்புகள்
-                  </Text>
+                  </MixedText>
                 </View>
                 <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
               </TouchableOpacity>
@@ -821,46 +803,41 @@ export default function HomeScreen() {
           <Animated.View style={[styles.drawerMenu, { backgroundColor: isDark ? '#0A1929' : '#FFFFFF', transform: [{ translateX: menuSlideAnim }] }]}>
             <SafeAreaView edges={['top']} style={{ flex: 1 }}>
               <View style={styles.drawerHeader}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: colors.primary }}>Menu</Text>
+                <MixedText style={{ fontSize: typography.h1.fontSize, fontWeight: 'bold', color: colors.primary }}>Menu</MixedText>
                 <TouchableOpacity onPress={() => setIsMenuOpen(false)}><Ionicons name="close" size={28} color={colors.text} /></TouchableOpacity>
               </View>
               <ScrollView style={{ padding: 20 }}>
-                {/* Removed redundant shortcuts for Devotion, Sabbath School, and Study */}
                 
                 <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('Settings')}>
                   <Ionicons name="settings" size={24} color={colors.text} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>Settings</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Settings</MixedText>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('About')}>
                   <Ionicons name="information-circle" size={24} color={colors.text} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>About the App</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>About the App</MixedText>
                 </TouchableOpacity>
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
                 
-                {/* 1st: Our Website */}
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://adventisttamiltool.great-site.net/'); }}>
                   <Image source={require('../../assets/WWW.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>Our Website</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Our Website</MixedText>
                 </TouchableOpacity>
                 
-                {/* 2nd: Gmail */}
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('mailto:adventisttamiltool@gmail.com'); }}>
                   <Image source={require('../../assets/Gmail.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
-                  <Text style={{ color: colors.text, fontSize: 16 }}>adventisttamiltool@gmail.com</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize - 2 }}>adventisttamiltool@gmail.com</MixedText>
                 </TouchableOpacity>
                 
-                {/* 3rd: WhatsApp */}
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p'); }}>
                   <Image source={require('../../assets/whatsapp.png')} style={{ width: 48, height: 48, marginRight: 15 }} resizeMode="contain" />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>Join our WhatsApp Channel</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Join our WhatsApp Channel</MixedText>
                 </TouchableOpacity>
 
-                {/* Added visual spacer and new SDA Hymn Link */}
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
                 
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://sdahymn.app/'); }}>
                   <Image source={require('../../assets/sdahymn.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
-                  <Text style={{ color: colors.text, fontSize: 18 }}>SDA Hymn</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>SDA Hymn</MixedText>
                 </TouchableOpacity>
               </ScrollView>
             </SafeAreaView>
@@ -874,23 +851,23 @@ export default function HomeScreen() {
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.onboardingContainer}>
               <View style={styles.onboardingHeader}>
                 <View style={[styles.iconContainerBig, { backgroundColor: 'transparent' }]}><Image source={require('../../assets/icon.png')} style={{ width: 100, height: 100, borderRadius: 25 }} resizeMode="cover" /></View>
-                <Text style={[styles.welcomeText, { color: colors.text }]}>Welcome to</Text>
-                <Text style={[styles.appNameText, { color: colors.primary }]}>Adventist Tamil Tool</Text>
-                <Text style={[styles.onboardingSub, { color: colors.subtext }]}>Please personalize your experience</Text>
+                <MixedText style={[styles.welcomeText, { color: colors.text, fontSize: typography.h2.fontSize }]}>Welcome to</MixedText>
+                <MixedText style={[styles.appNameText, { color: colors.primary, fontSize: typography.h1.fontSize + 8 }]}>Adventist Tamil Tool</MixedText>
+                <MixedText style={[styles.onboardingSub, { color: colors.subtext, fontSize: typography.body.fontSize }]}>Please personalize your experience</MixedText>
               </View>
               <View style={styles.onboardingForm}>
-                <Text style={[styles.inputLabel, { color: colors.subtext }]}>Your Name (English or Tamil)</Text>
-                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card }]} placeholder="e.g. David / தாவீது" placeholderTextColor={colors.subtext} value={tempName} onChangeText={setTempName} autoCorrect={false} />
-                <Text style={[styles.inputLabel, { color: colors.subtext, marginTop: 15 }]}>Your Country</Text>
+                <MixedText style={[styles.inputLabel, { color: colors.subtext, fontSize: typography.body.fontSize }]}>Your Name (English or Tamil)</MixedText>
+                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, fontSize: typography.body.fontSize }]} placeholder="e.g. David / தாவீது" placeholderTextColor={colors.subtext} value={tempName} onChangeText={setTempName} autoCorrect={false} />
+                <MixedText style={[styles.inputLabel, { color: colors.subtext, marginTop: 15, fontSize: typography.body.fontSize }]}>Your Country</MixedText>
                 <TouchableOpacity style={[styles.input, styles.countrySelector, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={() => setShowCountryPicker(true)}>
-                  <Text style={{ fontSize: 18, color: colors.text }}>{tempCountry.flag}  {tempCountry.name}</Text>
+                  <MixedText style={{ fontSize: typography.title.fontSize, color: colors.text }}>{tempCountry.flag}  {tempCountry.name}</MixedText>
                   <Ionicons name="chevron-down" size={20} color={colors.subtext} />
                 </TouchableOpacity>
               </View>
               <View style={{ flex: 1 }} />
               <TouchableOpacity style={[styles.saveBtn, { opacity: tempName.trim() ? 1 : 0.5 }]} onPress={saveUserData} disabled={!tempName.trim()}>
                 <LinearGradient colors={['#00F0FF', '#0080FF']} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                  <Text style={styles.saveBtnText}>Let's Begin</Text>
+                  <MixedText style={[styles.saveBtnText, { fontSize: typography.body.fontSize }]}>Let's Begin</MixedText>
                   <Ionicons name="arrow-forward" size={20} color="#000" style={{ marginLeft: 10 }} />
                 </LinearGradient>
               </TouchableOpacity>
@@ -900,11 +877,11 @@ export default function HomeScreen() {
           <Modal visible={showCountryPicker} animationType="slide" transparent={true}>
             <View style={styles.modalOverlay}>
               <View style={[styles.countrySheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}><Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Select Country</Text><TouchableOpacity onPress={() => setShowCountryPicker(false)}><Ionicons name="close-circle" size={28} color={colors.subtext} /></TouchableOpacity></View>
+                <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}><MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>Select Country</MixedText><TouchableOpacity onPress={() => setShowCountryPicker(false)}><Ionicons name="close-circle" size={28} color={colors.subtext} /></TouchableOpacity></View>
                 <FlatList data={COUNTRIES} keyExtractor={(item) => item.name} renderItem={({ item }) => (
                   <TouchableOpacity style={[styles.countryItem, { borderBottomColor: colors.border }]} onPress={() => { setTempCountry(item); setShowCountryPicker(false); if (hapticsEnabled) Haptics.selectionAsync(); }}>
-                    <Text style={{ fontSize: 24, marginRight: 15 }}>{item.flag}</Text>
-                    <Text style={{ fontSize: 16, color: colors.text, fontWeight: item.name === tempCountry.name ? 'bold' : 'normal' }}>{item.name}</Text>
+                    <MixedText style={{ fontSize: typography.title.fontSize, marginRight: 15 }}>{item.flag}</MixedText>
+                    <MixedText style={{ fontSize: typography.title.fontSize, color: colors.text, fontWeight: item.name === tempCountry.name ? 'bold' : 'normal' }}>{item.name}</MixedText>
                     {item.name === tempCountry.name && <Ionicons name="checkmark" size={20} color={colors.primary} style={{ marginLeft: 'auto' }} />}
                   </TouchableOpacity>
                 )} />
@@ -942,9 +919,9 @@ const styles = StyleSheet.create({
   onboardingContainer: { flex: 1, padding: 30, justifyContent: 'space-between' },
   onboardingHeader: { alignItems: 'center', marginTop: 40 },
   iconContainerBig: { width: 100, height: 100, borderRadius: 50, justifyContent: 'center', alignItems: 'center', marginBottom: 30 },
-  welcomeText: { fontSize: 24, fontWeight: '600', marginBottom: 5 },
-  appNameText: { fontSize: 32, fontWeight: '900', textAlign: 'center', marginBottom: 15 },
-  onboardingSub: { fontSize: 16, textAlign: 'center' },
+  welcomeText: { fontWeight: '600', marginBottom: 5 },
+  appNameText: { fontWeight: '900', textAlign: 'center', marginBottom: 15 },
+  onboardingSub: { textAlign: 'center' },
   onboardingForm: { marginTop: 40 },
   inputLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 8, marginLeft: 5 },
   input: { borderWidth: 1, borderRadius: 15, padding: 18, fontSize: 16 },
@@ -969,11 +946,12 @@ const styles = StyleSheet.create({
   sabbathPrimaryTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   recommendedPill: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFD700', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12 },
   recommendedPillText: { color: '#0F3D24', fontSize: 10, fontWeight: 'bold', marginLeft: 4 },
-  sabbathPrimaryTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: 'bold', includeFontPadding: false },
-  sabbathPrimaryTamil: { color: 'rgba(255,255,255,0.85)', fontSize: 15, fontFamily: 'Tamil003', fontWeight: 'normal', marginTop: 2, includeFontPadding: false },
+  sabbathPrimaryTitle: { color: '#FFFFFF', fontWeight: 'bold', includeFontPadding: false },
+  sabbathPrimaryTamil: { color: 'rgba(255,255,255,0.85)', fontFamily: 'Tamil003', fontWeight: 'normal', marginTop: 2, includeFontPadding: false },
   sabbathPrimaryDesc: { color: 'rgba(255,255,255,0.75)', fontSize: 13, fontFamily: 'Tamil003', fontWeight: 'normal', lineHeight: 20, marginTop: 10 },
   sabbathPrimaryFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.2)' },
   sabbathPrimaryFooterText: { color: '#FFFFFF', fontSize: 14, fontWeight: 'bold', marginRight: 8 },
+  sectionTitle: { fontWeight: 'bold', letterSpacing: 1 },
 
   sabbathSmallCard: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 16, borderWidth: 1, marginBottom: 12 }
 });

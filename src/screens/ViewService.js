@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Animated, Dimensions, Modal, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -109,7 +110,8 @@ export default function ViewService() {
   const route = useRoute();
   const { service } = route.params; 
   
-  const { colors, isDark, appFontSize, hapticsEnabled, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, typography, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
+  const styles = createStyles(typography);
 
   const [expandedId, setExpandedId] = useState(null);
   const [fetchedContent, setFetchedContent] = useState({});
@@ -266,12 +268,12 @@ export default function ViewService() {
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </TouchableOpacity>
           
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Live Service</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text }]}>Live Service</MixedText>
           
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <TouchableOpacity onPress={() => { triggerHaptic(); setShowTextSettings(true); }} style={{ marginRight: 12 }}>
               <View style={{ backgroundColor: colors.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 }}>
-                <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Aa</Text>
+                <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize }}>Aa</MixedText>
               </View>
             </TouchableOpacity>
 
@@ -280,15 +282,15 @@ export default function ViewService() {
               style={{ backgroundColor: '#FFCC00', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, flexDirection: 'row', alignItems: 'center', shadowColor: '#FFCC00', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 5 }}
             >
               <Ionicons name="qr-code-outline" size={16} color="#000" style={{ marginRight: 5 }} />
-              <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 15 }}>Invite</Text>
+              <MixedText style={{ color: '#000', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Invite</MixedText>
             </TouchableOpacity>
           </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={[styles.titleCard, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
-            <Text style={[styles.serviceName, { color: colors.primary }]}>{service.name}</Text>
-            <Text style={[styles.serviceDate, { color: colors.text }]}>{formattedDate}</Text>
+            <MixedText style={[styles.serviceName, { color: colors.primary }]}>{service.name}</MixedText>
+            <MixedText style={[styles.serviceDate, { color: colors.text }]}>{formattedDate}</MixedText>
           </View>
 
           <View style={styles.agendaContainer}>
@@ -297,36 +299,36 @@ export default function ViewService() {
               return (
                 <View key={block.id} style={[styles.blockWrapper, { backgroundColor: colors.card, borderColor: isExpanded ? colors.primary : colors.border }]}>
                   <TouchableOpacity style={styles.blockHeader} activeOpacity={0.7} onPress={() => handleExpand(block)}>
-                    <View style={styles.blockIndex}><Text style={{ color: colors.subtext, fontWeight: 'bold' }}>{index + 1}</Text></View>
+                    <View style={styles.blockIndex}><MixedText style={{ color: colors.subtext, fontWeight: 'bold' }}>{index + 1}</MixedText></View>
                     <View style={[styles.blockIconBadge, { backgroundColor: block.color + '20' }]}><Ionicons name={block.icon} size={20} color={block.color} /></View>
                     <View style={{ flex: 1, marginLeft: 15 }}>
-                      <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>{block.title}</Text>
+                      <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>{block.title}</MixedText>
                       
                       {block.category === 'person' && block.data?.ledBy ? (
-                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text>
+                        <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2 }}>Led by: {block.data.ledBy}</MixedText>
                       ) : null}
                       
                       {block.category === 'song' && block.data?.book && block.data?.number ? (
-                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
+                        <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
                           {block.data.book} #{block.data.number} {block.data?.title ? `- ${block.data.title}` : ''} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
-                        </Text>
+                        </MixedText>
                       ) : null}
                       
                       {block.category === 'bible' && block.data?.book && block.data?.chapter ? (
-                        <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
+                        <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
                           {block.data.book} {block.data.chapter}:{block.data.verse} {block.data.ledBy ? `(By ${block.data.ledBy})` : ''}
-                        </Text>
+                        </MixedText>
                       ) : null}
 
                       {block.category === 'tithe' && (
                         <View>
-                          {block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
-                          {block.data?.book && block.data?.chapter ? <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
+                          {block.data?.ledBy ? <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2 }}>Led by: {block.data.ledBy}</MixedText> : null}
+                          {block.data?.book && block.data?.chapter ? <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>{block.data.book} {block.data.chapter}:{block.data.verse}</MixedText> : null}
                         </View>
                       )}
                       
                       {block.category === 'note' && block.data?.note ? (
-                         <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }} numberOfLines={1}>{block.data.note}</Text>
+                         <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2 }} numberOfLines={1}>{block.data.note}</MixedText>
                       ) : null}
 
                     </View>
@@ -340,15 +342,15 @@ export default function ViewService() {
                             <View key={sIdx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                               <View style={{ width: 34 }}>
                                 {stanza.number && (
-                                  <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                                  <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                                     {stanza.number}
-                                  </Text>
+                                  </MixedText>
                                 )}
                               </View>
                               <View style={{ flex: 1 }}>
                                 {stanza.lines.map((line, lineIdx) => (
                                   // Pure white text for both Tamil and Thanglish, locked to Tamil003
-                                  <Text
+                                  <MixedText
                                     key={lineIdx}
                                     style={{
                                       color: line.isRefrain ? NEON_BLUE : colors.text,
@@ -360,16 +362,16 @@ export default function ViewService() {
                                     }}
                                   >
                                     {line.content.trim() === '' ? ' ' : line.content}
-                                  </Text>
+                                  </MixedText>
                                 ))}
                               </View>
                             </View>
                           ))
                         ) : (
                           // Bible verses (both Tamil and English) locked to Tamil003
-                          <Text style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
+                          <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
                             {fetchedContent[block.id]}
-                          </Text>
+                          </MixedText>
                         )
                       )}
                     </View>
@@ -386,7 +388,7 @@ export default function ViewService() {
           <View style={[styles.qrModalContainer, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
             
             <View style={styles.qrHeader}>
-              <Text style={{ color: colors.text, fontSize: 20, fontWeight: '800' }}>Invite to Service</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: '800' }}>Invite to Service</MixedText>
               <TouchableOpacity onPress={() => setShowInviteModal(false)} style={styles.closeBtn}>
                 <Ionicons name="close" size={20} color={colors.text} />
               </TouchableOpacity>
@@ -395,19 +397,19 @@ export default function ViewService() {
             {isGeneratingLink ? (
               <View style={{ padding: 40, alignItems: 'center' }}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ color: colors.text, marginTop: 15 }}>Connecting to cloud...</Text>
+                <MixedText style={{ color: colors.text, marginTop: 15 }}>Connecting to cloud...</MixedText>
               </View>
             ) : (
               <>
-                <Text style={{ color: colors.subtext, textAlign: 'center', marginBottom: 14, fontSize: 14 }}>
+                <MixedText style={{ color: colors.subtext, textAlign: 'center', marginBottom: 14, fontSize: typography.subtext.fontSize }}>
                   Share the Link, ID, or QR Code so your friends can sync this agenda.
-                </Text>
+                </MixedText>
 
                 <ViewShot ref={inviteCardRef} collapsable={false} options={{ format: 'png', quality: 1 }}>
                   <View style={styles.inviteCard} collapsable={false}>
-                    <Text style={styles.inviteHeader}>You're Invited!</Text>
-                    <Text style={styles.inviteServiceName}>{service.name}</Text>
-                    <Text style={styles.inviteDate}>{formattedDate}</Text>
+                    <MixedText style={styles.inviteHeader}>You're Invited!</MixedText>
+                    <MixedText style={styles.inviteServiceName}>{service.name}</MixedText>
+                    <MixedText style={styles.inviteDate}>{formattedDate}</MixedText>
 
                     <View style={styles.qrWrapper}>
                       <QRCode 
@@ -418,14 +420,14 @@ export default function ViewService() {
                       />
                     </View>
 
-                    <Text style={styles.inviteIdLabel}>SERVICE ID</Text>
-                    <Text style={styles.inviteId}>{shareId}</Text>
+                    <MixedText style={styles.inviteIdLabel}>SERVICE ID</MixedText>
+                    <MixedText style={styles.inviteId}>{shareId}</MixedText>
 
-                    <Text style={{ fontSize: 11, fontWeight: '700', color: '#0A84FF', marginBottom: 6 }}>
+                    <MixedText style={{ fontSize: typography.caption.fontSize, fontWeight: '700', color: '#0A84FF', marginBottom: 6 }}>
                       https://adventisttamil.app/join?id={shareId}
-                    </Text>
+                    </MixedText>
 
-                    <Text style={styles.inviteNote}>Scan the QR code, click the link, or enter the ID in the Adventist Tamil app to join.</Text>
+                    <MixedText style={styles.inviteNote}>Scan the QR code, click the link, or enter the ID in the Adventist Tamil app to join.</MixedText>
                   </View>
                 </ViewShot>
 
@@ -440,7 +442,7 @@ export default function ViewService() {
                     ) : (
                       <>
                         <Ionicons name="share-social" size={20} color="#000" style={{ marginRight: 8 }} />
-                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>Share Invite (QR + ID + Link)</Text>
+                        <MixedText style={{ color: '#000', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Share Invite (QR + ID + Link)</MixedText>
                       </>
                     )}
                   </TouchableOpacity>
@@ -460,26 +462,26 @@ export default function ViewService() {
           
           <Animated.View style={[styles.settingsCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, transform: [{ translateY: settingsSlideAnim }] }]}>
             <View style={styles.settingsHeader}>
-              <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Reading Preferences</MixedText>
               <TouchableOpacity onPress={() => { triggerHaptic(); setShowTextSettings(false); }}>
                 <Ionicons name="close" size={28} color={colors.text} />
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Live Screen Font Size</Text>
-              <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Size: {lyricsSize}</Text>
+              <MixedText style={[styles.settingLabel, { color: colors.primary, fontSize: typography.subtext.fontSize }]}>Live Screen Font Size</MixedText>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize }}>Size: {lyricsSize}</MixedText>
               <Slider minimumValue={12} maximumValue={45} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
               
-              <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15 }}>Line Spacing: {lyricsLineHeight}</Text>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, marginTop: 15 }}>Line Spacing: {lyricsLineHeight}</MixedText>
               <Slider minimumValue={20} maximumValue={70} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
               
-              <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15 }}>Letter Spacing: {lyricsSpacing}</Text>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, marginTop: 15 }}>Letter Spacing: {lyricsSpacing}</MixedText>
               <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
               
               <TouchableOpacity onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
                 <View style={[styles.restoreBtn, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]}>
                   <Ionicons name="refresh" size={20} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</Text>
+                  <MixedText style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: typography.body.fontSize }}>Restore Defaults</MixedText>
                 </View>
               </TouchableOpacity>
             </ScrollView>
@@ -491,15 +493,15 @@ export default function ViewService() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (typography) => StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 15, paddingVertical: 12, borderBottomWidth: 1 },
   headerBtn: { padding: 5 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: typography.h1.fontSize, fontWeight: 'bold' },
   scrollContent: { padding: 15, paddingBottom: 60 },
   titleCard: { padding: 25, borderRadius: 16, borderWidth: 1, alignItems: 'center', marginBottom: 25 },
-  serviceName: { fontSize: 22, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
-  serviceDate: { fontSize: 15, fontWeight: '600' },
+  serviceName: { fontSize: typography.h2.fontSize, fontWeight: 'bold', textAlign: 'center', marginBottom: 8 },
+  serviceDate: { fontSize: typography.subtext.fontSize, fontWeight: '600' },
   agendaContainer: { paddingBottom: 20 },
   blockWrapper: { borderRadius: 16, borderWidth: 1, marginBottom: 15, overflow: 'hidden' },
   blockHeader: { flexDirection: 'row', alignItems: 'center', padding: 15 },
@@ -514,13 +516,13 @@ const styles = StyleSheet.create({
   shareLinkBtn: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', padding: 13, borderRadius: 12 },
 
   inviteCard: { backgroundColor: '#FFFFFF', borderRadius: 18, padding: 20, alignItems: 'center' },
-  inviteHeader: { fontSize: 19, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
-  inviteServiceName: { fontSize: 16, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
-  inviteDate: { fontSize: 13, color: '#666666', marginTop: 4, marginBottom: 14 },
+  inviteHeader: { fontSize: typography.h2.fontSize, fontWeight: 'bold', color: '#0A1929', marginBottom: 4 },
+  inviteServiceName: { fontSize: typography.title.fontSize, fontWeight: '600', color: '#0A1929', textAlign: 'center' },
+  inviteDate: { fontSize: typography.subtext.fontSize, color: '#666666', marginTop: 4, marginBottom: 14 },
   qrWrapper: { padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#EEEEEE' },
-  inviteIdLabel: { fontSize: 11, fontWeight: '700', color: '#999999', letterSpacing: 1 },
-  inviteId: { fontSize: 20, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 10 },
-  inviteNote: { fontSize: 12, color: '#444444', textAlign: 'center', lineHeight: 17 },
+  inviteIdLabel: { fontSize: typography.caption.fontSize, fontWeight: '700', color: '#999999', letterSpacing: 1 },
+  inviteId: { fontSize: typography.h2.fontSize, fontWeight: 'bold', color: '#0A1929', letterSpacing: 2, marginTop: 4, marginBottom: 10 },
+  inviteNote: { fontSize: typography.subtext.fontSize, color: '#444444', textAlign: 'center', lineHeight: 17 },
 
   settingsCard: { position: 'absolute', bottom: 0, width: '100%', maxHeight: '80%', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 30, borderWidth: 1 },
   settingsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30 },

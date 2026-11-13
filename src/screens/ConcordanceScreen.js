@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ScrollView,
@@ -36,7 +37,7 @@ const getBookName = (bookId, language) => {
 
 export default function ConcordanceScreen({ navigation, route }) {
   const {
-    colors, isDark, appFontSize, bibleLanguage,
+    colors, isDark, appFontSize, typography, bibleLanguage,
     bibleFontSize: globalBibleFontSize,
     bibleLineHeight: globalBibleLineHeight,
     bibleLetterSpacing: globalBibleLetterSpacing,
@@ -341,13 +342,13 @@ export default function ConcordanceScreen({ navigation, route }) {
             onPress={() => openStrongsSheet(part)}
             hitSlop={{ top: 4, bottom: 4, left: 2, right: 2 }}
           >
-            <Text style={[styles.strongTagText, { color: colors.primary }]}>{part}</Text>
+            <MixedText style={[styles.strongTagText, { color: colors.primary, fontSize: typography.caption.fontSize }]}>{part}</MixedText>
           </TouchableOpacity>
         );
       }
       if (!part) return null;
       return (
-        <Text
+        <MixedText
           key={`text-${index}`}
           style={{
             color: colors.text,
@@ -358,7 +359,7 @@ export default function ConcordanceScreen({ navigation, route }) {
           }}
         >
           {part}
-        </Text>
+        </MixedText>
       );
     });
   };
@@ -593,7 +594,7 @@ export default function ConcordanceScreen({ navigation, route }) {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}>
             <Ionicons name="arrow-back" size={28} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Concordance</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Concordance</MixedText>
           <View style={{ width: 40 }} />
         </View>
 
@@ -602,34 +603,34 @@ export default function ConcordanceScreen({ navigation, route }) {
             <Ionicons name="library-outline" size={52} color={colors.primary} />
           </View>
 
-          <Text style={[styles.downloadPrompt, { color: colors.text, fontSize: appFontSize + 2 }]}>
+          <MixedText style={[styles.downloadPrompt, { color: colors.text, fontSize: typography.title.fontSize }]}>
             Concordance Engine
-          </Text>
-          <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: 'bold', marginBottom: 10 }}>
+          </MixedText>
+          <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold', marginBottom: 10 }}>
             வேதாகம கான்கார்டன்ஸ் பதிவிறக்கம்
-          </Text>
+          </MixedText>
           
-          <Text style={[styles.downloadSub, { color: colors.subtext, fontSize: appFontSize - 2, marginBottom: 5 }]}>
+          <MixedText style={[styles.downloadSub, { color: colors.subtext, fontSize: typography.subtext.fontSize, marginBottom: 5 }]}>
             Download once to unlock full Strong's dictionary, Hebrew and Greek definitions — fully offline.
-          </Text>
-          <Text style={{ color: colors.subtext, fontSize: appFontSize - 4, textAlign: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
+          </MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, textAlign: 'center', paddingHorizontal: 20, marginBottom: 20 }}>
             எபிரேய மற்றும் கிரேக்க மூல வார்த்தைகளின் அர்த்தங்கள் அடங்கியுள்ளது.
-          </Text>
+          </MixedText>
 
           <View style={{ backgroundColor: 'rgba(255, 59, 48, 0.1)', padding: 15, borderRadius: 10, marginBottom: 25, marginHorizontal: 20 }}>
-            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
+            <MixedText style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', marginBottom: 5 }}>
               ⚠️ WARNING: Do not close the app or go back while downloading!
-            </Text>
-            <Text style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', fontSize: 12 }}>
+            </MixedText>
+            <MixedText style={{ color: '#FF3B30', fontWeight: 'bold', textAlign: 'center', fontSize: typography.subtext.fontSize }}>
               எச்சரிக்கை: பதிவிறக்கம் செய்யும் போது செயலியை மூடவோ அல்லது பின்னால் செல்லவோ கூடாது!
-            </Text>
+            </MixedText>
           </View>
 
           {isDownloading ? (
             <View style={styles.progressContainer}>
-              <Text style={{ color: colors.primary, fontWeight: '700', marginBottom: 12, fontSize: 15 }}>
+              <MixedText style={{ color: colors.primary, fontWeight: '700', marginBottom: 12, fontSize: typography.body.fontSize }}>
                 Installing… {Math.round(downloadProgress * 100)}%
-              </Text>
+              </MixedText>
               <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
                 <View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
               </View>
@@ -642,7 +643,7 @@ export default function ConcordanceScreen({ navigation, route }) {
               activeOpacity={0.85}
             >
               <Ionicons name="cloud-download-outline" size={20} color="#000" style={{ marginRight: 8 }} />
-              <Text style={styles.downloadBtnText}>Download Now</Text>
+              <MixedText style={[styles.downloadBtnText, { fontSize: typography.body.fontSize }]}>Download Now</MixedText>
             </TouchableOpacity>
           )}
         </View>
@@ -674,9 +675,9 @@ export default function ConcordanceScreen({ navigation, route }) {
               onPress={() => { triggerHaptic(); setPickerStep('book'); setPickerVisible(true); }}
               style={[styles.pickerBtn, { borderRightWidth: 1, borderRightColor: colors.border }]}
             >
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '800' }} numberOfLines={1}>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: '800' }} numberOfLines={1}>
                 {getBookName(activeBookId)}
-              </Text>
+              </MixedText>
               <Ionicons name="caret-down" size={11} color={colors.primary} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
 
@@ -684,9 +685,9 @@ export default function ConcordanceScreen({ navigation, route }) {
               onPress={() => { triggerHaptic(); setPickerStep('chapter'); setPickerVisible(true); }}
               style={styles.pickerBtn}
             >
-              <Text style={{ color: colors.primary, fontSize: appFontSize, fontWeight: '800' }}>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: '800' }}>
                 {activeChapter}
-              </Text>
+              </MixedText>
               <Ionicons name="caret-down" size={11} color={colors.primary} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
@@ -736,7 +737,7 @@ export default function ConcordanceScreen({ navigation, route }) {
                 isHighlighted && { backgroundColor: 'rgba(255,215,0,0.22)', borderRadius: 10, padding: 6 }
               ]}>
                 <View style={[styles.verseNumBubble, { backgroundColor: colors.glow, borderColor: colors.primary }]}>
-                  <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 11 }}>{item.verse}</Text>
+                  <MixedText style={{ color: colors.primary, fontWeight: '700', fontSize: typography.caption.fontSize }}>{item.verse}</MixedText>
                 </View>
                 <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center' }}>
                   {renderTaggedText(item.tagged_text)}
@@ -801,31 +802,31 @@ export default function ConcordanceScreen({ navigation, route }) {
             onStartShouldSetResponder={() => true}
           >
             <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
-              <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: '700' }}>Typography</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: '700' }}>Typography</MixedText>
               <TouchableOpacity onPress={() => setShowTypography(false)}>
                 <Ionicons name="close-circle" size={26} color={colors.subtext} />
               </TouchableOpacity>
             </View>
 
             <ScrollView style={{ padding: 20 }} showsVerticalScrollIndicator={false}>
-              <Text style={[styles.sectionTitle, { color: colors.subtext }]}>BIBLE TEXT SIZE</Text>
+              <MixedText style={[styles.sectionTitle, { color: colors.subtext, fontSize: typography.h2.fontSize }]}>BIBLE TEXT SIZE</MixedText>
               <View style={styles.toggleRow}>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                   onPress={() => { const s = Math.max(14, verseSize - 2); setVerseSize(s); saveTypographySettings({ verseSize: s }); }}
                 >
-                  <Text style={{ color: colors.text, fontWeight: '700' }}>A−</Text>
+                  <MixedText style={{ color: colors.text, fontWeight: '700' }}>A−</MixedText>
                 </TouchableOpacity>
-                <Text style={{ color: colors.text, fontWeight: '800', fontSize: 20 }}>{verseSize}</Text>
+                <MixedText style={{ color: colors.text, fontWeight: '800', fontSize: 20 }}>{verseSize}</MixedText>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                   onPress={() => { const s = Math.min(36, verseSize + 2); setVerseSize(s); saveTypographySettings({ verseSize: s }); }}
                 >
-                  <Text style={{ color: colors.text, fontWeight: '700' }}>A+</Text>
+                  <MixedText style={{ color: colors.text, fontWeight: '700' }}>A+</MixedText>
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 16 }]}>LINE HEIGHT</Text>
+              <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginTop: 16, fontSize: typography.h2.fontSize }]}>LINE HEIGHT</MixedText>
               <View style={styles.toggleRow}>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
@@ -833,7 +834,7 @@ export default function ConcordanceScreen({ navigation, route }) {
                 >
                   <Ionicons name="remove" size={18} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={{ color: colors.text, fontWeight: '800' }}>{verseLineHeight}</Text>
+                <MixedText style={{ color: colors.text, fontWeight: '800' }}>{verseLineHeight}</MixedText>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                   onPress={() => { const l = Math.min(52, verseLineHeight + 2); setVerseLineHeight(l); saveTypographySettings({ verseLineHeight: l }); }}
@@ -842,7 +843,7 @@ export default function ConcordanceScreen({ navigation, route }) {
                 </TouchableOpacity>
               </View>
 
-              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 16 }]}>LETTER SPACING</Text>
+              <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginTop: 16, fontSize: typography.h2.fontSize }]}>LETTER SPACING</MixedText>
               <View style={[styles.toggleRow, { marginBottom: 20 }]}>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
@@ -850,7 +851,7 @@ export default function ConcordanceScreen({ navigation, route }) {
                 >
                   <Ionicons name="remove" size={18} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={{ color: colors.text, fontWeight: '800' }}>{verseSpacing.toFixed(1)}</Text>
+                <MixedText style={{ color: colors.text, fontWeight: '800' }}>{verseSpacing.toFixed(1)}</MixedText>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                   onPress={() => { const s = parseFloat(Math.min(3, verseSpacing + 0.25).toFixed(2)); setVerseSpacing(s); saveTypographySettings({ verseSpacing: s }); }}
@@ -861,20 +862,20 @@ export default function ConcordanceScreen({ navigation, route }) {
 
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-              <Text style={[styles.sectionTitle, { color: colors.subtext, marginTop: 16 }]}>DEFINITION SHEET SIZE</Text>
+              <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginTop: 16, fontSize: typography.h2.fontSize }]}>DEFINITION SHEET SIZE</MixedText>
               <View style={[styles.toggleRow, { marginBottom: 30 }]}>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                   onPress={() => { const s = Math.max(12, sheetFontSize - 2); setSheetFontSize(s); saveTypographySettings({ sheetFontSize: s }); }}
                 >
-                  <Text style={{ color: colors.text, fontWeight: '700' }}>A−</Text>
+                  <MixedText style={{ color: colors.text, fontWeight: '700' }}>A−</MixedText>
                 </TouchableOpacity>
-                <Text style={{ color: colors.text, fontWeight: '800', fontSize: 20 }}>{sheetFontSize}</Text>
+                <MixedText style={{ color: colors.text, fontWeight: '800', fontSize: 20 }}>{sheetFontSize}</MixedText>
                 <TouchableOpacity
                   style={[styles.controlBtn, { borderColor: colors.border, backgroundColor: colors.card }]}
                   onPress={() => { const s = Math.min(30, sheetFontSize + 2); setSheetFontSize(s); saveTypographySettings({ sheetFontSize: s }); }}
                 >
-                  <Text style={{ color: colors.text, fontWeight: '700' }}>A+</Text>
+                  <MixedText style={{ color: colors.text, fontWeight: '700' }}>A+</MixedText>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -892,7 +893,7 @@ export default function ConcordanceScreen({ navigation, route }) {
             <View style={[styles.searchBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
               <Ionicons name="search" size={17} color={colors.subtext} style={{ marginRight: 8 }} />
               <TextInput
-                style={{ flex: 1, color: colors.text, fontSize: 15 }}
+                style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize }}
                 placeholder="Word or Strong's ID (e.g. G5485, H7225)"
                 placeholderTextColor={colors.subtext}
                 value={searchQuery}
@@ -911,9 +912,9 @@ export default function ConcordanceScreen({ navigation, route }) {
 
           {!searchQuery && (
             <View style={styles.azWrapper}>
-              <Text style={[styles.sectionTitle, { color: colors.subtext, marginHorizontal: 16, marginBottom: 12 }]}>
+              <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginHorizontal: 16, marginBottom: 12, fontSize: typography.h2.fontSize }]}>
                 BROWSE BY LETTER
-              </Text>
+              </MixedText>
               <View style={styles.azGridContainer}>
                 {['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'].map((letter) => (
                   <TouchableOpacity
@@ -925,9 +926,9 @@ export default function ConcordanceScreen({ navigation, route }) {
                     ]}
                     onPress={() => handleLetterSelect(letter)}
                   >
-                    <Text style={{ color: selectedLetter === letter ? '#000' : colors.text, fontWeight: '800', fontSize: 13 }}>
+                    <MixedText style={{ color: selectedLetter === letter ? '#000' : colors.text, fontWeight: '800', fontSize: typography.subtext.fontSize }}>
                       {letter}
-                    </Text>
+                    </MixedText>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -947,12 +948,12 @@ export default function ConcordanceScreen({ navigation, route }) {
                 (searchQuery || selectedLetter) ? (
                   <View style={styles.centerContent}>
                     <Ionicons name="search-outline" size={40} color={colors.border} style={{ marginBottom: 10 }} />
-                    <Text style={{ color: colors.subtext, textAlign: 'center' }}>No results found</Text>
-                    <Text style={{ color: colors.primary, textAlign: 'center', fontSize: appFontSize - 2, marginTop: 15, lineHeight: 22 }}>
+                    <MixedText style={{ color: colors.subtext, textAlign: 'center' }}>No results found</MixedText>
+                    <MixedText style={{ color: colors.primary, textAlign: 'center', fontSize: typography.subtext.fontSize, marginTop: 15, lineHeight: 22 }}>
                       {`If data failed to load, go to:
 Settings -> Manage Storage -> Delete Concordance
 and redownload the file fully.`}
-                    </Text>
+                    </MixedText>
                   </View>
                 ) : null
               }
@@ -966,11 +967,11 @@ and redownload the file fully.`}
                   activeOpacity={0.75}
                 >
                   <View style={[styles.strongTagChip, { backgroundColor: colors.glow, paddingHorizontal: 8, paddingVertical: 4 }]}>
-                    <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 12 }}>{item.strongs_id}</Text>
+                    <MixedText style={{ color: colors.primary, fontWeight: '700', fontSize: typography.caption.fontSize }}>{item.strongs_id}</MixedText>
                   </View>
-                  <Text style={{ color: colors.text, fontSize: 15, marginLeft: 12, flex: 1 }} numberOfLines={1}>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, marginLeft: 12, flex: 1 }} numberOfLines={1}>
                     {item.word_use}
-                  </Text>
+                  </MixedText>
                   <Ionicons name="chevron-forward" size={16} color={colors.border} />
                 </TouchableOpacity>
               )}
@@ -1002,9 +1003,9 @@ and redownload the file fully.`}
 
               {/* Sheet top header — just close button */}
               <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
-                <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-condensed' }}>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: '700', letterSpacing: 0.6, textTransform: 'uppercase', fontFamily: Platform.OS === 'ios' ? 'Avenir-Heavy' : 'sans-serif-condensed' }}>
                   {strongsData ? (strongsData.isGreek ? 'New Testament · Greek' : 'Old Testament · Hebrew') : 'Strong\'s Definition'}
-                </Text>
+                </MixedText>
                 <TouchableOpacity
                   onPress={closeBottomSheet}
                   style={[styles.sheetCloseBtn, { backgroundColor: colors.card }]}
@@ -1018,17 +1019,17 @@ and redownload the file fully.`}
             {isLoadingSheet ? (
               <View style={styles.centerContent}>
                 <ActivityIndicator size="large" color={colors.primary} />
-                <Text style={{ color: colors.subtext, marginTop: 12, fontSize: 13 }}>Loading definition…</Text>
+                <MixedText style={{ color: colors.subtext, marginTop: 12, fontSize: typography.subtext.fontSize }}>Loading definition…</MixedText>
               </View>
             ) : !strongsData ? (
               <View style={styles.centerContent}>
                 <Ionicons name="help-circle-outline" size={44} color={colors.border} style={{ marginBottom: 10 }} />
-                <Text style={{ color: colors.subtext, textAlign: 'center', fontSize: 15 }}>
+                <MixedText style={{ color: colors.subtext, textAlign: 'center', fontSize: typography.body.fontSize }}>
                   No definition found for {selectedStrongId}
-                </Text>
-                <Text style={{ color: colors.subtext, textAlign: 'center', fontSize: 12, marginTop: 8, paddingHorizontal: 24 }}>
+                </MixedText>
+                <MixedText style={{ color: colors.subtext, textAlign: 'center', fontSize: typography.subtext.fontSize, marginTop: 8, paddingHorizontal: 24 }}>
                   This Strong's ID may not exist in the database or uses a different format.
-                </Text>
+                </MixedText>
               </View>
             ) : (
               <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
@@ -1038,20 +1039,20 @@ and redownload the file fully.`}
 
                   {/* Strong ID — small pill badge */}
                   <View style={[styles.strongIdBadge, { backgroundColor: colors.glow, borderColor: colors.primary + '40' }]}>
-                    <Text style={[styles.strongIdLabel, { color: colors.primary }]}>
+                    <MixedText style={[styles.strongIdLabel, { color: colors.primary }]}>
                       {strongsData.lemma}
-                    </Text>
+                    </MixedText>
                   </View>
 
                   {/* Original word — center, big */}
-                  <Text style={[styles.originalWord, { color: colors.text }]}>
+                  <MixedText style={[styles.originalWord, { color: colors.text }]}>
                     {strongsData.word}
-                  </Text>
+                  </MixedText>
 
                   {/* Transliteration — center, italic serif */}
-                  <Text style={[styles.transliterationText, { color: colors.subtext }]}>
+                  <MixedText style={[styles.transliterationText, { color: colors.subtext }]}>
                     {strongsData.transliteration}
-                  </Text>
+                  </MixedText>
 
                   {/* Small accent rule — closes off the identity block */}
                   <View style={[styles.identityRule, { backgroundColor: colors.primary }]} />
@@ -1063,57 +1064,57 @@ and redownload the file fully.`}
                   {/* pronunciation */}
                   {strongsData.pronunciation && strongsData.pronunciation !== '—' && (
                     <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.primary }]}>pronunciation</Text>
-                      <Text style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
+                      <MixedText style={[styles.detailLabel, { color: colors.primary }]}>pronunciation</MixedText>
+                      <MixedText style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
                         {strongsData.pronunciation}
-                      </Text>
+                      </MixedText>
                     </View>
                   )}
 
                   {/* derivation / part of speech */}
                   {strongsData.extraInfo && strongsData.extraInfo !== '—' && (
                     <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.primary }]}>
+                      <MixedText style={[styles.detailLabel, { color: colors.primary }]}>
                         {strongsData.isGreek ? 'derivation' : 'part of speech'}
-                      </Text>
-                      <Text style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
+                      </MixedText>
+                      <MixedText style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
                         {strongsData.extraInfo}
-                      </Text>
+                      </MixedText>
                     </View>
                   )}
 
                   {/* strongs def / meaning */}
                   <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: colors.primary }]}>
+                    <MixedText style={[styles.detailLabel, { color: colors.primary }]}>
                       {strongsData.isGreek ? 'strongs def' : 'meaning'}
-                    </Text>
-                    <Text style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
+                    </MixedText>
+                    <MixedText style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
                       {strongsData.definition || '—'}
-                    </Text>
+                    </MixedText>
                   </View>
 
                   {/* kjv def / usage */}
                   <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: colors.primary }]}>
+                    <MixedText style={[styles.detailLabel, { color: colors.primary }]}>
                       {strongsData.isGreek ? 'KJV def' : 'usage'}
-                    </Text>
-                    <Text style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
+                    </MixedText>
+                    <MixedText style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
                       {strongsData.secondaryDef || '—'}
-                    </Text>
+                    </MixedText>
                   </View>
 
                   {/* kjv translations */}
                   <View style={styles.detailRow}>
-                    <Text style={[styles.detailLabel, { color: colors.primary }]}>KJV translations</Text>
-                    <Text style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
+                    <MixedText style={[styles.detailLabel, { color: colors.primary }]}>KJV translations</MixedText>
+                    <MixedText style={[styles.detailValue, { color: colors.text, fontSize: sheetFontSize }]}>
                       {strongsData.translations || '—'}
-                    </Text>
+                    </MixedText>
                   </View>
 
                   {/* references list — as tappable pill chips */}
                   {strongsRawRefs ? (
                     <View style={styles.detailRow}>
-                      <Text style={[styles.detailLabel, { color: colors.primary }]}>references list</Text>
+                      <MixedText style={[styles.detailLabel, { color: colors.primary }]}>references list</MixedText>
                       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 2 }}>
                         {parseRefsString(strongsRawRefs).map((ref, idx) => (
                           <TouchableOpacity
@@ -1122,9 +1123,9 @@ and redownload the file fully.`}
                             activeOpacity={0.6}
                             style={[styles.refChip, { backgroundColor: colors.card, borderColor: colors.border }]}
                           >
-                            <Text style={[styles.refChipText, { color: colors.primary, fontSize: sheetFontSize - 3 }]}>
+                            <MixedText style={[styles.refChipText, { color: colors.primary, fontSize: sheetFontSize - 3 }]}>
                               {getBookName(ref.b)} {ref.c}:{ref.v}
-                            </Text>
+                            </MixedText>
                           </TouchableOpacity>
                         ))}
                       </View>
@@ -1135,9 +1136,9 @@ and redownload the file fully.`}
                 {/* ── VERSE CARDS ── */}
                 {strongsVerses.length > 0 && (
                   <View style={[styles.versesSection, { borderTopColor: colors.border }]}>
-                    <Text style={[styles.sectionTitle, { color: colors.primary, paddingHorizontal: 20, paddingTop: 20, marginBottom: 12 }]}>
+                    <MixedText style={[styles.sectionTitle, { color: colors.primary, paddingHorizontal: 20, paddingTop: 20, marginBottom: 12 }]}>
                       VERSES  ({strongsVerses.length})
-                    </Text>
+                    </MixedText>
                     {strongsVerses.map((vItem, idx) => (
                       <TouchableOpacity
                         key={`ctx-${idx}`}
@@ -1150,15 +1151,15 @@ and redownload the file fully.`}
                       >
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 7 }}>
                           <View style={[styles.refBadge, { backgroundColor: colors.glow }]}>
-                            <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '700' }}>
+                            <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, fontWeight: '700' }}>
                               {getBookName(vItem.book_id)} {vItem.chapter}:{vItem.verse}
-                            </Text>
+                            </MixedText>
                           </View>
                           <Ionicons name="arrow-forward-outline" size={13} color={colors.primary} style={{ marginLeft: 6 }} />
                         </View>
-                        <Text style={{ color: colors.text, fontSize: sheetFontSize - 2, lineHeight: sheetFontSize + 8 }} numberOfLines={3}>
+                        <MixedText style={{ color: colors.text, fontSize: sheetFontSize - 2, lineHeight: sheetFontSize + 8 }} numberOfLines={3}>
                           {vItem.tagged_text.replace(HTML_TAG_REGEX, '').replace(/<[HG]\d+>/g, '')}
-                        </Text>
+                        </MixedText>
                       </TouchableOpacity>
                     ))}
                   </View>

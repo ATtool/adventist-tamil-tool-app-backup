@@ -1,7 +1,9 @@
+import MixedText from '../MixedText.js';
 import React, { useEffect, useRef } from 'react';
 import { TouchableOpacity, StyleSheet, Platform, Text, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function BibleActionBar({
   colors,
@@ -15,6 +17,7 @@ export default function BibleActionBar({
   onConcordance,
   onExplanations
 }) {
+  const { typography } = useSettings();
   const slideAnim = useRef(new Animated.Value(100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -39,7 +42,7 @@ export default function BibleActionBar({
   const ActionBtn = ({ icon, text, onPress, highlight }) => (
     <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
       <Ionicons name={icon} size={24} color={highlight ? "#FF3B30" : "#FFD700"} />
-      <Text style={{ color: highlight ? "#FF3B30" : "#FFD700", fontSize: 11, fontWeight: 'bold', marginTop: 6 }}>{text}</Text>
+      <MixedText style={{ color: highlight ? "#FF3B30" : "#FFD700", fontSize: typography.caption.fontSize, fontWeight: 'bold', marginTop: 6 }}>{text}</MixedText>
     </TouchableOpacity>
   );
 

@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet,
@@ -70,7 +71,7 @@ const DICTIONARIES = [
 ];
 
 export default function DictionaryScreen({ onClose }) {
-  const { colors, isDark, appFontSize, hapticsEnabled } = useSettings();
+  const { colors, isDark, appFontSize, typography, hapticsEnabled } = useSettings();
   const navigation = useNavigation();
 
   const [activeDict, setActiveDict] = useState(null);
@@ -614,13 +615,13 @@ export default function DictionaryScreen({ onClose }) {
     return parts.map((part, i) => {
       if (part.type === 'text') return part.value;
       return (
-        <Text
+        <MixedText
           key={i}
           style={{ color: activeDict?.accent?.[0] || colors.primary, fontWeight: '600' }}
           onPress={() => fetchAndShowVerse(part.value)}
         >
           {part.value}
-        </Text>
+        </MixedText>
       );
     });
   };
@@ -633,9 +634,9 @@ export default function DictionaryScreen({ onClose }) {
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 2 }]}>
+            <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>
               Dictionary
-            </Text>
+            </MixedText>
           </View>
           <TouchableOpacity 
             onPress={() => setHistoryModalVisible(true)} 
@@ -648,9 +649,9 @@ export default function DictionaryScreen({ onClose }) {
         <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.selectionContent}>
           <View style={[styles.introBanner, { borderColor: colors.border, backgroundColor: colors.card }]}>
             <Ionicons name="information-circle-outline" size={24} color={colors.primary} style={{ marginRight: 12 }} />
-            <Text style={[styles.introText, { color: colors.subtext, fontSize: appFontSize }]}>
+            <MixedText style={[styles.introText, { color: colors.subtext, fontSize: typography.body.fontSize }]}>
               Choose a dictionary
-            </Text>
+            </MixedText>
           </View>
 
           {DICTIONARIES.map(dict => (
@@ -661,12 +662,12 @@ export default function DictionaryScreen({ onClose }) {
                   <Ionicons name={dict.icon} size={26} color="#fff" />
                 </LinearGradient>
                 <View style={styles.cardBody}>
-                  <Text style={[styles.cardName, { color: colors.text, fontSize: appFontSize + 1 }]}>
+                  <MixedText style={[styles.cardName, { color: colors.text, fontSize: typography.title.fontSize }]}>
                     {dict.name}
-                  </Text>
-                  <Text style={[styles.cardSubtitle, { color: colors.subtext, fontSize: appFontSize - 1 }]}>
+                  </MixedText>
+                  <MixedText style={[styles.cardSubtitle, { color: colors.subtext, fontSize: typography.subtext.fontSize }]}>
                     {dict.subtitle}
-                  </Text>
+                  </MixedText>
                   {!dict.isOnline && downloadingId === dict.id && (
                     <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
                       <View
@@ -687,14 +688,14 @@ export default function DictionaryScreen({ onClose }) {
                     size={16}
                     color={downloadStatus[dict.id] ? dict.accent[0] : colors.subtext}
                   />
-                  <Text
+                  <MixedText
                     style={[
                       styles.statusLabel,
-                      { color: downloadStatus[dict.id] ? dict.accent[0] : colors.subtext, fontSize: appFontSize - 2, marginLeft: 4 }
+                      { color: downloadStatus[dict.id] ? dict.accent[0] : colors.subtext, fontSize: typography.subtext.fontSize, marginLeft: 4 }
                     ]}
                   >
                     {downloadingId === dict.id ? `${Math.round(downloadProgress * 100)}%` : downloadStatus[dict.id] ? (dict.isOnline ? 'Visit' : 'Ready') : 'Download'}
-                  </Text>
+                  </MixedText>
                 </View>
               </View>
             </TouchableOpacity>
@@ -713,9 +714,9 @@ export default function DictionaryScreen({ onClose }) {
                 <Ionicons name="chevron-back" size={24} color={colors.primary} />
               </TouchableOpacity>
               <View style={styles.headerCenter}>
-                <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 2 }]}>
+                <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>
                   History ({history.length})
-                </Text>
+                </MixedText>
               </View>
               <TouchableOpacity 
                 onPress={clearHistory} 
@@ -730,9 +731,9 @@ export default function DictionaryScreen({ onClose }) {
                 <View style={[styles.emptyIconWrap, { backgroundColor: colors.card }]}>
                   <Ionicons name="time-outline" size={48} color={colors.subtext} />
                 </View>
-                <Text style={[{ color: colors.subtext, fontSize: appFontSize, marginTop: 16 }]}>
+                <MixedText style={[{ color: colors.subtext, fontSize: typography.body.fontSize, marginTop: 16 }]}>
                   No history
-                </Text>
+                </MixedText>
               </View>
             ) : (
               <FlatList
@@ -752,12 +753,12 @@ export default function DictionaryScreen({ onClose }) {
                   >
                     <View style={[styles.resultDot, { backgroundColor: colors.accent }]} />
                     <View style={styles.resultBody}>
-                      <Text style={[{ color: colors.text, fontSize: appFontSize, fontWeight: '600' }]}>
+                      <MixedText style={[{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: '600' }]}>
                         {item.word}
-                      </Text>
-                      <Text style={[{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 4 }]}>
+                      </MixedText>
+                      <MixedText style={[{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 4 }]}>
                         {item.dict}
-                      </Text>
+                      </MixedText>
                     </View>
                     <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
                   </TouchableOpacity>
@@ -781,9 +782,9 @@ export default function DictionaryScreen({ onClose }) {
             <Ionicons name="chevron-back" size={24} color={colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
-            <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 1 }]}>
+            <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>
               {activeDict.name}
-            </Text>
+            </MixedText>
           </View>
         </View>
 
@@ -837,16 +838,16 @@ export default function DictionaryScreen({ onClose }) {
                   }
                 ]}
               >
-                <Text
+                <MixedText
                   style={{
                     color: selectedLetter === letter ? '#000' : colors.text,
-                    fontSize: appFontSize + 4,
+                    fontSize: typography.h2.fontSize,
                     fontWeight: '700',
                     letterSpacing: 0.5
                   }}
                 >
                   {letter}
-                </Text>
+                </MixedText>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -854,9 +855,9 @@ export default function DictionaryScreen({ onClose }) {
           {results.length > 0 && (
             <View style={[styles.countRow, { borderBottomColor: colors.border }]}>
               <View style={[styles.countBadge, { backgroundColor: colors.accent }]}>
-                <Text style={{ color: colors.background, fontWeight: '600', fontSize: appFontSize - 1 }}>
+                <MixedText style={{ color: colors.background, fontWeight: '600', fontSize: typography.subtext.fontSize }}>
                   {results.length} result{results.length !== 1 ? 's' : ''}
-                </Text>
+                </MixedText>
               </View>
             </View>
           )}
@@ -870,9 +871,9 @@ export default function DictionaryScreen({ onClose }) {
               <View style={[styles.emptyIconGrad, { backgroundColor: colors.card }]}>
                 <Ionicons name="search-outline" size={44} color={colors.subtext} />
               </View>
-              <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 12 }}>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, marginTop: 12 }}>
                 No results
-              </Text>
+              </MixedText>
             </View>
           ) : (
             <FlatList
@@ -889,12 +890,12 @@ export default function DictionaryScreen({ onClose }) {
                 >
                   <View style={[styles.resultDot, { backgroundColor: activeDict.accent[0] }]} />
                   <View style={styles.resultBody}>
-                    <Text style={[{ color: colors.text, fontSize: appFontSize, fontWeight: '600' }]}>
+                    <MixedText style={[{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: '600' }]}>
                       {item.word}
-                    </Text>
-                    <Text style={[{ color: colors.subtext, fontSize: appFontSize - 1, marginTop: 4 }]} numberOfLines={1}>
+                    </MixedText>
+                    <MixedText style={[{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 4 }]} numberOfLines={1}>
                       {item.definition}
-                    </Text>
+                    </MixedText>
                   </View>
                   <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
                 </TouchableOpacity>
@@ -913,9 +914,9 @@ export default function DictionaryScreen({ onClose }) {
       <View style={[styles.readToolbar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
         <TouchableOpacity onPress={handleBack} style={styles.readBackBtn}>
           <Ionicons name="chevron-back" size={24} color={colors.primary} />
-          <Text style={[styles.readBackText, { color: colors.primary, fontSize: appFontSize }]}>
+          <MixedText style={[styles.readBackText, { color: colors.primary, fontSize: typography.body.fontSize }]}>
             Back
-          </Text>
+          </MixedText>
         </TouchableOpacity>
 
         <View style={styles.readToolGroup}>
@@ -952,9 +953,9 @@ export default function DictionaryScreen({ onClose }) {
             {isTranslating ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Text style={{ fontSize: 16, fontWeight: '700', color: translationModalVisible ? colors.background : colors.primary }}>
+              <MixedText style={{ fontSize: typography.body.fontSize, fontWeight: '700', color: translationModalVisible ? colors.background : colors.primary }}>
                 த
-              </Text>
+              </MixedText>
             )}
           </TouchableOpacity>
 
@@ -962,14 +963,14 @@ export default function DictionaryScreen({ onClose }) {
             onPress={() => setReadingFontSize(Math.min(readingFontSize + 2, appFontSize + 8))}
             style={[styles.toolPill, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
           >
-            <Text style={{ fontSize: 20, fontWeight: '700', color: colors.primary }}>A+</Text>
+            <MixedText style={{ fontSize: typography.body.fontSize, fontWeight: '700', color: colors.primary }}>A+</MixedText>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => setReadingFontSize(Math.max(readingFontSize - 2, appFontSize))}
             style={[styles.toolPill, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
           >
-            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.primary }}>A-</Text>
+            <MixedText style={{ fontSize: typography.body.fontSize, fontWeight: '700', color: colors.primary }}>A-</MixedText>
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -988,21 +989,21 @@ export default function DictionaryScreen({ onClose }) {
             colors={[colors.card, colors.background]}
             style={styles.wordGradArea}
           >
-            <Text style={[styles.wordTitle, { color: colors.text, fontSize: readingFontSize + 4 }]}>
+            <MixedText style={[styles.wordTitle, { color: colors.text, fontSize: readingFontSize + 4 }]}>
               {selectedWord.word}
-            </Text>
+            </MixedText>
             <View style={[styles.dictChip, { backgroundColor: activeDict.accent[0] }]}>
-              <Text style={{ color: '#fff', fontWeight: '600', fontSize: appFontSize - 2 }}>
+              <MixedText style={{ color: '#fff', fontWeight: '600', fontSize: typography.subtext.fontSize }}>
                 {activeDict.name}
-              </Text>
+              </MixedText>
             </View>
           </LinearGradient>
         </View>
 
         <View style={[styles.definitionPad]}>
-          <Text style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.75 }}>
+          <MixedText style={{ color: colors.text, fontSize: readingFontSize, lineHeight: readingFontSize * 1.75 }}>
             {renderDefinitionText(selectedWord.definition)}
-          </Text>
+          </MixedText>
         </View>
       </ScrollView>
 
@@ -1020,18 +1021,18 @@ export default function DictionaryScreen({ onClose }) {
               end={{ x: 1, y: 0 }}
               style={styles.translationCardTop}
             >
-              <Text style={styles.translationRefLabel}>
+              <MixedText style={[styles.translationRefLabel, { fontSize: typography.h2.fontSize }]}>
                 Tamil Translation
-              </Text>
+              </MixedText>
               <TouchableOpacity onPress={() => setTranslationModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#fff" />
               </TouchableOpacity>
             </LinearGradient>
 
             <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-              <Text style={{ color: colors.text, fontSize: appFontSize + 2, lineHeight: (appFontSize + 2) * 1.8, fontFamily: 'Tamil003' }}>
+              <MixedText style={{ color: colors.text, fontSize: appFontSize + 2, lineHeight: (appFontSize + 2) * 1.8, fontFamily: 'Tamil003' }}>
                 {translatedText}
-              </Text>
+              </MixedText>
             </ScrollView>
 
             <View style={[styles.translationFooter, { borderTopColor: colors.border }]}>
@@ -1039,7 +1040,7 @@ export default function DictionaryScreen({ onClose }) {
                 onPress={() => setTranslationModalVisible(false)}
                 style={[styles.translationCloseBtn, { backgroundColor: activeDict.accent[0] }]}
               >
-                <Text style={{ color: '#fff', fontWeight: '700', fontSize: appFontSize }}>Done</Text>
+                <MixedText style={{ color: '#fff', fontWeight: '700', fontSize: typography.body.fontSize }}>Done</MixedText>
               </TouchableOpacity>
             </View>
           </View>
@@ -1060,22 +1061,22 @@ export default function DictionaryScreen({ onClose }) {
               end={{ x: 1, y: 0 }}
               style={styles.verseCardTop}
             >
-              <Text style={styles.verseRefLabel}>
+              <MixedText style={[styles.verseRefLabel, { fontSize: typography.h2.fontSize }]}>
                 {modalVerseRef}
-              </Text>
+              </MixedText>
             </LinearGradient>
 
             <ScrollView style={{ maxHeight: 350 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: 20 }}>
-              <Text style={{ color: colors.text, fontSize: appFontSize, lineHeight: appFontSize * 1.75, fontStyle: 'italic' }}>
+              <MixedText style={{ color: colors.text, fontSize: appFontSize, lineHeight: appFontSize * 1.75, fontStyle: 'italic' }}>
                 {modalVerseText}
-              </Text>
+              </MixedText>
             </ScrollView>
 
             <TouchableOpacity
               onPress={() => setVerseModalVisible(false)}
               style={[styles.verseCloseBtn, { borderTopColor: colors.border }]}
             >
-              <Text style={{ color: colors.subtext, fontWeight: '600', fontSize: appFontSize - 1 }}>Close</Text>
+              <MixedText style={{ color: colors.subtext, fontWeight: '600', fontSize: typography.body.fontSize }}>Close</MixedText>
             </TouchableOpacity>
           </View>
         </View>

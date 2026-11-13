@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +13,8 @@ const ACCENT_VERSE = '#2ECC71';
 
 export default function StudyScreen() {
   const navigation = useNavigation();
-  const { colors, appFontSize } = useSettings();
+  // Added typography here!
+  const { colors, typography } = useSettings();
 
   // --- ANIMATION VALUES ---
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -47,7 +49,7 @@ export default function StudyScreen() {
       
       {/* HEADER */}
       <Animated.View style={[styles.header, { borderBottomColor: colors.border, opacity: headerOpacity }]}>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>Bible Tool & Study notes</Text>
+        <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerTitle, { color: colors.text, fontSize: typography.display.fontSize - 4 }]} allowFontScaling={false}>Bible Tool & Study notes</MixedText>
       </Animated.View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -63,8 +65,8 @@ export default function StudyScreen() {
               <Ionicons name="book" size={22} color={colors.primary} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Bible Dictionary</Text>
-              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வேதாகம அகராதி</Text>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Bible Dictionary</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வேதாகம அகராதி</MixedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
@@ -81,14 +83,14 @@ export default function StudyScreen() {
               <Ionicons name="search" size={22} color={ACCENT_CONC} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Concordance</Text>
-              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வார்த்தை விளக்கம்</Text>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Concordance</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வார்த்தை விளக்கம்</MixedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
         </Animated.View>
 
-        {/* NEW: Bible Verse Explanations Card */}
+        {/* Bible Verse Explanations Card */}
         <Animated.View style={{ opacity: cardOpacities[2], transform: [{ translateY: cardAnims[2] }] }}>
           <TouchableOpacity 
             activeOpacity={0.75}
@@ -99,8 +101,8 @@ export default function StudyScreen() {
               <Ionicons name="library" size={22} color={ACCENT_VERSE} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.cardTitle, { color: colors.text, fontSize: 16 }]} allowFontScaling={false}>Verse Explanations</Text>
-              <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வசன விளக்கம்</Text>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Verse Explanations</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வசன விளக்கம்</MixedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
           </TouchableOpacity>
@@ -114,7 +116,7 @@ export default function StudyScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { padding: 20, borderBottomWidth: 1 },
-  headerTitle: { fontSize: 22, fontWeight: 'bold' },
+  headerTitle: { fontWeight: 'bold' },
   scrollContent: { padding: 15, paddingBottom: 40 },
   card: {
     flexDirection: 'row',
@@ -130,7 +132,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   iconContainer: { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
-  textContainer: { flex: 1 },
+  textContainer: { flex: 1, paddingRight: 10 },
   cardTitle: { fontWeight: 'bold', marginBottom: 3, includeFontPadding: false },
   cardSub: { includeFontPadding: false }
 });

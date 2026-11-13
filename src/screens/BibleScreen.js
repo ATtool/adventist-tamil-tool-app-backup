@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Share, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,7 +22,7 @@ import BibleSearch from '../components/bible/BibleSearch';
 
 export default function BibleScreen() {
   const navigation = useNavigation(); // Hooking up navigation so we can jump to Concordance & Explanations
-  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion, bibleFontSize, bibleLineHeight, bibleLetterSpacing } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion, bibleFontSize, bibleLineHeight, bibleLetterSpacing, typography } = useSettings();
 
   const [activeBookId, setActiveBookId] = useState(1);
   const [activeChapter, setActiveChapter] = useState(1);
@@ -344,9 +345,9 @@ export default function BibleScreen() {
             }}
           >
             <Ionicons name="arrow-undo" size={20} color={isDark ? '#000' : '#FFF'} />
-            <Text style={{ color: isDark ? '#000' : '#FFF', fontWeight: 'bold', marginLeft: 8, fontSize: 14 }}>
+            <MixedText numberOfLines={1} adjustsFontSizeToFit style={{ color: isDark ? '#000' : '#FFF', fontWeight: 'bold', marginLeft: 8, fontSize: typography.body.fontSize, flexShrink: 1 }}>
               Back to {getBookName(jumpHistory[jumpHistory.length - 1].bookId)} {jumpHistory[jumpHistory.length - 1].chapter}:{jumpHistory[jumpHistory.length - 1].verse}
-            </Text>
+            </MixedText>
           </TouchableOpacity>
 
           <View style={{ width: 1, backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.3)', marginVertical: 8 }} />

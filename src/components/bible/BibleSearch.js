@@ -1,3 +1,4 @@
+import MixedText from '../MixedText.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Dimensions, TextInput, FlatList, ActivityIndicator, Keyboard, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,7 +15,7 @@ import { getSafeDb, getTableNameSync } from '../../utils/DatabaseManager';
 const { width } = Dimensions.get('window');
 
 export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
-  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion, typography } = useSettings();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,7 +88,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
     const parts = text.split(regex);
     
     return parts.map((part, index) => 
-      regex.test(part) ? <Text key={index} style={{ color: '#FF3B30', fontWeight: 'bold' }}>{part}</Text> : <Text key={index}>{part}</Text>
+      regex.test(part) ? <MixedText key={index} style={{ color: '#FF3B30', fontWeight: 'bold' }}>{part}</MixedText> : <MixedText key={index}>{part}</MixedText>
     );
   }
 
@@ -195,18 +196,18 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
           setTimeout(() => onJumpToVerse(item.book_id, item.chapter, item.verse, searchQuery.trim()), 300);
         }}
       >
-        <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize, marginBottom: 5 }}>
+        <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize, marginBottom: 5 }}>
           {getBookName(item.book_id)} {item.chapter}:{item.verse}
-        </Text>
+        </MixedText>
         {(bibleLanguage === 'tamil' || bibleLanguage === 'both') && item.text_ta ? (
-          <Text style={{ color: colors.text, fontSize: appFontSize - 1, fontFamily: 'Tamil003', marginBottom: 4 }} numberOfLines={3}>
+          <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginBottom: 4 }} numberOfLines={3}>
             {highlightText(item.text_ta, searchQuery.trim())}
-          </Text>
+          </MixedText>
         ) : null}
         {(bibleLanguage === 'english' || bibleLanguage === 'both') && item.text_en ? (
-          <Text style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: appFontSize - 2 }} numberOfLines={3}>
+          <MixedText style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: typography.subtext.fontSize }} numberOfLines={3}>
             {highlightText(item.text_en, searchQuery.trim())}
-          </Text>
+          </MixedText>
         ) : null}
       </TouchableOpacity>
     );
@@ -231,7 +232,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
               
               <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TextInput 
-                  style={{ flex: 1, color: colors.text, fontSize: appFontSize, paddingVertical: 10, paddingHorizontal: 15 }}
+                  style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, paddingVertical: 10, paddingHorizontal: 15 }}
                   placeholder="Search Bible..."
                   placeholderTextColor={colors.subtext}
                   value={searchQuery}
@@ -254,7 +255,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
 
             <View style={[styles.filterContainer, { borderBottomColor: colors.border }]}>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 15, alignItems: 'center' }}>
-                <Text style={{ color: colors.subtext, fontWeight: 'bold', marginRight: 15, fontSize: 12 }}>SCOPE:</Text>
+                <MixedText style={{ color: colors.subtext, fontWeight: 'bold', marginRight: 15, fontSize: typography.subtext.fontSize }}>SCOPE:</MixedText>
                 
                 {['all', 'ot', 'nt', 'custom'].map(scope => (
                   <TouchableOpacity 
@@ -262,16 +263,16 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
                     style={[styles.filterChip, { backgroundColor: searchScope === scope ? colors.primary : colors.card, borderColor: searchScope === scope ? colors.primary : colors.border }]} 
                     onPress={() => { triggerHaptic(); setSearchScope(scope); if (scope === 'custom') setShowCustomPicker(true); }}
                   >
-                    <Text style={{ color: searchScope === scope ? (isDark ? '#000' : '#FFF') : colors.text, fontWeight: 'bold', fontSize: 12, textTransform: 'uppercase' }}>
+                    <MixedText style={{ color: searchScope === scope ? (isDark ? '#000' : '#FFF') : colors.text, fontWeight: 'bold', fontSize: typography.subtext.fontSize, textTransform: 'uppercase' }}>
                       {scope === 'all' ? 'Whole Bible' : scope === 'ot' ? 'Old Testament' : scope === 'nt' ? 'New Testament' : 'Custom'}
-                    </Text>
+                    </MixedText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             </View>
 
             {isSearching ? (
-              <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /><Text style={{ color: colors.primary, marginTop: 10 }}>Searching...</Text></View>
+              <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /><MixedText style={{ color: colors.primary, marginTop: 10 }}>Searching...</MixedText></View>
             ) : results.length > 0 ? (
               <FlatList
                 data={results}
@@ -279,18 +280,18 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
                 renderItem={renderResultItem}
                 contentContainerStyle={{ padding: 15, paddingBottom: 100 }}
                 keyboardShouldPersistTaps="handled"
-                ListHeaderComponent={<Text style={{ color: colors.subtext, marginBottom: 15, fontWeight: 'bold' }}>Found {results.length} matches</Text>}
+                ListHeaderComponent={<MixedText style={{ color: colors.subtext, marginBottom: 15, fontWeight: 'bold' }}>Found {results.length} matches</MixedText>}
               />
             ) : (
               <View style={{ flex: 1 }}>
                 {!isSearching && recentSearches.length > 0 ? (
                   <View style={{ padding: 20 }}>
-                    <Text style={{ color: colors.subtext, fontWeight: 'bold', marginBottom: 15, fontSize: 12 }}>RECENT SEARCHES</Text>
+                    <MixedText style={{ color: colors.subtext, fontWeight: 'bold', marginBottom: 15, fontSize: typography.subtext.fontSize }}>RECENT SEARCHES</MixedText>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
                       {recentSearches.map((s, idx) => (
                         <View key={idx} style={[styles.historyChip, { backgroundColor: colors.card, borderColor: colors.border }]}>
                           <TouchableOpacity onPress={() => executeSearch(s)} style={{ paddingVertical: 8, paddingLeft: 12, paddingRight: 6 }}>
-                            <Text style={{ color: colors.text, fontSize: appFontSize - 2 }}>{s}</Text>
+                            <MixedText style={{ color: colors.text, fontSize: typography.subtext.fontSize }}>{s}</MixedText>
                           </TouchableOpacity>
                           <TouchableOpacity onPress={() => removeHistoryItem(s)} style={{ paddingVertical: 8, paddingRight: 10, paddingLeft: 4 }}>
                             <Ionicons name="close" size={16} color={colors.subtext} />
@@ -302,7 +303,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
                 ) : (
                   <View style={styles.center}>
                     <Ionicons name="search" size={80} color={colors.border} />
-                    <Text style={{ color: colors.subtext, marginTop: 15, fontSize: appFontSize }}>Enter a word or phrase to search.</Text>
+                    <MixedText style={{ color: colors.subtext, marginTop: 15, fontSize: typography.body.fontSize }}>Enter a word or phrase to search.</MixedText>
                   </View>
                 )}
               </View>
@@ -316,9 +317,9 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
             <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFillObject} />
             <View style={[styles.bottomSheet, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
               <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
-                <TouchableOpacity onPress={() => { triggerHaptic(); setSelectedBooks([]); }} style={{ padding: 5 }}><Text style={{ color: colors.primary, fontWeight: 'bold' }}>Clear</Text></TouchableOpacity>
-                <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Select Books</Text>
-                <TouchableOpacity onPress={() => { triggerHaptic(); setShowCustomPicker(false); }} style={{ padding: 5 }}><Text style={{ color: colors.primary, fontWeight: 'bold' }}>Done</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => { triggerHaptic(); setSelectedBooks([]); }} style={{ padding: 5 }}><MixedText style={{ color: colors.primary, fontWeight: 'bold' }}>Clear</MixedText></TouchableOpacity>
+                <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Select Books</MixedText>
+                <TouchableOpacity onPress={() => { triggerHaptic(); setShowCustomPicker(false); }} style={{ padding: 5 }}><MixedText style={{ color: colors.primary, fontWeight: 'bold' }}>Done</MixedText></TouchableOpacity>
               </View>
               <FlatList
                 data={booksData}
@@ -329,9 +330,9 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
                   const isSelected = selectedBooks.includes(item.id);
                   return (
                     <TouchableOpacity style={[styles.bookCheckItem, { borderBottomColor: colors.border }]} onPress={() => toggleCustomBook(item.id)}>
-                      <Text style={{ color: isSelected ? colors.primary : colors.text, fontSize: appFontSize, fontWeight: isSelected ? 'bold' : 'normal', fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil003' }}>
+                      <MixedText style={{ color: isSelected ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontWeight: isSelected ? 'bold' : 'normal', fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil003' }}>
                         {bibleLanguage === 'english' ? item.name_en : item.name_ta}
-                      </Text>
+                      </MixedText>
                       {isSelected ? <Ionicons name="checkmark-circle" size={24} color={colors.primary} /> : <Ionicons name="ellipse-outline" size={24} color={colors.subtext} />}
                     </TouchableOpacity>
                   );

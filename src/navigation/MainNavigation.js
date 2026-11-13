@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useRef, useEffect } from 'react';
 import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -55,7 +56,7 @@ const linking = {
 
 // --- CUSTOM TAB BAR ---
 function CustomTabBar({ state, descriptors, navigation, insets }) {
-  const { colors, hapticsEnabled } = useSettings();
+  const { colors, hapticsEnabled, typography } = useSettings();
   const { width } = useWindowDimensions();
   
   const PRIME_YELLOW = '#FFD700';
@@ -129,9 +130,13 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 12 }}
           >
             <Ionicons name={iconName} size={isFocused ? 26 : 24} color={isFocused ? PRIME_YELLOW : NEON_BLUE} />
-            <Text style={{ color: isFocused ? PRIME_YELLOW : NEON_BLUE, fontSize: 10, fontWeight: isFocused ? 'bold' : '600', marginTop: 5 }}>
+            <MixedText 
+              numberOfLines={1} 
+              adjustsFontSizeToFit 
+              style={{ color: isFocused ? PRIME_YELLOW : NEON_BLUE, fontSize: typography.caption.fontSize - 1, fontWeight: isFocused ? 'bold' : '600', marginTop: 5, includeFontPadding: false }}
+            >
               {route.name}
-            </Text>
+            </MixedText>
           </TouchableOpacity>
         );
       })}

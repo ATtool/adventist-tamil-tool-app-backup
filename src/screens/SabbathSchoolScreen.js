@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Modal, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -35,7 +36,7 @@ const BOOK_MAP = {
 };
 
 export default function SabbathSchoolScreen() {
-  const { colors, appFontSize, isDark, hapticsEnabled } = useSettings();
+  const { colors, appFontSize, isDark, hapticsEnabled, typography } = useSettings();
   const navigation = useNavigation();
   
   const [quarterData, setQuarterData] = useState(null);
@@ -311,9 +312,9 @@ export default function SabbathSchoolScreen() {
         return (
           <TouchableOpacity key={index} onPress={() => handleParagraphPress(index)} onLongPress={() => toggleHighlight(index)} delayLongPress={500} activeOpacity={0.9}>
             <View style={[styles.memoryVerseBox, { backgroundColor: isHighlighted ? 'rgba(255, 215, 0, 0.15)' : colors.card, borderLeftColor: colors.primary }]}>
-              <Text style={{ color: colors.text, fontSize: readerFontSize - 2, fontFamily: 'Tamil003', lineHeight: readerFontSize * 1.6 }}>
+              <MixedText style={{ color: colors.text, fontSize: readerFontSize - 2, fontFamily: 'Tamil003', lineHeight: readerFontSize * 1.6 }}>
                 {blockText}
-              </Text>
+              </MixedText>
             </View>
           </TouchableOpacity>
         );
@@ -326,7 +327,7 @@ export default function SabbathSchoolScreen() {
       if (parts.length > 1) {
         let i = 0;
         while (i < parts.length) {
-          if (parts[i]) elements.push(<Text key={`text-${i}`}>{parts[i].replace(/\*\*/g, '')}</Text>);
+          if (parts[i]) elements.push(<MixedText key={`text-${i}`}>{parts[i].replace(/\*\*/g, '')}</MixedText>);
           
           if (i + 3 < parts.length) {
             let bookMatch = parts[i+1];
@@ -343,9 +344,9 @@ export default function SabbathSchoolScreen() {
             const fullVerseRef = `${bookMatch} ${chapMatch}:${verseMatch}`;
 
             elements.push(
-              <Text key={`verse-${i}`} style={{ color: '#30D158', fontFamily: 'Tamil003' }} onPress={() => handleVerseClick(fullVerseRef)}>
+              <MixedText key={`verse-${i}`} style={{ color: '#30D158', fontFamily: 'Tamil003' }} onPress={() => handleVerseClick(fullVerseRef)}>
                 {fullVerseRef}
-              </Text>
+              </MixedText>
             );
             i += 3;
           }
@@ -355,7 +356,7 @@ export default function SabbathSchoolScreen() {
         const boldParts = paragraph.split(/(\*\*.*?\*\*)/g);
         elements = boldParts.map((part, i) => {
           if (part.startsWith('**') && part.endsWith('**')) {
-            return <Text key={i} style={{ fontFamily: 'Tamil003', color: colors.primary }}>{part.replace(/\*\*/g, '')}</Text>;
+            return <MixedText key={i} style={{ fontFamily: 'Tamil003', color: colors.primary }}>{part.replace(/\*\*/g, '')}</MixedText>;
           }
           return part.replace(/_([^_]+)_/g, '$1'); 
         });
@@ -364,9 +365,9 @@ export default function SabbathSchoolScreen() {
       return (
         <TouchableOpacity key={index} onPress={() => handleParagraphPress(index)} onLongPress={() => toggleHighlight(index)} delayLongPress={500} activeOpacity={0.9}>
           <View style={{ backgroundColor: isHighlighted ? 'rgba(255, 215, 0, 0.15)' : 'transparent', borderRadius: 8, padding: isHighlighted ? 5 : 0, marginBottom: 15 }}>
-            <Text style={{ color: colors.text, fontSize: readerFontSize, fontFamily: 'Tamil003', lineHeight: readerFontSize * 1.8 }}>
+            <MixedText style={{ color: colors.text, fontSize: readerFontSize, fontFamily: 'Tamil003', lineHeight: readerFontSize * 1.8 }}>
               {elements}
-            </Text>
+            </MixedText>
           </View>
         </TouchableOpacity>
       );
@@ -407,17 +408,17 @@ export default function SabbathSchoolScreen() {
         {activeTab !== 0 && (
           <TouchableOpacity onPress={() => setSelectedDay(null)} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={20} color={colors.subtext} />
-            <Text style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>பட்டியலுக்கு திரும்பு</Text>
+            <MixedText style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>பட்டியலுக்கு திரும்பு</MixedText>
           </TouchableOpacity>
         )}
 
-        <Text style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 10, textAlign: 'center' }}>
+        <MixedText style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 10, textAlign: 'center' }}>
           {isInsideStory ? rawTitle : `பாடம் ${parseInt(dayKey)} : ${rawTitle}`}
-        </Text>
+        </MixedText>
         
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 10, borderBottomWidth: 1, borderColor: colors.border }}>
-          <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{DAY_NAMES[dayKey]}</Text>
-          {!!rawDate && <Text style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{rawDate}</Text>}
+          <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{DAY_NAMES[dayKey]}</MixedText>
+          {!!rawDate && <MixedText style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{rawDate}</MixedText>}
         </View>
 
         {renderBookText(dataToRender)}
@@ -425,9 +426,9 @@ export default function SabbathSchoolScreen() {
         {/* ONLY append inside story at the bottom if we are on Tab 0 (Today) and it's Friday */}
         {activeTab === 0 && isFriday && insideStory && (
           <View style={[styles.missionStoryBox, { borderColor: colors.border }]}>
-             <Text style={{ color: colors.primary, fontSize: readerFontSize + 2, fontFamily: 'Tamil003', marginBottom: 15, textAlign: 'center' }}>
+             <MixedText style={{ color: colors.primary, fontSize: readerFontSize + 2, fontFamily: 'Tamil003', marginBottom: 15, textAlign: 'center' }}>
                மிஷன் கதை (Inside Story)
-             </Text>
+             </MixedText>
              {renderBookText(insideStory)}
           </View>
         )}
@@ -438,13 +439,13 @@ export default function SabbathSchoolScreen() {
             disabled={isPrevDisabled} onPress={handlePrev}
           >
             <Ionicons name="chevron-back" size={20} color={colors.text} />
-            <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003' }}>முந்தைய</Text>
+            <MixedText style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003' }}>முந்தைய</MixedText>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border, opacity: isNextDisabled ? 0.3 : 1 }]} 
             disabled={isNextDisabled} onPress={handleNext}
           >
-            <Text style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003' }}>அடுத்த</Text>
+            <MixedText style={{ color: colors.text, marginRight: 5, fontFamily: 'Tamil003' }}>அடுத்த</MixedText>
             <Ionicons name="chevron-forward" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
@@ -459,17 +460,17 @@ export default function SabbathSchoolScreen() {
         {activeTab === 2 && (
           <TouchableOpacity onPress={() => setSelectedWeek(null)} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={20} color={colors.subtext} />
-            <Text style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>காலாண்டுக்கு திரும்பு</Text>
+            <MixedText style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>காலாண்டுக்கு திரும்பு</MixedText>
           </TouchableOpacity>
         )}
 
         <View style={[styles.weekHeaderBox, { backgroundColor: colors.primary + '20' }]}>
-          <Text style={{ color: colors.primary, fontSize: appFontSize + 4, fontFamily: 'Tamil003', textAlign: 'center' }}>
+          <MixedText style={{ color: colors.primary, fontSize: typography.h1.fontSize, fontFamily: 'Tamil003', textAlign: 'center' }}>
             {weekData.info.title}
-          </Text>
-          <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginTop: 5 }}>
+          </MixedText>
+          <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginTop: 5 }}>
             {weekData.info.start_date} - {weekData.info.end_date}
-          </Text>
+          </MixedText>
         </View>
 
         <View style={{ marginTop: 20 }}>
@@ -486,10 +487,10 @@ export default function SabbathSchoolScreen() {
             
             return (
               <TouchableOpacity key={day} activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: '#BF5AF2' }]} onPress={() => setSelectedDay(day)}>
-                <View style={[styles.iconContainer, { backgroundColor: '#BF5AF222' }]}><Text style={{ color: '#BF5AF2', fontFamily: 'Tamil003', fontSize: 16 }}>{circleIconText}</Text></View>
+                <View style={[styles.iconContainer, { backgroundColor: '#BF5AF222' }]}><MixedText style={{ color: '#BF5AF2', fontFamily: 'Tamil003', fontSize: typography.title.fontSize }}>{circleIconText}</MixedText></View>
                 <View style={styles.textContainer}>
-                  <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }]} numberOfLines={1}>{rawTitle}</Text>
-                  <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>{DAY_NAMES[day]}</Text>
+                  <MixedText style={[styles.cardTitle, { color: colors.text, fontSize: typography.title.fontSize, fontFamily: 'Tamil003' }]} numberOfLines={1}>{rawTitle}</MixedText>
+                  <MixedText style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>{DAY_NAMES[day]}</MixedText>
                 </View>
                 <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
               </TouchableOpacity>
@@ -506,11 +507,11 @@ export default function SabbathSchoolScreen() {
         <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
           <TouchableOpacity onPress={() => setShowIntro(false)} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={20} color={colors.subtext} />
-            <Text style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>காலாண்டுக்கு திரும்பு</Text>
+            <MixedText style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>காலாண்டுக்கு திரும்பு</MixedText>
           </TouchableOpacity>
-          <Text style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 15, lineHeight: 30, textAlign: 'center' }}>
+          <MixedText style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 15, lineHeight: 30, textAlign: 'center' }}>
             அறிமுகம் (Introduction)
-          </Text>
+          </MixedText>
           {renderBookText(quarterData.quarter_info.introduction)}
         </Animated.View>
       );
@@ -523,8 +524,8 @@ export default function SabbathSchoolScreen() {
         <TouchableOpacity activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: colors.primary, marginBottom: 25 }]} onPress={() => setShowIntro(true)}>
           <View style={[styles.iconContainer, { backgroundColor: colors.glow }]}><Ionicons name="book" size={20} color={colors.primary} /></View>
           <View style={styles.textContainer}>
-            <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }]}>அறிமுகம்</Text>
-            <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>Introduction</Text>
+            <MixedText style={[styles.cardTitle, { color: colors.text, fontSize: typography.title.fontSize, fontFamily: 'Tamil003' }]}>அறிமுகம்</MixedText>
+            <MixedText style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>Introduction</MixedText>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
         </TouchableOpacity>
@@ -533,10 +534,10 @@ export default function SabbathSchoolScreen() {
           const wInfo = quarterData.lessons[week].info;
           return (
             <TouchableOpacity key={week} activeOpacity={0.75} style={[styles.card, { backgroundColor: colors.card, borderLeftColor: '#30D158' }]} onPress={() => setSelectedWeek(week)}>
-              <View style={[styles.iconContainer, { backgroundColor: '#30D15822' }]}><Text style={{ color: '#30D158', fontFamily: 'Tamil003', fontSize: 16 }}>{week}</Text></View>
+              <View style={[styles.iconContainer, { backgroundColor: '#30D15822' }]}><MixedText style={{ color: '#30D158', fontFamily: 'Tamil003', fontSize: typography.title.fontSize }}>{week}</MixedText></View>
               <View style={styles.textContainer}>
-                <Text style={[styles.cardTitle, { color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }]} numberOfLines={1}>{wInfo.title}</Text>
-                <Text style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>{wInfo.start_date} - {wInfo.end_date}</Text>
+                <MixedText style={[styles.cardTitle, { color: colors.text, fontSize: typography.title.fontSize, fontFamily: 'Tamil003' }]} numberOfLines={1}>{wInfo.title}</MixedText>
+                <MixedText style={[styles.cardSub, { color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }]}>{wInfo.start_date} - {wInfo.end_date}</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
             </TouchableOpacity>
@@ -558,9 +559,9 @@ export default function SabbathSchoolScreen() {
         </View>
         
         <View style={{ flex: 1, alignItems: 'center' }}>
-          <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003' }} numberOfLines={1}>
+          <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontFamily: 'Tamil003' }} numberOfLines={1}>
              {quarterData && !isExpired ? quarterData.quarter_info.info.title : "ஓய்வுநாள் பள்ளி"}
-          </Text>
+          </MixedText>
         </View>
 
         <View style={[styles.headerTools, { width: 80, justifyContent: 'flex-end' }]}>
@@ -569,7 +570,7 @@ export default function SabbathSchoolScreen() {
           </TouchableOpacity>
           {!isExpired && (
             <TouchableOpacity onPress={() => setShowFontSettings(true)} style={styles.iconBtn}>
-              <Text style={{ color: "#00F0FF", fontFamily: 'Tamil003', fontSize: 16 }}>Aa</Text>
+              <MixedText style={{ color: "#00F0FF", fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>Aa</MixedText>
             </TouchableOpacity>
           )}
         </View>
@@ -580,9 +581,9 @@ export default function SabbathSchoolScreen() {
         <View style={[styles.tabBar, { borderBottomColor: colors.border }]}>
           {['இன்று', 'இந்த வாரம்', 'காலாண்டு'].map((tab, index) => (
             <TouchableOpacity key={index} activeOpacity={0.7} style={[styles.tabButton, activeTab === index && { borderBottomColor: colors.primary, borderBottomWidth: 3 }]} onPress={() => handleTabPress(index)}>
-              <Text style={{ color: activeTab === index ? colors.primary : colors.subtext, fontFamily: activeTab === index ? 'Tamil003' : 'Tamil003', fontSize: appFontSize - 1 }}>
+              <MixedText style={{ color: activeTab === index ? colors.primary : colors.subtext, fontFamily: activeTab === index ? 'Tamil003' : 'Tamil003', fontSize: typography.body.fontSize }}>
                 {tab}
-              </Text>
+              </MixedText>
             </TouchableOpacity>
           ))}
         </View>
@@ -595,17 +596,17 @@ export default function SabbathSchoolScreen() {
         ) : isExpired ? (
           <View style={styles.center}>
              <Ionicons name="calendar-outline" size={60} color={colors.border} />
-             <Text style={{ color: colors.text, marginTop: 20, fontSize: appFontSize, fontFamily: 'Tamil003', textAlign: 'center', lineHeight: 28 }}>
+             <MixedText style={{ color: colors.text, marginTop: 20, fontSize: appFontSize, fontFamily: 'Tamil003', textAlign: 'center', lineHeight: 28 }}>
                புதிய காலாண்டு பாடங்கள் இன்னும் பதிவேற்றப்படவில்லை. (New quarter not available yet).{"\n"}
                தற்காலிகமாக மாற்று வழிகளை பயன்படுத்தவும். (Please use other options temporarily).
-             </Text>
+             </MixedText>
              <TouchableOpacity onPress={() => fetchData(true)} style={[styles.navBtn, { backgroundColor: colors.card, borderColor: colors.border, marginTop: 30, paddingHorizontal: 20 }]}>
                <Ionicons name="reload" size={20} color={colors.primary} />
-               <Text style={{ color: colors.primary, marginLeft: 10, fontFamily: 'Tamil003' }}>Reload / புதுப்பிக்கவும்</Text>
+               <MixedText style={{ color: colors.primary, marginLeft: 10, fontFamily: 'Tamil003' }}>Reload / புதுப்பிக்கவும்</MixedText>
              </TouchableOpacity>
           </View>
         ) : !quarterData ? (
-          <View style={styles.center}><Text style={{ color: colors.text, fontFamily: 'Tamil003' }}>தரவுகள் கிடைக்கவில்லை.</Text></View>
+          <View style={styles.center}><MixedText style={{ color: colors.text, fontFamily: 'Tamil003' }}>தரவுகள் கிடைக்கவில்லை.</MixedText></View>
         ) : (
           <>
             {activeTab === 0 && selectedDay && renderDayDetail(selectedWeek, selectedDay)}
@@ -622,20 +623,20 @@ export default function SabbathSchoolScreen() {
       <Modal visible={showFontSettings} transparent animationType="fade" onRequestClose={() => setShowFontSettings(false)}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowFontSettings(false)}>
           <TouchableOpacity style={[styles.fontCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]} activeOpacity={1}>
-            <Text style={{ color: colors.text, fontSize: 16, marginBottom: 20, fontFamily: 'Tamil003' }}>எழுத்து அளவு (Font Size)</Text>
+            <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, marginBottom: 20, fontFamily: 'Tamil003' }}>எழுத்து அளவு (Font Size)</MixedText>
             <View style={{ flexDirection: 'row', alignItems: 'center', width: '100%', justifyContent: 'center' }}>
-              <Text style={{ color: colors.subtext, fontSize: 14 }}>A</Text>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize }}>A</MixedText>
               <Slider
                 style={{ width: 180, height: 40, marginHorizontal: 10 }}
                 minimumValue={14} maximumValue={36} step={2}
                 value={readerFontSize} onValueChange={setReaderFontSize}
                 maximumTrackTintColor={colors.border} thumbTintColor="#00F0FF" minimumTrackTintColor="#00F0FF"
               />
-              <Text style={{ color: colors.text, fontSize: 24, fontFamily: 'Tamil003' }}>A</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h2.fontSize, fontFamily: 'Tamil003' }}>A</MixedText>
             </View>
-            <Text style={{ color: colors.subtext, fontSize: 12, marginTop: 15, fontFamily: 'Tamil003', textAlign: 'center' }}>Double tap or long press paragraphs to highlight.</Text>
+            <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 15, fontFamily: 'Tamil003', textAlign: 'center' }}>Double tap or long press paragraphs to highlight.</MixedText>
             <TouchableOpacity style={{ marginTop: 25, padding: 10 }} onPress={() => setShowFontSettings(false)}>
-              <Text style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: 16 }}>Close</Text>
+              <MixedText style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>Close</MixedText>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>
@@ -647,7 +648,7 @@ export default function SabbathSchoolScreen() {
           <View style={[styles.versePopup, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
             
             <View style={[styles.versePopupHeader, { borderBottomColor: colors.border }]}>
-              <Text style={{ color: colors.primary, fontSize: 18, fontFamily: 'Tamil003' }}>{popupVerseRef}</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.title.fontSize, fontFamily: 'Tamil003' }}>{popupVerseRef}</MixedText>
               <TouchableOpacity onPress={() => setShowVersePopup(false)}>
                 <Ionicons name="close-circle" size={28} color={colors.subtext} />
               </TouchableOpacity>
@@ -655,9 +656,9 @@ export default function SabbathSchoolScreen() {
             
             <ScrollView style={{ maxHeight: 250, padding: 20 }}>
               <Animated.View style={{ opacity: fadeAnimVerse }}>
-                <Text style={{ color: colors.text, fontSize: readerFontSize, fontFamily: 'Tamil003', lineHeight: readerFontSize * 1.6 }}>
+                <MixedText style={{ color: colors.text, fontSize: readerFontSize, fontFamily: 'Tamil003', lineHeight: readerFontSize * 1.6 }}>
                   {popupVerseText}
-                </Text>
+                </MixedText>
               </Animated.View>
             </ScrollView>
 
@@ -665,10 +666,10 @@ export default function SabbathSchoolScreen() {
             <View style={[styles.versePopupFooter, { borderTopColor: colors.border }]}>
               <TouchableOpacity onPress={() => navigateVerse(-1)} style={styles.popupNavBtn}>
                 <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                <Text style={{ color: colors.primary, fontFamily: 'Tamil003', marginLeft: 5 }}>முந்தைய</Text>
+                <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', marginLeft: 5 }}>முந்தைய</MixedText>
               </TouchableOpacity>
               <TouchableOpacity onPress={() => navigateVerse(1)} style={styles.popupNavBtn}>
-                <Text style={{ color: colors.primary, fontFamily: 'Tamil003', marginRight: 5 }}>அடுத்த</Text>
+                <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', marginRight: 5 }}>அடுத்த</MixedText>
                 <Ionicons name="arrow-forward" size={20} color={colors.primary} />
               </TouchableOpacity>
             </View>

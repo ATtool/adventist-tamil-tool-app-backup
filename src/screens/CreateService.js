@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Animated, KeyboardAvoidingView, Platform, Dimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -57,7 +58,8 @@ const SONGBOOKS = [
 export default function CreateService() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors, isDark, appFontSize, hapticsEnabled } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, typography } = useSettings();
+  const styles = createStyles(typography);
 
   const [serviceId, setServiceId] = useState(null); // Used for editing an existing service
   const [meetingName, setMeetingName] = useState('');
@@ -452,11 +454,11 @@ export default function CreateService() {
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
             <Ionicons name="chevron-back" size={28} color={colors.primary} />
-            <Text style={{ color: colors.primary, fontSize: 17, fontFamily: 'Tamil003', includeFontPadding: false }}>Back</Text>
+            <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Back</MixedText>
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{serviceId ? "Edit Service" : "Service Builder"}</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text }]}>{serviceId ? "Edit Service" : "Service Builder"}</MixedText>
           <TouchableOpacity onPress={handleSaveService} style={styles.headerBtn} disabled={!meetingName || blocks.length === 0}>
-            <Text style={{ color: (meetingName && blocks.length > 0) ? colors.primary : colors.subtext, fontSize: 17, fontWeight: 'bold', fontFamily: 'Tamil003', includeFontPadding: false }}>Save</Text>
+            <MixedText style={{ color: (meetingName && blocks.length > 0) ? colors.primary : colors.subtext, fontSize: typography.body.fontSize, fontWeight: 'bold', fontFamily: 'Tamil003', includeFontPadding: false }}>Save</MixedText>
           </TouchableOpacity>
         </View>
 
@@ -464,13 +466,13 @@ export default function CreateService() {
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 120 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             
             <View style={[styles.detailsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-              <Text style={[styles.label, { color: colors.subtext }]}>Service Name / ஆராதனை பெயர்</Text>
+              <MixedText style={[styles.label, { color: colors.subtext }]}>Service Name / ஆராதனை பெயர்</MixedText>
               <TextInput style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]} placeholder="e.g. Sabbath Morning Worship" placeholderTextColor={colors.subtext} value={meetingName} onChangeText={setMeetingName} />
               
-              <Text style={[styles.label, { color: colors.subtext, marginTop: 15 }]}>Date / தேதி</Text>
+              <MixedText style={[styles.label, { color: colors.subtext, marginTop: 15 }]}>Date / தேதி</MixedText>
               
               <TouchableOpacity onPress={() => setShowDatePicker(true)} style={[styles.input, { borderBottomColor: 'transparent' }]}>
-                <Text style={{ color: colors.text, fontSize: 18 }}>{meetingDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize }}>{meetingDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</MixedText>
               </TouchableOpacity>
               
               {showDatePicker && (
@@ -484,18 +486,18 @@ export default function CreateService() {
                   />
                   {Platform.OS === 'ios' && (
                     <TouchableOpacity onPress={() => setShowDatePicker(false)} style={{ padding: 15, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
-                      <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>Done</Text>
+                      <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize }}>Done</MixedText>
                     </TouchableOpacity>
                   )}
                 </View>
               )}
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Agenda / நிரல்</Text>
+            <MixedText style={[styles.sectionTitle, { color: colors.text }]}>Agenda / நிரல்</MixedText>
             {blocks.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="list" size={50} color={colors.border} />
-                <Text style={{ color: colors.subtext, marginTop: 10 }}>Your agenda is empty.</Text>
+                <MixedText style={{ color: colors.subtext, marginTop: 10 }}>Your agenda is empty.</MixedText>
               </View>
             ) : (
               blocks.map((block, index) => {
@@ -505,28 +507,28 @@ export default function CreateService() {
                     <TouchableOpacity style={styles.blockHeader} activeOpacity={0.7} onPress={() => { triggerHaptic(); setExpandedBlockId(isExpanded ? null : block.id); }}>
                       <View style={[styles.blockIconBadge, { backgroundColor: block.color + '20' }]}><Ionicons name={block.icon} size={20} color={block.color} /></View>
                       <View style={{ flex: 1, marginLeft: 15 }}>
-                        <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>{block.title}</Text>
+                        <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>{block.title}</MixedText>
                         
                         {/* Perfect Matching Formatting for Agenda View */}
-                        {block.category === 'person' && block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
-                        {block.category === 'note' && block.data?.note ? <Text style={{ color: colors.subtext, fontSize: 14, marginTop: 2 }} numberOfLines={1}>{block.data.note}</Text> : null}
+                        {block.category === 'person' && block.data?.ledBy ? <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2 }}>Led by: {block.data.ledBy}</MixedText> : null}
+                        {block.category === 'note' && block.data?.note ? <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2 }} numberOfLines={1}>{block.data.note}</MixedText> : null}
                         
                         {block.category === 'song' && (
-                          <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                          <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2 }}>
                             {block.data?.book} #{block.data?.number} {block.data?.title ? `- ${block.data.title}` : ''} {block.data?.ledBy ? `(By ${block.data.ledBy})` : ''}
-                          </Text>
+                          </MixedText>
                         )}
                         
                         {block.category === 'bible' && (
-                          <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>
+                          <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2 }}>
                             {block.data?.book} {block.data?.chapter}:{block.data?.verse} {block.data?.ledBy ? `(By ${block.data.ledBy})` : ''}
-                          </Text>
+                          </MixedText>
                         )}
                         
                         {block.category === 'tithe' && (
                           <View>
-                            {block.data?.ledBy ? <Text style={{ color: colors.primary, fontSize: 14, marginTop: 2 }}>Led by: {block.data.ledBy}</Text> : null}
-                            {block.data?.book && block.data?.chapter ? <Text style={{ color: colors.subtext, fontSize: 13, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</Text> : null}
+                            {block.data?.ledBy ? <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, marginTop: 2 }}>Led by: {block.data.ledBy}</MixedText> : null}
+                            {block.data?.book && block.data?.chapter ? <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 2 }}>{block.data.book} {block.data.chapter}:{block.data.verse}</MixedText> : null}
                           </View>
                         )}
                       </View>
@@ -548,11 +550,11 @@ export default function CreateService() {
                         <View style={{ flexDirection: 'row' }}>
                           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primary + '20', marginRight: 8 }]} onPress={() => editBlock(block)}>
                             <Ionicons name="pencil" size={18} color={colors.primary} />
-                            <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 5 }}>Edit</Text>
+                            <MixedText style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 5 }}>Edit</MixedText>
                           </TouchableOpacity>
                           <TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(255, 59, 48, 0.1)' }]} onPress={() => removeBlock(block.id)}>
                             <Ionicons name="trash" size={18} color="#FF3B30" />
-                            <Text style={{ color: '#FF3B30', fontWeight: 'bold', marginLeft: 5 }}>Del</Text>
+                            <MixedText style={{ color: '#FF3B30', fontWeight: 'bold', marginLeft: 5 }}>Del</MixedText>
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -564,7 +566,7 @@ export default function CreateService() {
 
             <TouchableOpacity style={[styles.addBlockBtn, { backgroundColor: colors.primary + '15', borderColor: colors.primary }]} onPress={openAddModal}>
               <Ionicons name="add-circle" size={24} color={colors.primary} />
-              <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold', marginLeft: 8 }}>Add Item</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold', marginLeft: 8 }}>Add Item</MixedText>
             </TouchableOpacity>
 
           </ScrollView>
@@ -579,7 +581,7 @@ export default function CreateService() {
           </TouchableOpacity>
           <Animated.View style={[styles.bottomSheet, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, transform: [{ translateY: sheetAnim }] }]}>
             <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Add to Service</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Add to Service</MixedText>
               <TouchableOpacity onPress={closeAddModal}><Ionicons name="close-circle" size={28} color={colors.subtext} /></TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={styles.gridContainer}>
@@ -592,8 +594,8 @@ export default function CreateService() {
                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
                    <View style={[styles.gridIcon, { backgroundColor: colors.primary + '30', marginRight: 15 }]}><Ionicons name="heart" size={28} color={colors.primary} /></View>
                    <View>
-                      <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold' }}>Marriage Program</Text>
-                      <Text style={{ color: colors.primary, fontSize: 12, fontFamily: 'Tamil003', includeFontPadding: false }}>திருமண நிகழ்ச்சி நிரல்</Text>
+                      <MixedText style={{ color: colors.primary, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>Marriage Program</MixedText>
+                      <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>திருமண நிகழ்ச்சி நிரல்</MixedText>
                    </View>
                 </View>
               </TouchableOpacity>
@@ -602,8 +604,8 @@ export default function CreateService() {
               {BLOCK_TYPES.map((item, index) => (
                 <TouchableOpacity key={index} style={[styles.gridItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => initiateBlockConfig(item)}>
                   <View style={[styles.gridIcon, { backgroundColor: item.color + '15' }]}><Ionicons name={item.icon} size={28} color={item.color} /></View>
-                  <Text style={{ color: colors.text, fontSize: 13, fontWeight: 'bold', textAlign: 'center', marginTop: 10 }}>{item.type}</Text>
-                  <Text style={{ color: colors.subtext, fontSize: 10, fontFamily: 'Tamil003', textAlign: 'center', marginTop: 2, includeFontPadding: false }}>{item.tamil}</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.subtext.fontSize, fontWeight: 'bold', textAlign: 'center', marginTop: 10 }}>{item.type}</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, fontFamily: 'Tamil003', textAlign: 'center', marginTop: 2, includeFontPadding: false }}>{item.tamil}</MixedText>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -621,7 +623,7 @@ export default function CreateService() {
             
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
               <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>Setup {pendingBlockTemplate.type}</Text>
+                <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Setup {pendingBlockTemplate.type}</MixedText>
                 <TouchableOpacity onPress={closeConfigModal}><Ionicons name="close-circle" size={28} color={colors.subtext} /></TouchableOpacity>
               </View>
               
@@ -630,7 +632,7 @@ export default function CreateService() {
                 {/* BIBLE OR TITHE PICKER */}
                 {(activeConfigType === 'bible' || activeConfigType === 'tithe') && (
                   <View>
-                    <Text style={[styles.compactLabel, { color: colors.subtext }]}>Select Book</Text>
+                    <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Select Book</MixedText>
                     
                     {/* BIBLE LANGUAGE TOGGLE */}
                     <View style={{ alignItems: 'center', marginBottom: 15 }}>
@@ -645,8 +647,8 @@ export default function CreateService() {
                         style={[styles.toggleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
                       >
                         <Animated.View style={[styles.toggleThumb, { backgroundColor: colors.primary, transform: [{ translateX: bibleToggleAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 108] }) }] }]} />
-                        <View style={styles.toggleOption}><Text style={{ color: !isEnglishBible ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>தமிழ்</Text></View>
-                        <View style={styles.toggleOption}><Text style={{ color: isEnglishBible ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>English</Text></View>
+                        <View style={styles.toggleOption}><MixedText style={{ color: !isEnglishBible ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>தமிழ்</MixedText></View>
+                        <View style={styles.toggleOption}><MixedText style={{ color: isEnglishBible ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>English</MixedText></View>
                       </TouchableOpacity>
                     </View>
 
@@ -663,7 +665,7 @@ export default function CreateService() {
                             }} 
                             style={[styles.pill, { backgroundColor: tempBibleData.book === displayName ? colors.primary : colors.card, borderColor: tempBibleData.book === displayName ? colors.primary : colors.border }]}
                           >
-                            <Text style={{ color: tempBibleData.book === displayName ? '#000' : colors.text, fontFamily: 'Tamil003', includeFontPadding: false }}>{displayName}</Text>
+                            <MixedText style={{ color: tempBibleData.book === displayName ? '#000' : colors.text, fontFamily: 'Tamil003', includeFontPadding: false }}>{displayName}</MixedText>
                           </TouchableOpacity>
                         );
                       })}
@@ -671,11 +673,11 @@ export default function CreateService() {
 
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                       <View style={{ flex: 1, marginRight: 10 }}>
-                        <Text style={[styles.compactLabel, { color: colors.subtext }]}>Chp / அதிகாரம்</Text>
+                        <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Chp / அதிகாரம்</MixedText>
                         <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.chapter} onChangeText={(text) => { setTempBibleData({...tempBibleData, chapter: text}); fetchBiblePreview(tempBibleData.book, text, tempBibleData.verse, isEnglishBible); }} />
                       </View>
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.compactLabel, { color: colors.subtext }]}>Ver / வசனம்</Text>
+                        <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Ver / வசனம்</MixedText>
                         <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.verse} onChangeText={(text) => { setTempBibleData({...tempBibleData, verse: text}); fetchBiblePreview(tempBibleData.book, tempBibleData.chapter, text, isEnglishBible); }} />
                       </View>
                     </View>
@@ -685,7 +687,7 @@ export default function CreateService() {
                 {/* SONG PICKER */}
                 {activeConfigType === 'song' && (
                   <View>
-                    <Text style={[styles.compactLabel, { color: colors.subtext }]}>Select Songbook</Text>
+                    <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Select Songbook</MixedText>
                     
                     {/* SONG LANGUAGE TOGGLE */}
                     <View style={{ alignItems: 'center', marginBottom: 15 }}>
@@ -700,8 +702,8 @@ export default function CreateService() {
                         style={[styles.toggleContainer, { backgroundColor: colors.card, borderColor: colors.border }]}
                       >
                         <Animated.View style={[styles.toggleThumb, { backgroundColor: colors.primary, transform: [{ translateX: songToggleAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 108] }) }] }]} />
-                        <View style={styles.toggleOption}><Text style={{ color: !isThanglishSong ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>தமிழ்</Text></View>
-                        <View style={styles.toggleOption}><Text style={{ color: isThanglishSong ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: 13, includeFontPadding: false }}>Thanglish</Text></View>
+                        <View style={styles.toggleOption}><MixedText style={{ color: !isThanglishSong ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>தமிழ்</MixedText></View>
+                        <View style={styles.toggleOption}><MixedText style={{ color: isThanglishSong ? '#000' : colors.subtext, fontWeight: 'bold', fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>Thanglish</MixedText></View>
                       </TouchableOpacity>
                     </View>
 
@@ -717,14 +719,14 @@ export default function CreateService() {
                           }} 
                           style={[styles.gridPill, { backgroundColor: tempSongData.book === book.id ? colors.primary : colors.card, borderColor: tempSongData.book === book.id ? colors.primary : colors.border }]}
                         >
-                          <Text style={{ color: tempSongData.book === book.id ? '#000' : colors.text, fontFamily: 'Tamil003', fontSize: 13, textAlign: 'center', includeFontPadding: false }}>
+                          <MixedText style={{ color: tempSongData.book === book.id ? '#000' : colors.text, fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, textAlign: 'center', includeFontPadding: false }}>
                             {isThanglishSong ? book.en : book.ta}
-                          </Text>
+                          </MixedText>
                         </TouchableOpacity>
                       ))}
                     </View>
 
-                    <Text style={[styles.compactLabel, { color: colors.subtext }]}>Search by Number or Name</Text>
+                    <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Search by Number or Name</MixedText>
                     <TextInput 
                       style={[styles.compactInput, { color: colors.text, borderColor: colors.border, marginBottom: 5 }]} 
                       placeholder="e.g. 45 or Guide me..." 
@@ -741,13 +743,13 @@ export default function CreateService() {
                 {/* LIVE PREVIEW BOX */}
                 {(activeConfigType === 'song' || activeConfigType === 'bible' || activeConfigType === 'tithe') && (
                   <View style={[styles.previewBox, { backgroundColor: isDark ? '#1A1A1A' : '#F5F5F5', borderColor: colors.border }]}>
-                    <Text style={{ color: colors.primary, fontSize: 12, fontWeight: 'bold', marginBottom: 5 }}>
+                    <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, fontWeight: 'bold', marginBottom: 5 }}>
                       {isSearching ? 'SEARCHING...' : 'LIVE PREVIEW'}
-                    </Text>
+                    </MixedText>
                     <ScrollView style={{ maxHeight: 120 }} nestedScrollEnabled={true}>
-                      <Text style={{ color: colors.text, fontStyle: 'italic', fontFamily: 'Tamil003', fontSize: appFontSize - 2, includeFontPadding: false }}>
+                      <MixedText style={{ color: colors.text, fontStyle: 'italic', fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>
                         {livePreviewText || 'Type a number or verse above to see the preview here.'}
-                      </Text>
+                      </MixedText>
                     </ScrollView>
                   </View>
                 )}
@@ -755,7 +757,7 @@ export default function CreateService() {
                 {/* COMMON LED BY FIELD */}
                 {(activeConfigType === 'person' || activeConfigType === 'song' || activeConfigType === 'bible' || activeConfigType === 'tithe') && (
                   <View style={{ marginTop: 5 }}>
-                    <Text style={[styles.compactLabel, { color: colors.subtext }]}>Led By / யார் செய்வது? (Optional)</Text>
+                    <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Led By / யார் செய்வது? (Optional)</MixedText>
                     <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} placeholder="Type name..." placeholderTextColor={colors.subtext} value={tempPersonName} onChangeText={setTempPersonName} />
                   </View>
                 )}
@@ -763,16 +765,16 @@ export default function CreateService() {
                 {/* CUSTOM NOTE FIELD */}
                 {(activeConfigType === 'note' || activeConfigType === 'tithe') && (
                   <View style={{ marginTop: 10 }}>
-                    <Text style={[styles.compactLabel, { color: colors.subtext }]}>Custom Text / குறிப்பு</Text>
+                    <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Custom Text / குறிப்பு</MixedText>
                     <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border, height: 80 }]} placeholder="Type your notes here..." placeholderTextColor={colors.subtext} value={tempNoteText} onChangeText={setTempNoteText} multiline />
                   </View>
                 )}
 
                 {/* ALWAYS ENABLED BUTTON! */}
                 <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={confirmAndAddBlock}>
-                  <Text style={{ color: '#000', fontSize: 16, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tamil003', includeFontPadding: false }}>
+                  <MixedText style={{ color: '#000', fontSize: typography.body.fontSize, fontWeight: 'bold', textAlign: 'center', fontFamily: 'Tamil003', includeFontPadding: false }}>
                     {editingBlockId ? "Save Changes" : "Add to Service"}
-                  </Text>
+                  </MixedText>
                 </TouchableOpacity>
 
               </ScrollView>
@@ -784,15 +786,15 @@ export default function CreateService() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (typography) => StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 12, borderBottomWidth: 1 },
   headerBtn: { flexDirection: 'row', alignItems: 'center', padding: 5, width: 80 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  headerTitle: { fontSize: typography.h1.fontSize, fontWeight: 'bold' },
   detailsCard: { padding: 20, borderRadius: 16, borderWidth: 1, marginBottom: 25 },
-  label: { fontSize: 13, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
-  input: { fontSize: 18, paddingVertical: 10, borderBottomWidth: 1, fontWeight: '500' },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
+  label: { fontSize: typography.subtext.fontSize, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+  input: { fontSize: typography.body.fontSize, paddingVertical: 10, borderBottomWidth: 1, fontWeight: '500' },
+  sectionTitle: { fontSize: typography.h2.fontSize, fontWeight: 'bold', marginBottom: 15 },
   emptyState: { padding: 40, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderStyle: 'dashed', borderColor: 'gray', borderRadius: 16 },
   blockWrapper: { borderRadius: 16, borderWidth: 1, marginBottom: 12, overflow: 'hidden' },
   blockHeader: { flexDirection: 'row', alignItems: 'center', padding: 15 },
@@ -808,8 +810,8 @@ const styles = StyleSheet.create({
   gridItem: { width: '48%', borderRadius: 20, borderWidth: 1, justifyContent: 'center', alignItems: 'center', padding: 15, marginBottom: 15 },
   gridIcon: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
   
-  compactLabel: { fontSize: 12, fontWeight: 'bold', marginBottom: 5 },
-  compactInput: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: 15 },
+  compactLabel: { fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginBottom: 5 },
+  compactInput: { borderWidth: 1, borderRadius: 10, padding: 12, fontSize: typography.body.fontSize },
   pill: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: 'transparent' },
   gridPill: { width: '48%', paddingVertical: 12, paddingHorizontal: 5, borderRadius: 12, borderWidth: 1, marginBottom: 10, justifyContent: 'center', alignItems: 'center' },
   previewBox: { padding: 15, borderRadius: 12, borderWidth: 1, marginVertical: 10 },

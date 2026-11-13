@@ -1,3 +1,4 @@
+import MixedText from './MixedText.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Animated, Easing, Dimensions, ActivityIndicator, Linking, Share, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
@@ -9,7 +10,7 @@ import { useSettings } from '../context/SettingsContext';
 const { height } = Dimensions.get('window');
 
 export default function InAppBrowser({ visible, url, title, onClose }) {
-  const { colors, isDark, appFontSize, hapticsEnabled } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, typography } = useSettings();
   const webviewRef = useRef(null);
 
   const [currentUrl, setCurrentUrl] = useState('');
@@ -113,14 +114,14 @@ export default function InAppBrowser({ visible, url, title, onClose }) {
               </TouchableOpacity>
 
               <View style={styles.titleContainer}>
-                <Text style={[styles.title, { color: colors.text, fontSize: appFontSize }]} numberOfLines={1}>
+                <MixedText style={[styles.title, { color: colors.text, fontSize: typography.h1.fontSize }]} numberOfLines={1}>
                   {title || 'Browser'}
-                </Text>
+                </MixedText>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Ionicons name="lock-closed" size={10} color={colors.subtext} style={{ marginRight: 4 }} />
-                  <Text style={[styles.url, { color: colors.subtext, fontSize: appFontSize - 4 }]} numberOfLines={1}>
+                  <MixedText style={[styles.url, { color: colors.subtext, fontSize: typography.caption.fontSize }]} numberOfLines={1}>
                     {getDomain(currentUrl)}
-                  </Text>
+                  </MixedText>
                 </View>
               </View>
 
@@ -188,11 +189,11 @@ export default function InAppBrowser({ visible, url, title, onClose }) {
                 ]}>
                   <TouchableOpacity style={[styles.menuItem, { borderBottomColor: isDark ? '#334155' : '#E2E8F0', borderBottomWidth: 1 }]} onPress={handleShare}>
                     <Ionicons name="share-social-outline" size={20} color={isDark ? '#FFF' : '#000'} style={{ marginRight: 10 }} />
-                    <Text style={{ color: isDark ? '#FFF' : '#000', fontSize: appFontSize, fontWeight: 'bold' }}>Share / Copy Link</Text>
+                    <MixedText style={{ color: isDark ? '#FFF' : '#000', fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Share / Copy Link</MixedText>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.menuItem} onPress={handleOpenInBrowser}>
                     <Ionicons name="compass-outline" size={20} color={isDark ? '#FFF' : '#000'} style={{ marginRight: 10 }} />
-                    <Text style={{ color: isDark ? '#FFF' : '#000', fontSize: appFontSize, fontWeight: 'bold' }}>Open in External Browser</Text>
+                    <MixedText style={{ color: isDark ? '#FFF' : '#000', fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Open in External Browser</MixedText>
                   </TouchableOpacity>
                 </View>
               </TouchableOpacity>

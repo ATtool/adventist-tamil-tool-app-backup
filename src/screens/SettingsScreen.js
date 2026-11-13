@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect } from 'react';
 import { View, Text, Switch, StyleSheet, ScrollView, TouchableOpacity, Modal, Alert, ActivityIndicator, LayoutAnimation, UIManager, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +34,8 @@ const MAPS_FOLDER = 'BibleMaps';
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
-  const { colors, isDark, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion } = useSettings();
+  // Added typography here!
+  const { colors, isDark, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion, typography } = useSettings();
 
   const [showStorageModal, setShowStorageModal] = useState(false);
   const [downloadedBibles, setDownloadedBibles] = useState([]);
@@ -200,7 +202,6 @@ export default function SettingsScreen() {
     } catch (e) { console.log("Delete error:", e); }
   };
 
-  // Helper to render accordion headers
   const renderAccordionHeader = (title, sectionKey, count) => {
     const isExpanded = expandedSection === sectionKey;
     return (
@@ -213,8 +214,8 @@ export default function SettingsScreen() {
         ]}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ color: isExpanded ? colors.primary : colors.text, fontSize: appFontSize, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1 }}>{title}</Text>
-          <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginLeft: 8 }}>({count})</Text>
+          <MixedText style={{ color: isExpanded ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 1, includeFontPadding: false }}>{title}</MixedText>
+          <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, marginLeft: 8, includeFontPadding: false }}>({count})</MixedText>
         </View>
         <Ionicons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={isExpanded ? colors.primary : colors.subtext} />
       </TouchableOpacity>
@@ -230,33 +231,35 @@ export default function SettingsScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5, width: 40 }}>
             <Ionicons name="arrow-back" size={26} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: colors.text, fontSize: appFontSize + 12 }]}>Settings</Text>
-          <View style={{ width: 36 }} />
+          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
+            <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize, includeFontPadding: false }]}>Settings</MixedText>
+          </View>
+          <View style={{ width: 40 }} />
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
           
-          <Text style={[styles.sectionTitle, { color: colors.primary, fontSize: appFontSize - 3 }]}>APPEARANCE & FEEL</Text>
+          <MixedText style={[styles.sectionTitle, { color: colors.primary, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>APPEARANCE & FEEL</MixedText>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.cardRow}>
               <View style={styles.rowLeft}>
                 <Ionicons name="phone-portrait-outline" size={24} color={colors.text} />
-                <Text style={[styles.rowText, { color: colors.text, fontSize: appFontSize + 1 }]}>Haptic Feedback</Text>
+                <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, includeFontPadding: false }]}>Haptic Feedback</MixedText>
               </View>
               <Switch value={hapticsEnabled} onValueChange={toggleHaptics} trackColor={{ false: '#ccc', true: colors.primary }} thumbColor={'#fff'} />
             </View>
           </View>
 
-          <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: appFontSize - 3 }]}>GLOBAL APP TEXT SIZE</Text>
+          <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>GLOBAL APP TEXT SIZE</MixedText>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, paddingVertical: 20 }]}>
-            <Text style={{ color: colors.subtext, marginBottom: 10, fontSize: appFontSize }}>App Font Size: {appFontSize}</Text>
+            <MixedText style={{ color: colors.subtext, marginBottom: 10, fontSize: typography.body.fontSize, includeFontPadding: false }}>App Font Size: {appFontSize}</MixedText>
             <Slider minimumValue={12} maximumValue={24} step={1} value={appFontSize} onValueChange={setAppFontSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
           </View>
 
-          <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: appFontSize - 3 }]}>MANAGE STORAGE</Text>
+          <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>MANAGE STORAGE</MixedText>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, paddingHorizontal: 0 }]}>
             <TouchableOpacity 
               style={[styles.cardRow, { paddingHorizontal: 20 }]} 
@@ -267,7 +270,7 @@ export default function SettingsScreen() {
             >
               <View style={styles.rowLeft}>
                 <Ionicons name="server-outline" size={24} color={colors.text} />
-                <Text style={[styles.rowText, { color: colors.text, fontSize: appFontSize + 1 }]}>Downloaded Databases</Text>
+                <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, includeFontPadding: false }]}>Downloaded Databases</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
             </TouchableOpacity>
@@ -283,7 +286,7 @@ export default function SettingsScreen() {
             
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <View style={{ width: 34 }} />
-              <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Manage Storage</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold', includeFontPadding: false }}>Manage Storage</MixedText>
               <TouchableOpacity onPress={() => { if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowStorageModal(false); }} style={{ padding: 5 }}>
                 <Ionicons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -291,7 +294,6 @@ export default function SettingsScreen() {
             
             <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
               
-              {/* SECTION: Deep Study Tools */}
               {renderAccordionHeader('Deep Study Tools', 'tools', toolsCount)}
               {expandedSection === 'tools' && (
                 <View style={styles.accordionContent}>
@@ -299,7 +301,7 @@ export default function SettingsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                       <Ionicons name="library" size={24} color={isStudyDownloaded ? colors.primary : colors.subtext} style={{ marginRight: 15 }} />
                       <View style={{ flex: 1, paddingRight: 10 }}>
-                        <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Bible Verse Explanations</Text>
+                        <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold', includeFontPadding: false }}>Bible Verse Explanations</MixedText>
                       </View>
                     </View>
                     {isStudyDownloaded ? (
@@ -307,7 +309,7 @@ export default function SettingsScreen() {
                         <Ionicons name="trash" size={20} color="#FF3B30" />
                       </TouchableOpacity>
                     ) : (
-                      <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontStyle: 'italic' }}>Not Downloaded</Text>
+                      <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, fontStyle: 'italic', includeFontPadding: false }}>Not Downloaded</MixedText>
                     )}
                   </View>
 
@@ -315,7 +317,7 @@ export default function SettingsScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                       <Ionicons name="layers" size={24} color={isConcordanceDownloaded ? colors.primary : colors.subtext} style={{ marginRight: 15 }} />
                       <View style={{ flex: 1, paddingRight: 10 }}>
-                        <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Strong's Concordance</Text>
+                        <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold', includeFontPadding: false }}>Strong's Concordance</MixedText>
                       </View>
                     </View>
                     {isConcordanceDownloaded ? (
@@ -323,26 +325,25 @@ export default function SettingsScreen() {
                         <Ionicons name="trash" size={20} color="#FF3B30" />
                       </TouchableOpacity>
                     ) : (
-                      <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, fontStyle: 'italic' }}>Not Downloaded</Text>
+                      <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, fontStyle: 'italic', includeFontPadding: false }}>Not Downloaded</MixedText>
                     )}
                   </View>
                 </View>
               )}
 
-              {/* SECTION: EGW Books */}
               {renderAccordionHeader('EGW Books', 'egw', downloadedEGWBooks.length)}
               {expandedSection === 'egw' && (
                 <View style={styles.accordionContent}>
                   {downloadedEGWBooks.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No EGW Books downloaded yet.</Text>
+                    <MixedText style={[styles.emptyText, { color: colors.subtext, fontSize: typography.body.fontSize, includeFontPadding: false }]}>No EGW Books downloaded yet.</MixedText>
                   ) : (
                     downloadedEGWBooks.map((book) => (
                       <View key={book.id} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
                           <Ionicons name={book.icon || "book"} size={24} color={colors.primary} style={{ marginRight: 15 }} />
                           <View style={{ flex: 1 }}>
-                            <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{book.title_english}</Text>
-                            <Text style={{ color: colors.subtext, fontSize: appFontSize - 2, marginTop: 2 }} numberOfLines={1}>{book.title_tamil}</Text>
+                            <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }} numberOfLines={1}>{book.title_english}</MixedText>
+                            <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, marginTop: 2, includeFontPadding: false }} numberOfLines={1}>{book.title_tamil}</MixedText>
                           </View>
                         </View>
                         <TouchableOpacity onPress={() => confirmDeleteEgwBook(book)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
@@ -354,18 +355,17 @@ export default function SettingsScreen() {
                 </View>
               )}
 
-              {/* SECTION: Monthly Magazine */}
               {renderAccordionHeader('Monthly Magazine', 'mag', downloadedMagazines.length)}
               {expandedSection === 'mag' && (
                 <View style={styles.accordionContent}>
                   {downloadedMagazines.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No magazines downloaded yet.</Text>
+                    <MixedText style={[styles.emptyText, { color: colors.subtext, fontSize: typography.body.fontSize, includeFontPadding: false }]}>No magazines downloaded yet.</MixedText>
                   ) : (
                     downloadedMagazines.map((item) => (
                       <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
                           <Ionicons name="document-text" size={24} color={colors.primary} style={{ marginRight: 15 }} />
-                          <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{getDisplayName(item)}</Text>
+                          <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }} numberOfLines={1}>{getDisplayName(item)}</MixedText>
                         </View>
                         <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
                           <Ionicons name="trash" size={20} color="#FF3B30" />
@@ -376,18 +376,17 @@ export default function SettingsScreen() {
                 </View>
               )}
 
-              {/* SECTION: Bible Versions */}
               {renderAccordionHeader('Bible Versions', 'bibles', downloadedBibles.length)}
               {expandedSection === 'bibles' && (
                 <View style={styles.accordionContent}>
                   {downloadedBibles.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No extra Bible versions downloaded.</Text>
+                    <MixedText style={[styles.emptyText, { color: colors.subtext, fontSize: typography.body.fontSize, includeFontPadding: false }]}>No extra Bible versions downloaded.</MixedText>
                   ) : (
                     downloadedBibles.map((item) => (
                       <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
                           <Ionicons name="book" size={24} color={colors.primary} style={{ marginRight: 15 }} />
-                          <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>{getDisplayName(item)}</Text>
+                          <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }}>{getDisplayName(item)}</MixedText>
                         </View>
                         <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
                           <Ionicons name="trash" size={20} color="#FF3B30" />
@@ -398,18 +397,17 @@ export default function SettingsScreen() {
                 </View>
               )}
 
-              {/* SECTION: Dictionaries */}
               {renderAccordionHeader('Dictionaries', 'dicts', downloadedDicts.length)}
               {expandedSection === 'dicts' && (
                 <View style={styles.accordionContent}>
                   {downloadedDicts.length === 0 ? (
-                    <Text style={[styles.emptyText, { color: colors.subtext, fontSize: appFontSize }]}>No dictionaries downloaded yet.</Text>
+                    <MixedText style={[styles.emptyText, { color: colors.subtext, fontSize: typography.body.fontSize, includeFontPadding: false }]}>No dictionaries downloaded yet.</MixedText>
                   ) : (
                     downloadedDicts.map((item) => (
                       <View key={item} style={[styles.versionCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 10 }}>
                           <Ionicons name="library" size={24} color={colors.primary} style={{ marginRight: 15 }} />
-                          <Text style={{ color: colors.text, fontSize: appFontSize + 1, fontWeight: 'bold' }} numberOfLines={1}>{getDisplayName(item)}</Text>
+                          <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }} numberOfLines={1}>{getDisplayName(item)}</MixedText>
                         </View>
                         <TouchableOpacity onPress={() => confirmDelete(item)} style={{ padding: 10, backgroundColor: 'rgba(255,59,48,0.1)', borderRadius: 10 }}>
                           <Ionicons name="trash" size={20} color="#FF3B30" />

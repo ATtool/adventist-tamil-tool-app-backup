@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions, Platform, KeyboardAvoidingView, Alert } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,7 +11,7 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'; // Added useRoute here
 
 // Database Functions
 import { getCustomSongs, addCustomSong, updateCustomSong, deleteCustomSong } from '../utils/UserDataDB';
@@ -51,10 +52,46 @@ const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size =
   );
 };
 
+// FULLY FIXED: Added typography and isThanglish to props, and added +2 size logic
+const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize, typography, isThanglish }) => {
+  const translateY = listAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [30 + (index % 10) * 5, 0]
+  });
+
+  // Smart logic to show Thanglish if toggled ON
+  const displayTitle = isThanglish ? (item.title_thanglish || item.title_tamil) : item.title_tamil;
+
+  return (
+    <Animated.View style={{ opacity: listAnim, transform: [{ translateY }] }}>
+      <ScalePressable onPress={() => onPress(item)}>
+        <View style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]}>
+          <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
+            <MixedText style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.id}</MixedText>
+          </View>
+          <View style={styles.titleContainer}>
+            {/* The +2 font size boost is right here! */}
+            <MixedText style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: isThanglish ? typography.title.fontSize : typography.title.fontSize + 2 }]} numberOfLines={1}>{displayTitle || 'Unknown'}</MixedText>
+            {item.title_thanglish && !isThanglish ? (
+              <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize }} numberOfLines={1}>{item.title_thanglish}</MixedText>
+            ) : null}
+          </View>
+          <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
+        </View>
+      </ScalePressable>
+    </Animated.View>
+  );
+});
+
 export default function CustomSongsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
-  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
+  const route = useRoute(); // Catching the route info
+  
+  // Catching the Thanglish toggle state passed from the main SongsScreen
+  const isThanglish = route.params?.isThanglish || false;
+
+  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
   
   // State for Data
   const [songs, setSongs] = useState([]);
@@ -327,7 +364,7 @@ export default function CustomSongsScreen() {
               <ScalePressable onPress={clearAllFilters} style={{ marginRight: 8 }}>
                 <View style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
                   <Ionicons name="close" size={14} color="#FF3B30" />
-                  <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Clear All</Text>
+                  <MixedText style={{ color: "#FF3B30", marginLeft: 4, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Clear All</MixedText>
                 </View>
               </ScalePressable>
             )}
@@ -335,14 +372,14 @@ export default function CustomSongsScreen() {
             <ScalePressable onPress={() => { triggerHaptic(); setShowSortMenu(true); Keyboard.dismiss(); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: colors.card }]}>
                 <MaterialCommunityIcons name={sortOrder === 'number' ? "sort-numeric-ascending" : "sort-alphabetical-ascending"} size={16} color={colors.text} />
-                <Text style={{ color: colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Sort</Text>
+                <MixedText style={{ color: colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Sort</MixedText>
               </View>
             </ScalePressable>
 
             <ScalePressable onPress={() => { triggerHaptic(); setShowFavoritesOnly(!showFavoritesOnly); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: showFavoritesOnly ? 'rgba(255,0,0,0.1)' : colors.card }]}>
                 <Ionicons name={showFavoritesOnly ? "heart" : "heart-outline"} size={14} color={showFavoritesOnly ? "red" : colors.text} />
-                <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontWeight: 'bold' }}>Favorites</Text>
+                <MixedText style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontWeight: 'bold' }}>Favorites</MixedText>
               </View>
             </ScalePressable>
           </ScrollView>
@@ -358,27 +395,13 @@ export default function CustomSongsScreen() {
           ListEmptyComponent={
             <View style={{ alignItems: 'center', justifyContent: 'center', marginTop: 100 }}>
                <Ionicons name="musical-notes-outline" size={60} color={colors.primary} />
-               <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15, textAlign: 'center', paddingHorizontal: 20 }}>
+               <MixedText style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15, textAlign: 'center', paddingHorizontal: 20 }}>
                  You haven't added any custom songs yet. Click the + icon above to write your first song!
-               </Text>
+               </MixedText>
             </View>
           }
-          renderItem={({ item }) => (
-            <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setActiveSong(item); }}>
-              <View style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]}>
-                {/* Number Circle - Now using Neon Blue (primary) */}
-                <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
-                  <Text style={{ color: colors.primary, fontWeight: '900', fontSize: appFontSize }}>{item.id}</Text>
-                </View>
-                <View style={styles.titleContainer}>
-                  <Text style={[styles.songTitle, { color: colors.text, fontFamily: 'Tamil008', fontSize: appFontSize + 2 }]} numberOfLines={1}>{item.title_tamil}</Text>
-                  {item.title_thanglish ? (
-                    <Text style={{ color: colors.subtext, fontSize: appFontSize - 2 }} numberOfLines={1}>{item.title_thanglish}</Text>
-                  ) : null}
-                </View>
-                <AnimatedHeart isFavorite={favorites.has(item.id)} onPress={() => toggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
-              </View>
-            </ScalePressable>
+          renderItem={({ item, index }) => (
+            <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} typography={typography} isThanglish={isThanglish} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setActiveSong(song); }} />
           )}
         />
       </SafeAreaView>
@@ -389,21 +412,21 @@ export default function CustomSongsScreen() {
       <Modal visible={showSortMenu} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4 }]}>Sort Options</Text>
+            <MixedText style={[styles.modalHeaderTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Sort Options</MixedText>
             <ScalePressable onPress={() => { triggerHaptic(); setSortOrder('number'); setShowSortMenu(false); }}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</Text>
+                <MixedText style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', marginLeft: 15 }}>🔢 எண் வரிசை (Number Order)</MixedText>
               </View>
             </ScalePressable>
             <ScalePressable onPress={() => { triggerHaptic(); setSortOrder('alpha'); setShowSortMenu(false); }}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</Text>
+                <MixedText style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontWeight: 'bold', marginLeft: 15 }}>🔠 அகர வரிசை (Alphabetical)</MixedText>
               </View>
             </ScalePressable>
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
-              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</Text>
+              <MixedText style={{ color: '#FF3B30', fontSize: appFontSize, fontWeight: 'bold' }}>Cancel</MixedText>
             </TouchableOpacity>
           </View>
         </BlurView>
@@ -421,39 +444,39 @@ export default function CustomSongsScreen() {
           <SafeAreaView style={{ flex: 1 }}>
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <TouchableOpacity onPress={() => setIsFormVisible(false)} style={{ padding: 10 }}>
-                <Text style={{ color: colors.subtext, fontSize: 16 }}>Cancel</Text>
+                <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize }}>Cancel</MixedText>
               </TouchableOpacity>
-              <Text style={{ color: colors.text, fontSize: 18, fontWeight: 'bold' }}>
+              <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>
                 {editingId ? "Edit Song" : "Add Your Song"}
-              </Text>
+              </MixedText>
               {/* SAVE BUTTON - Now using Neon Blue (primary) */}
               <TouchableOpacity onPress={saveSong} style={{ padding: 10 }}>
-                <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold' }}>Save</Text>
+                <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Save</MixedText>
               </TouchableOpacity>
             </View>
 
             <View style={{ flex: 1, padding: 20 }}>
-              <Text style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Tamil (Required)</Text>
+              <MixedText style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Tamil (Required)</MixedText>
               <TextInput 
-                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontFamily: 'Tamil003' }]} 
+                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }]} 
                 placeholder="எ.கா: தேவனுக்கு மகிமை" 
                 placeholderTextColor={colors.subtext}
                 value={formTamil}
                 onChangeText={setFormTamil}
               />
 
-              <Text style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Thanglish (Optional)</Text>
+              <MixedText style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Thanglish (Optional)</MixedText>
               <TextInput 
-                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]} 
+                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize }]} 
                 placeholder="Ex: Devanukku magimai" 
                 placeholderTextColor={colors.subtext}
                 value={formThanglish}
                 onChangeText={setFormThanglish}
               />
 
-              <Text style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Lyrics (Required)</Text>
+              <MixedText style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Lyrics (Required)</MixedText>
               <TextInput 
-                style={[styles.inputBox, styles.textArea, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border }]} 
+                style={[styles.inputBox, styles.textArea, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize }]} 
                 placeholder="Type your lyrics here..." 
                 placeholderTextColor={colors.subtext}
                 multiline
@@ -482,15 +505,15 @@ export default function CustomSongsScreen() {
               </ScalePressable>
               
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
-                 <Text style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
+                 <MixedText style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                    {activeSong?.id} - {activeSong?.title_tamil}
-                 </Text>
+                 </MixedText>
               </View>
 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <Text style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</Text>
+                    <MixedText style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</MixedText>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeSong)}>
@@ -516,14 +539,14 @@ export default function CustomSongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
-                      </Text>
+                      </MixedText>
                     )}
                   </View>
                   <View style={{ flex: 1 }}>
                     {stanza.lines.map((line, lineIdx) => (
-                      <Text
+                      <MixedText
                         key={lineIdx}
                         style={{
                           color: line.isRefrain ? NEON_BLUE : colors.text,
@@ -535,7 +558,7 @@ export default function CustomSongsScreen() {
                         }}
                       >
                         {line.content.trim() === '' ? ' ' : line.content}
-                      </Text>
+                      </MixedText>
                     ))}
                   </View>
                 </View>
@@ -551,24 +574,26 @@ export default function CustomSongsScreen() {
               </Animated.View>
               <Animated.View style={[styles.settingsCard, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, transform: [{ translateY: settingsSlideAnim }] }]}>
                 <View style={styles.settingsHeader}>
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Reading Preferences</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Reading Preferences</MixedText>
                   <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(false); }}>
                     <Ionicons name="close" size={28} color={colors.text} />
                   </ScalePressable>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2 }]}>Title Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</Text>
+                  <MixedText style={[styles.settingLabel, { color: colors.primary, fontSize: typography.subtext.fontSize }]}>Title Settings</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {titleSize}</MixedText>
                   <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2 }]}>Lyrics Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</Text>
+                  <MixedText style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: typography.subtext.fontSize }]}>Lyrics Settings</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Font Size: {lyricsSize}</MixedText>
                   <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</Text>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Line Spacing: {lyricsLineHeight}</MixedText>
                   <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize }}>Letter Spacing: {lyricsSpacing}</MixedText>
+                  <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
                   <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
                     <View style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]}>
                       <Ionicons name="refresh" size={20} color={colors.primary} />
-                      <Text style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</Text>
+                      <MixedText style={{ color: colors.primary, fontWeight: 'bold', marginLeft: 8, fontSize: appFontSize }}>Restore Defaults</MixedText>
                     </View>
                   </ScalePressable>
                 </ScrollView>

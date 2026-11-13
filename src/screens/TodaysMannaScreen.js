@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Share, Modal, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +12,7 @@ import { useSettings } from '../context/SettingsContext';
 const DEVOTION_URL = 'https://gist.githubusercontent.com/ATtool/e3a8241e07503969cb06448a32eb4382/raw/manna.json';
 
 export default function TodaysMannaScreen() {
-  const { colors, appFontSize, isDark } = useSettings();
+  const { colors, appFontSize, isDark, typography } = useSettings();
   const navigation = useNavigation();
 
   const [todayDevotion, setTodayDevotion] = useState(null);
@@ -178,7 +179,7 @@ export default function TodaysMannaScreen() {
         </TouchableOpacity>
         
         <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerBtn}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{displayDate}</Text>
+          <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>{displayDate}</MixedText>
           <Ionicons name="calendar-outline" size={16} color={colors.text} style={{ marginLeft: 6 }} />
         </TouchableOpacity>
 
@@ -194,7 +195,7 @@ export default function TodaysMannaScreen() {
           {todayDevotion && (
             <>
               <TouchableOpacity onPress={() => setShowFontSettings(true)} style={styles.iconBtn}>
-                <Text style={{ color: "#00F0FF", fontWeight: 'bold', fontSize: 16 }}>Aa</Text>
+                <MixedText style={{ color: "#00F0FF", fontWeight: 'bold', fontSize: typography.body.fontSize }}>Aa</MixedText>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={shareDevotion} style={styles.iconBtn}>
@@ -218,9 +219,9 @@ export default function TodaysMannaScreen() {
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowFontSettings(false)}>
           
           <TouchableOpacity style={[styles.fontCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]} activeOpacity={1}>
-            <Text style={{ color: colors.text, fontSize: 16, marginBottom: 20, fontFamily: 'Tamil003' }}>எழுத்து அளவு (Font Size)</Text>
+            <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, marginBottom: 20, fontFamily: 'Tamil003' }}>எழுத்து அளவு (Font Size)</MixedText>
             <View style={styles.sliderWrapper}>
-              <Text style={{ color: colors.subtext, fontSize: 14 }}>A</Text>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize }}>A</MixedText>
               <Slider
                 style={{ width: 180, height: 40, marginHorizontal: 10 }}
                 minimumValue={14}
@@ -232,11 +233,11 @@ export default function TodaysMannaScreen() {
                 thumbTintColor="#00F0FF"
                 minimumTrackTintColor="#00F0FF"
               />
-              <Text style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>A</Text>
+              <MixedText style={{ color: colors.text, fontSize: typography.h2.fontSize, fontWeight: 'bold' }}>A</MixedText>
             </View>
 
             <TouchableOpacity style={{ marginTop: 25, padding: 10 }} onPress={() => setShowFontSettings(false)}>
-              <Text style={{ color: '#00F0FF', fontWeight: 'bold', fontSize: 16 }}>Close</Text>
+              <MixedText style={{ color: '#00F0FF', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Close</MixedText>
             </TouchableOpacity>
           </TouchableOpacity>
 
@@ -247,12 +248,12 @@ export default function TodaysMannaScreen() {
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#00F0FF" />
-          <Text style={{ color: colors.subtext, marginTop: 15, fontFamily: 'Tamil003' }}>மன்னா தயாராகிறது...</Text>
+          <MixedText style={{ color: colors.subtext, marginTop: 15, fontFamily: 'Tamil003' }}>மன்னா தயாராகிறது...</MixedText>
         </View>
       ) : errorMsg ? (
         <View style={styles.center}>
           <Ionicons name="book-outline" size={60} color={colors.border} />
-          <Text style={{ color: colors.text, marginTop: 20, fontSize: appFontSize, fontFamily: 'Tamil003', textAlign: 'center', paddingHorizontal: 30, lineHeight: 28 }}>{errorMsg}</Text>
+          <MixedText style={{ color: colors.text, marginTop: 20, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', textAlign: 'center', paddingHorizontal: 30, lineHeight: 28 }}>{errorMsg}</MixedText>
 
           <TouchableOpacity
             onPress={() => loadDevotion(selectedDate)}
@@ -264,9 +265,9 @@ export default function TodaysMannaScreen() {
             ) : (
               <Ionicons name="reload" size={18} color="#00F0FF" />
             )}
-            <Text style={{ color: '#00F0FF', marginLeft: 8, fontFamily: 'Tamil003', fontSize: 15 }}>
+            <MixedText style={{ color: '#00F0FF', marginLeft: 8, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>
               மீண்டும் முயற்சிக்க
-            </Text>
+            </MixedText>
           </TouchableOpacity>
 
           {/* Added Navigation Buttons for when no devotion is found (e.g. Future Days) */}
@@ -276,7 +277,7 @@ export default function TodaysMannaScreen() {
               style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
               <Ionicons name="chevron-back" size={20} color={colors.text} />
-              <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: 14 }}>முந்தைய நாள்</Text>
+              <MixedText style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>முந்தைய நாள்</MixedText>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -284,7 +285,7 @@ export default function TodaysMannaScreen() {
               onPress={goToNextDay}
               disabled={isToday(selectedDate)}
             >
-              <Text style={{ color: isToday(selectedDate) ? colors.subtext : colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
+              <MixedText style={{ color: isToday(selectedDate) ? colors.subtext : colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>அடுத்த நாள்</MixedText>
               <Ionicons name="chevron-forward" size={20} color={isToday(selectedDate) ? colors.subtext : colors.text} />
             </TouchableOpacity>
           </View>
@@ -293,27 +294,27 @@ export default function TodaysMannaScreen() {
       ) : todayDevotion ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           
-          <Text style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 7 }]}>
+          <MixedText style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 12 }]}>
             {todayDevotion.title}
-          </Text>
+          </MixedText>
           
           <View style={[styles.verseBox, { backgroundColor: colors.card, borderColor: 'rgba(0, 240, 255, 0.2)' }]}>
-            <Text style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 2 }]}>
+            <MixedText style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 6 }]}>
               {todayDevotion.verse}
-            </Text>          
+            </MixedText>          
           </View>
 
-          <Text style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize, lineHeight: readerFontSize * 1.8 }]}>
+          <MixedText style={[styles.bodyText, { color: colors.text, fontSize: readerFontSize + 4, lineHeight: (readerFontSize + 3) * 1.8 }]}>
             {todayDevotion.content}
-          </Text>
+          </MixedText>
 
           <View style={[styles.blessingBox, { borderColor: colors.border }]}>
-            <Text style={[styles.blessingText, { color: colors.subtext, fontSize: readerFontSize - 4 }]}>
+            <MixedText style={[styles.blessingText, { color: colors.subtext, fontSize: readerFontSize - 4 }]}>
               🌾 இன்றைய நாள் உங்களுக்கு ஆசிர்வாதமாக இருப்பதாக. 🌟
-            </Text>
-            <Text style={[styles.blessingText, { color: colors.subtext, fontSize: readerFontSize - 4, marginTop: 10 }]}>
+            </MixedText>
+            <MixedText style={[styles.blessingText, { color: colors.subtext, fontSize: readerFontSize - 4, marginTop: 10 }]}>
               🌾 தேவனுடைய கற்பனையின்படி நடக்க மறவாதீர்கள் 😇
-            </Text>
+            </MixedText>
           </View>
 
           <View style={styles.navButtonsContainer}>
@@ -322,7 +323,7 @@ export default function TodaysMannaScreen() {
               style={[styles.dayNavBtn, { backgroundColor: colors.card, borderColor: colors.border }]}
             >
               <Ionicons name="chevron-back" size={20} color={colors.text} />
-              <Text style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: 14 }}>முந்தைய நாள்</Text>
+              <MixedText style={{ color: colors.text, marginLeft: 5, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>முந்தைய நாள்</MixedText>
             </TouchableOpacity>
 
             <TouchableOpacity 
@@ -330,7 +331,7 @@ export default function TodaysMannaScreen() {
               onPress={goToNextDay}
               disabled={isToday(selectedDate)}
             >
-              <Text style={{ color: isToday(selectedDate) ? colors.subtext : colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: 14 }}>அடுத்த நாள்</Text>
+              <MixedText style={{ color: isToday(selectedDate) ? colors.subtext : colors.text, marginRight: 5, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>அடுத்த நாள்</MixedText>
               <Ionicons name="chevron-forward" size={20} color={isToday(selectedDate) ? colors.subtext : colors.text} />
             </TouchableOpacity>
           </View>

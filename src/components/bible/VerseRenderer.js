@@ -1,6 +1,8 @@
+import MixedText from '../MixedText.js';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSettings } from '../../context/SettingsContext';
 
 const VerseRenderer = React.memo(({
   item, 
@@ -17,6 +19,7 @@ const VerseRenderer = React.memo(({
   onToggleSelection,
   onLongPress
 }) => {
+  const { typography } = useSettings();
 
   let bgStyle = { padding: 10, borderRadius: 12 };
   if (isTargetHighlighted) bgStyle.backgroundColor = isDark ? 'rgba(0, 240, 255, 0.2)' : 'rgba(180, 95, 6, 0.15)';
@@ -28,9 +31,7 @@ const VerseRenderer = React.memo(({
     const regex = new RegExp(`(${safeQuery})`, 'gi');
     const parts = text.split(regex);
     return parts.map((part, index) => 
-      // Removed fontWeight: 'bold' to stop Tamil letters from clipping.
-      // Added an underline so the highlighted search word still pops!
-      regex.test(part) ? <Text key={index} style={{ color: '#FF3B30', textDecorationLine: 'underline' }}>{part}</Text> : <Text key={index}>{part}</Text>
+      regex.test(part) ? <MixedText key={index} style={{ color: '#FF3B30', textDecorationLine: 'underline' }}>{part}</MixedText> : <MixedText key={index}>{part}</MixedText>
     );
   };
 
@@ -43,26 +44,26 @@ const VerseRenderer = React.memo(({
     >
       <View style={{ width: 30, alignItems: 'center', marginRight: 10, marginTop: 5 }}>
         <View style={[styles.verseNumBubble, { backgroundColor: isSelected ? colors.primary : colors.glow, borderColor: colors.primary }]}>
-          <Text style={{ color: isSelected ? (isDark ? '#000' : '#FFF') : colors.primary, fontWeight: 'bold', fontSize: 12 }}>
+          <MixedText style={{ color: isSelected ? (isDark ? '#000' : '#FFF') : colors.primary, fontWeight: 'bold', fontSize: typography.caption.fontSize }}>
             {item.verse}
-          </Text>
+          </MixedText>
         </View>
         {isFavorite && <Ionicons name="heart" size={16} color="#FF3B30" style={{ marginTop: 6 }} />}
       </View>
 
       <View style={{ flex: 1 }}>
         {(bibleLanguage === 'tamil' || bibleLanguage === 'both') && item.text_ta ? (
-          // Forced 20px font and 32px line height for beautiful, readable Tamil003 text with zero clipping
-          <Text style={{ color: colors.text, fontSize: 20, lineHeight: 32, letterSpacing: bibleLetterSpacing, fontFamily: 'Tamil003', marginBottom: bibleLanguage === 'both' ? 10 : 0 }}>
+          // Fixed! Now dynamically responding to bibleFontSize and bibleLineHeight
+          <MixedText style={{ color: colors.text, fontSize: bibleFontSize, lineHeight: bibleLineHeight, letterSpacing: bibleLetterSpacing, fontFamily: 'Tamil003', marginBottom: bibleLanguage === 'both' ? 10 : 0 }}>
             {renderHighlightedText(item.text_ta, highlightedWord)}
-          </Text>
+          </MixedText>
         ) : null}
         
         {(bibleLanguage === 'english' || bibleLanguage === 'both') && item.text_en ? (
-          // English text set to 18px to visually match the weight of 20px Tamil text
-          <Text style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: 18, lineHeight: 28, letterSpacing: bibleLetterSpacing }}>
+          // English font dynamically scales at -2px so it matches the visual weight of Tamil text
+          <MixedText style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: Math.max(12, bibleFontSize - 2), lineHeight: bibleLineHeight - 4, letterSpacing: bibleLetterSpacing }}>
             {renderHighlightedText(item.text_en, highlightedWord)}
-          </Text>
+          </MixedText>
         ) : null}
       </View>
     </TouchableOpacity>

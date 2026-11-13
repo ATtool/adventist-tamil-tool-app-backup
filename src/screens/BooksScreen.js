@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,7 +8,8 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
 
 export default function BooksScreen({ navigation }) {
-  const { colors } = useSettings();
+  // Added typography here!
+  const { colors, typography } = useSettings();
 
   // --- ANIMATION VALUES ---
   const headerOpacity = useRef(new Animated.Value(0)).current;
@@ -43,8 +45,8 @@ export default function BooksScreen({ navigation }) {
         
         {/* Animated Header Section */}
         <Animated.View style={[styles.headerContainer, { opacity: headerOpacity }]}>
-          <Text style={[styles.headerTitle, { color: colors.text }]} allowFontScaling={false}>நூலகம்</Text>
-          <Text style={[styles.headerSubtitle, { color: colors.subtext }]} allowFontScaling={false}>Spiritual Library</Text>
+          <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerTitle, { color: colors.text, fontSize: typography.display.fontSize }]} allowFontScaling={false}>நூலகம்</MixedText>
+          <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerSubtitle, { color: colors.subtext, fontSize: typography.caption.fontSize }]} allowFontScaling={false}>Spiritual Library</MixedText>
         </Animated.View>
         
         {/* Animated Stunning EGW Books Card */}
@@ -55,7 +57,7 @@ export default function BooksScreen({ navigation }) {
             style={styles.cardWrapper}
           >
             <LinearGradient
-              colors={['#1A2980', '#26D0CE']} // A beautiful deep blue to glowing cyan gradient
+              colors={['#1A2980', '#26D0CE']} 
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.gradientCard}
@@ -66,13 +68,13 @@ export default function BooksScreen({ navigation }) {
                   <Ionicons name="library" size={32} color="#FFFFFF" />
                 </View>
                 
-                {/* Middle: Text */}
+                {/* Middle: Text (Protected with Card Rule) */}
                 <View style={styles.textContainer}>
-                  <Text style={styles.cardTitleTamil} allowFontScaling={false}>எலன் ஜி. வைட் நூல்கள்</Text>
-                  <Text style={styles.cardTitleEnglish} allowFontScaling={false}>Spirit of Prophecy Books</Text>
-                  <Text style={styles.cardDescription} allowFontScaling={false}>
+                  <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitleTamil, { fontSize: typography.h2.fontSize }]} allowFontScaling={false}>எலன் ஜி. வைட் நூல்கள்</MixedText>
+                  <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitleEnglish, { fontSize: typography.body.fontSize }]} allowFontScaling={false}>Spirit of Prophecy Books</MixedText>
+                  <MixedText numberOfLines={2} adjustsFontSizeToFit style={[styles.cardDescription, { fontSize: typography.subtext.fontSize }]} allowFontScaling={false}>
                     Explore the writings and counsels for the last days.
-                  </Text>
+                  </MixedText>
                 </View>
 
                 {/* Right Side: Arrow */}
@@ -102,12 +104,10 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   headerTitle: {
-    fontSize: 32,
     fontFamily: 'Tamil003', 
     includeFontPadding: false,
   },
   headerSubtitle: {
-    fontSize: 16,
     marginTop: 4,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   },
   cardWrapper: {
     borderRadius: 20,
-    elevation: 8, // Adds a nice shadow on Android
+    elevation: 8, 
     shadowColor: '#00F0FF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -143,30 +143,26 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
+    paddingRight: 10,
   },
   cardTitleTamil: {
-    fontSize: 20,
     fontFamily: 'Tamil003',
     color: '#FFFFFF',
     marginBottom: 2,
     includeFontPadding: false,
-    // Android requires strict font families without extra bold weights
   },
   cardTitleEnglish: {
-    fontSize: 14,
     fontWeight: 'bold',
     color: '#E0E0E0',
     includeFontPadding: false,
   },
   cardDescription: {
-    fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
     marginTop: 6,
     lineHeight: 16,
     includeFontPadding: false,
   },
   arrowContainer: {
-    marginLeft: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },

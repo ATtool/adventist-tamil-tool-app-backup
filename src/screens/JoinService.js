@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,7 +21,8 @@ const ACCENT_ID = '#FFC72C';
 export default function JoinService() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors, hapticsEnabled } = useSettings();
+  const { colors, hapticsEnabled, typography } = useSettings();
+  const styles = createStyles(typography);
   
   const [permission, requestPermission] = useCameraPermissions();
   const [mode, setMode] = useState('select'); // 'select', 'scan', 'link'
@@ -151,7 +153,7 @@ export default function JoinService() {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={handleHeaderBack} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={28} color={colors.primary} />
-          <Text style={{ color: colors.primary, fontSize: 17 }}>Back</Text>
+          <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize }}>Back</MixedText>
         </TouchableOpacity>
       </View>
 
@@ -163,8 +165,8 @@ export default function JoinService() {
           </View>
         )}
 
-        <Text style={[styles.title, { color: colors.text }]}>Join a Service</Text>
-        <Text style={[styles.subtitle, { color: colors.subtext }]}>Scan a QR code or enter the service ID to sync the agenda to your device.</Text>
+        <MixedText style={[styles.title, { color: colors.text }]}>Join a Service</MixedText>
+        <MixedText style={[styles.subtitle, { color: colors.subtext }]}>Scan a QR code or enter the service ID to sync the agenda to your device.</MixedText>
 
         {mode === 'select' && (
           <View style={{ marginTop: 26, width: '100%' }}>
@@ -180,8 +182,8 @@ export default function JoinService() {
                 <Ionicons name="scan-outline" size={22} color={ACCENT_SCAN} />
               </View>
               <View style={styles.optionTextWrap}>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Scan QR Code</Text>
-                <Text style={[styles.optionSubtitle, { color: colors.subtext }]}>Use your camera</Text>
+                <MixedText style={[styles.optionTitle, { color: colors.text }]}>Scan QR Code</MixedText>
+                <MixedText style={[styles.optionSubtitle, { color: colors.subtext }]}>Use your camera</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
             </TouchableOpacity>
@@ -194,8 +196,8 @@ export default function JoinService() {
                 <Ionicons name="image-outline" size={22} color={ACCENT_GALLERY} />
               </View>
               <View style={styles.optionTextWrap}>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Choose from Gallery</Text>
-                <Text style={[styles.optionSubtitle, { color: colors.subtext }]}>Pick a saved QR image</Text>
+                <MixedText style={[styles.optionTitle, { color: colors.text }]}>Choose from Gallery</MixedText>
+                <MixedText style={[styles.optionSubtitle, { color: colors.subtext }]}>Pick a saved QR image</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
             </TouchableOpacity>
@@ -208,8 +210,8 @@ export default function JoinService() {
                 <Ionicons name="key-outline" size={22} color={ACCENT_ID} />
               </View>
               <View style={styles.optionTextWrap}>
-                <Text style={[styles.optionTitle, { color: colors.text }]}>Enter ID</Text>
-                <Text style={[styles.optionSubtitle, { color: colors.subtext }]}>Type the 6-character code</Text>
+                <MixedText style={[styles.optionTitle, { color: colors.text }]}>Enter ID</MixedText>
+                <MixedText style={[styles.optionSubtitle, { color: colors.subtext }]}>Type the 6-character code</MixedText>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.subtext} />
             </TouchableOpacity>
@@ -221,7 +223,7 @@ export default function JoinService() {
             {!permission ? (
               <ActivityIndicator size="large" color={colors.primary} />
             ) : !permission.granted ? (
-              <Text style={{ color: colors.text, textAlign: 'center' }}>We need your permission to access the camera.</Text>
+              <MixedText style={{ color: colors.text, textAlign: 'center' }}>We need your permission to access the camera.</MixedText>
             ) : (
               <View style={[styles.cameraBox, { borderColor: ACCENT_SCAN }]}>
                 <CameraView 
@@ -240,7 +242,7 @@ export default function JoinService() {
             )}
             
             <TouchableOpacity style={styles.cancelScanBtn} onPress={handleCancelScan}>
-              <Text style={{ color: colors.primary, fontSize: 16, fontWeight: 'bold' }}>Cancel Scan</Text>
+              <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }}>Cancel Scan</MixedText>
             </TouchableOpacity>
           </View>
         )}
@@ -250,11 +252,11 @@ export default function JoinService() {
             <View style={[styles.heroBadgeSmall, { backgroundColor: ACCENT_ID + '20', borderColor: ACCENT_ID + '50' }]}>
               <Ionicons name="key-outline" size={26} color={ACCENT_ID} />
             </View>
-            <Text style={{ color: colors.text, marginBottom: 10, fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>Enter Service ID</Text>
+            <MixedText style={{ color: colors.text, marginBottom: 10, fontWeight: 'bold', fontSize: typography.title.fontSize, textAlign: 'center' }}>Enter Service ID</MixedText>
             <View style={[styles.inputBox, { backgroundColor: colors.card, borderColor: ACCENT_ID + '60' }]}>
               <Ionicons name="key" size={20} color={ACCENT_ID} style={{ marginRight: 10 }} />
               <TextInput
-                style={{ flex: 1, color: colors.text, fontSize: 18, letterSpacing: 2, fontWeight: '600' }}
+                style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, letterSpacing: 2, fontWeight: '600' }}
                 placeholder="e.g. A7B9K2"
                 placeholderTextColor={colors.subtext}
                 value={linkInput}
@@ -269,11 +271,11 @@ export default function JoinService() {
               onPress={handleLinkSubmit}
               disabled={isProcessing}
             >
-              {isProcessing ? <ActivityIndicator color="#000" /> : <Text style={{ color: '#101010', fontWeight: 'bold', fontSize: 16 }}>Load Service</Text>}
+              {isProcessing ? <ActivityIndicator color="#000" /> : <MixedText style={{ color: '#101010', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Load Service</MixedText>}
             </TouchableOpacity>
 
             <TouchableOpacity style={{ alignSelf: 'center', marginTop: 20 }} onPress={() => setMode('select')}>
-              <Text style={{ color: colors.subtext, fontSize: 16 }}>Back</Text>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize }}>Back</MixedText>
             </TouchableOpacity>
           </View>
         )}
@@ -283,7 +285,7 @@ export default function JoinService() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (typography) => StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 12, borderBottomWidth: 1 },
   backBtn: { flexDirection: 'row', alignItems: 'center', padding: 5 },
@@ -310,8 +312,8 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
-  title: { fontSize: 25, fontWeight: '800', marginBottom: 8, letterSpacing: 0.3 },
-  subtitle: { fontSize: 14.5, textAlign: 'center', lineHeight: 21, paddingHorizontal: 10 },
+  title: { fontSize: typography.h1.fontSize, fontWeight: '800', marginBottom: 8, letterSpacing: 0.3 },
+  subtitle: { fontSize: typography.body.fontSize, textAlign: 'center', lineHeight: 21, paddingHorizontal: 10 },
   
   optionCard: {
     width: '100%',
@@ -329,8 +331,8 @@ const styles = StyleSheet.create({
   },
   iconCircle: { width: 46, height: 46, borderRadius: 23, justifyContent: 'center', alignItems: 'center', marginRight: 14 },
   optionTextWrap: { flex: 1 },
-  optionTitle: { fontSize: 16, fontWeight: '700' },
-  optionSubtitle: { fontSize: 12, marginTop: 2 },
+  optionTitle: { fontSize: typography.title.fontSize, fontWeight: '700' },
+  optionSubtitle: { fontSize: typography.subtext.fontSize, marginTop: 2 },
 
   scannerWrapper: { flex: 1, width: '100%', alignItems: 'center', marginTop: 20 },
   cameraBox: { width: 280, height: 280, borderRadius: 24, overflow: 'hidden', borderWidth: 2 },

@@ -1,23 +1,26 @@
+import MixedText from '../MixedText.js';
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
+import { useSettings } from '../../context/SettingsContext';
 
 export function NoteModal({ visible, colors, isDark, appFontSize, noteText, setNoteText, onSave, onClose }) {
+  const { typography } = useSettings();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlayCenter}>
         <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFillObject} />
         <View style={[styles.noteCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
-          <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold', marginBottom: 15 }}>Add Note</Text>
+          <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold', marginBottom: 15 }}>Add Note</MixedText>
           <TextInput 
-            style={[styles.noteInput, { color: colors.text, borderColor: colors.border, fontSize: appFontSize }]} 
+            style={[styles.noteInput, { color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize }]} 
             placeholderTextColor={colors.subtext} placeholder="Type your notes here..." 
             multiline autoFocus value={noteText} onChangeText={setNoteText} 
           />
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 20 }}>
-            <TouchableOpacity onPress={onClose} style={{ padding: 10, marginRight: 15 }}><Text style={{ color: colors.subtext, fontWeight: 'bold', fontSize: appFontSize }}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity onPress={onSave} style={{ padding: 10, backgroundColor: colors.glow, borderRadius: 10 }}><Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: appFontSize }}>Save Note</Text></TouchableOpacity>
+            <TouchableOpacity onPress={onClose} style={{ padding: 10, marginRight: 15 }}><MixedText style={{ color: colors.subtext, fontWeight: 'bold', fontSize: typography.body.fontSize }}>Cancel</MixedText></TouchableOpacity>
+            <TouchableOpacity onPress={onSave} style={{ padding: 10, backgroundColor: colors.glow, borderRadius: 10 }}><MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize }}>Save Note</MixedText></TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -26,6 +29,7 @@ export function NoteModal({ visible, colors, isDark, appFontSize, noteText, setN
 }
 
 export function CrossRefModal({ visible, colors, isDark, appFontSize, bibleLanguage, crossRefsList, getBookName, onJump, onClose }) {
+  const { typography } = useSettings();
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.modalOverlayBottom}>
@@ -33,19 +37,19 @@ export function CrossRefModal({ visible, colors, isDark, appFontSize, bibleLangu
         <View style={[styles.bottomSheet, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
           <View style={[styles.sheetHeader, { borderBottomColor: colors.border }]}>
             <View style={{ width: 34 }} />
-            <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontWeight: 'bold' }}>Cross References</Text>
+            <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontWeight: 'bold' }}>Cross References</MixedText>
             <TouchableOpacity onPress={onClose} style={{ padding: 5 }}><Ionicons name="close" size={24} color={colors.text} /></TouchableOpacity>
           </View>
           {crossRefsList.length === 0 ? (
-            <View style={styles.bodyCenter}><Ionicons name="search" size={50} color={colors.border} /><Text style={{ color: colors.subtext, marginTop: 10 }}>No cross references found.</Text></View>
+            <View style={styles.bodyCenter}><Ionicons name="search" size={50} color={colors.border} /><MixedText style={{ color: colors.subtext, marginTop: 10 }}>No cross references found.</MixedText></View>
           ) : (
             <FlatList data={crossRefsList} keyExtractor={(item, index) => index.toString()} contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
               renderItem={({ item }) => (
                 <TouchableOpacity style={[styles.crossRefCard, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => onJump(item.to_book_id, item.to_chapter, item.to_verse)}>
                   <Ionicons name="book" size={20} color={colors.primary} style={{ marginRight: 15 }} />
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }}>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontFamily: bibleLanguage === 'english' ? undefined : 'Tamil008' }}>
                     {getBookName(item.to_book_id)} {item.to_chapter}:{item.to_verse}
-                  </Text>
+                  </MixedText>
                   <View style={{ flex: 1 }} /><Ionicons name="arrow-forward-circle" size={24} color={colors.primary} />
                 </TouchableOpacity>
               )}

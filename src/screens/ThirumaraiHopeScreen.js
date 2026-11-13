@@ -1,3 +1,4 @@
+import MixedText from '../components/MixedText.js';
 import { getThiruDb } from '../utils/SongDb';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Modal, ScrollView, Keyboard, Share, Animated, BackHandler, Dimensions } from 'react-native';
@@ -50,7 +51,7 @@ const AnimatedHeart = ({ isFavorite, onPress, inactiveColor, activeColor, size =
 };
 
 // FULLY LOCKED FONTS IN THE LIST ITEM (No fontWeight conflicts so Tamil003/Tamil008 render cleanly on Android)
-const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, appFontSize, isThanglish }) => {
+const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onToggleFavorite, colors, isDark, typography, isThanglish }) => {
   const translateY = listAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [30 + (index % 10) * 5, 0] 
@@ -60,20 +61,20 @@ const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onTog
       <ScalePressable onPress={() => onPress(item)}>
         <View style={[styles.songCard, { backgroundColor: colors.card, borderColor: colors.border, shadowColor: isDark ? 'transparent' : '#ccc', elevation: isDark ? 0 : 2 }]}>
           <View style={[styles.numberCircle, { borderColor: colors.primary, backgroundColor: colors.glow }]}>
-            <Text style={{ color: colors.primary, fontSize: appFontSize, fontFamily: 'Tamil008', includeFontPadding: false }}>{item.song_number || item.id || '?'}</Text>
+            <MixedText style={{ color: colors.primary, fontSize: typography.body.fontSize, fontFamily: 'Tamil008', includeFontPadding: false }}>{item.song_number || item.id || '?'}</MixedText>
           </View>
           <View style={styles.titleContainer}>
-            <Text 
+            <MixedText 
               style={[styles.songTitle, { 
                 color: colors.text, 
                 fontFamily: 'Tamil003',
-                fontSize: appFontSize + (isThanglish ? 4 : 2),
+                fontSize: isThanglish ? typography.title.fontSize : typography.title.fontSize + 2,
                 includeFontPadding: false
               }]} 
               numberOfLines={1}
             >
               {item.title || 'Unknown'}
-            </Text>
+            </MixedText>
           </View>
           <AnimatedHeart isFavorite={isFavorite} onPress={() => onToggleFavorite(item.id)} inactiveColor={colors.subtext} activeColor="red" />
         </View>
@@ -82,13 +83,13 @@ const SongItem = React.memo(({ item, index, listAnim, isFavorite, onPress, onTog
   );
 });
 
-const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, appFontSize }) => {
+const LetterGridItem = React.memo(({ letter, index, listAnim, onPress, colors, typography, appFontSize }) => {
   const translateY = listAnim.interpolate({ inputRange: [0, 1], outputRange: [20 + (index % 5) * 5, 0] });
   return (
     <Animated.View style={{ flex: 1, margin: 5, opacity: listAnim, transform: [{ translateY }] }}>
       <ScalePressable onPress={() => onPress(letter)}>
         <View style={[styles.gridItemCompact, { backgroundColor: colors.card, borderColor: colors.border }]}>
-          <Text style={{ color: colors.primary, fontSize: appFontSize + 2, fontFamily: 'Tamil008', includeFontPadding: false }}>{letter}</Text>
+          <MixedText style={{ color: colors.primary, fontSize: typography.title.fontSize, fontFamily: 'Tamil008', includeFontPadding: false }}>{letter}</MixedText>
         </View>
       </ScalePressable>
     </Animated.View>
@@ -102,7 +103,7 @@ export default function ThirumaraiHopeScreen() {
   // Catch the memory from SongsScreen
   const isThanglish = route.params?.isThanglish || false;
 
-  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
   
   const [songs, setSongs] = useState([]);
   const [search, setSearch] = useState('');
@@ -457,8 +458,8 @@ export default function ThirumaraiHopeScreen() {
 
             <View style={[styles.searchPill, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}>
               <View style={{ flex: 1 }}>
-                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="ஏசுவின் / Yesuvin" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
-                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
+                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="ஏசுவின் / Yesuvin" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
+                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
               </View>
 
               {search.length > 0 && (
@@ -469,10 +470,10 @@ export default function ThirumaraiHopeScreen() {
 
               <View style={[styles.inlineToggleContainer, { backgroundColor: isDark ? '#2A2D35' : '#E5E7EB' }]}>
                 <TouchableOpacity style={[styles.inlineToggleBtn, !isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(false)}>
-                  <Text style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontFamily: 'Tamil003', fontSize: 12, includeFontPadding: false }}>ABC</Text>
+                  <MixedText style={{ color: !isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>ABC</MixedText>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.inlineToggleBtn, isNumericKeyboard && { backgroundColor: isDark ? '#FFFFFF' : '#111827' }]} onPress={() => toggleKeyboardType(true)}>
-                  <Text style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontFamily: 'Tamil003', fontSize: 12, includeFontPadding: false }}>123</Text>
+                  <MixedText style={{ color: isNumericKeyboard ? (isDark ? '#000000' : '#FFFFFF') : colors.subtext, fontFamily: 'Tamil003', fontSize: typography.subtext.fontSize, includeFontPadding: false }}>123</MixedText>
                 </TouchableOpacity>
               </View>
             </View>
@@ -483,7 +484,7 @@ export default function ThirumaraiHopeScreen() {
               <ScalePressable onPress={clearAllFilters} style={{ marginRight: 8 }}>
                 <View style={[styles.chipBtn, { borderColor: '#FF3B30', backgroundColor: 'rgba(255,59,48,0.1)' }]}>
                   <Ionicons name="close" size={14} color="#FF3B30" />
-                  <Text style={{ color: "#FF3B30", marginLeft: 4, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Clear All</Text>
+                  <MixedText style={{ color: "#FF3B30", marginLeft: 4, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Clear All</MixedText>
                 </View>
               </ScalePressable>
             )}
@@ -491,14 +492,14 @@ export default function ThirumaraiHopeScreen() {
             <ScalePressable onPress={() => { triggerHaptic(); setShowSortMenu(true); Keyboard.dismiss(); }} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: isAlphabetMode ? colors.primary + '20' : colors.card }]}>
                 <MaterialCommunityIcons name={sortOrder === 'number' ? "sort-numeric-ascending" : "sort-alphabetical-ascending"} size={16} color={isAlphabetMode ? colors.primary : colors.text} />
-                <Text style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Sort</Text>
+                <MixedText style={{ color: isAlphabetMode ? colors.primary : colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Sort</MixedText>
               </View>
             </ScalePressable>
 
             <ScalePressable onPress={handleToggleFavoritesList} style={{ marginRight: 8 }}>
               <View style={[styles.chipBtn, { borderColor: colors.border, backgroundColor: showFavoritesOnly ? 'rgba(255,0,0,0.1)' : colors.card }]}>
                 <Ionicons name={showFavoritesOnly ? "heart" : "heart-outline"} size={14} color={showFavoritesOnly ? "red" : colors.text} />
-                <Text style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: appFontSize - 2, fontFamily: 'Tamil003', includeFontPadding: false }}>Favorites</Text>
+                <MixedText style={{ color: showFavoritesOnly ? "red" : colors.text, marginLeft: 6, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Favorites</MixedText>
               </View>
             </ScalePressable>
           </ScrollView>
@@ -519,12 +520,12 @@ export default function ThirumaraiHopeScreen() {
               <ScalePressable onPress={() => { triggerHaptic(); selectNumberOrder(); }}>
                 <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary, marginHorizontal: 5 }]}>
                   <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontSize: appFontSize, marginLeft: 8, fontFamily: 'Tamil003', includeFontPadding: false }}>Back to Numbers</Text>
+                  <MixedText style={{ color: colors.primary, fontSize: appFontSize, marginLeft: 8, fontFamily: 'Tamil003', includeFontPadding: false }}>Back to Numbers</MixedText>
                 </View>
               </ScalePressable>
             }
             renderItem={({ item, index }) => (
-              <LetterGridItem letter={item} index={index} listAnim={listAnim} colors={colors} appFontSize={appFontSize} onPress={(letter) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setSelectedLetter(letter); setIsAlphabetMode(false); }} />
+              <LetterGridItem letter={item} index={index} listAnim={listAnim} colors={colors} typography={typography} appFontSize={appFontSize} onPress={(letter) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Medium); setSelectedLetter(letter); setIsAlphabetMode(false); }} />
             )}
           />
         ) : (
@@ -545,18 +546,18 @@ export default function ThirumaraiHopeScreen() {
                 <ScalePressable onPress={() => { triggerHaptic(); setIsAlphabetMode(true); setSelectedLetter('All'); }}>
                   <View style={[styles.backToGridBtn, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}>
                     <Ionicons name="arrow-back" size={20} color={colors.primary} />
-                    <Text style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8, includeFontPadding: false }}>அகர வரிசைக்குச் செல் (Back)</Text>
+                    <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: appFontSize, marginLeft: 8, includeFontPadding: false }}>அகர வரிசைக்குச் செல் (Back)</MixedText>
                   </View>
                 </ScalePressable>
               ) : null
             }
             renderItem={({ item, index }) => (
-              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} appFontSize={appFontSize} isThanglish={isThanglish} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
+              <SongItem item={item} index={index} listAnim={listAnim} isFavorite={favorites.has(item.id)} colors={colors} isDark={isDark} typography={typography} appFontSize={appFontSize} isThanglish={isThanglish} onToggleFavorite={toggleFavorite} onPress={(song) => { triggerHaptic(Haptics.ImpactFeedbackStyle.Light); Keyboard.dismiss(); setSelectedSongIndex(index); }} />
             )}
             ListEmptyComponent={
               <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', marginTop: 100 }}>
                  <Ionicons name="search" size={60} color={colors.border} />
-                 <Text style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15, fontFamily: 'Tamil003', includeFontPadding: false }}>No songs found matching your search.</Text>
+                 <MixedText style={{ color: colors.subtext, fontSize: appFontSize, marginTop: 15, fontFamily: 'Tamil003', includeFontPadding: false }}>No songs found matching your search.</MixedText>
               </View>
             }
           />
@@ -573,21 +574,21 @@ export default function ThirumaraiHopeScreen() {
       <Modal visible={showSortMenu} transparent animationType="fade">
         <BlurView intensity={60} tint="dark" style={styles.modalBg}>
           <View style={[styles.sortModalCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1 }]}>
-            <Text style={[styles.modalHeaderTitle, { color: colors.text, fontSize: appFontSize + 4, fontFamily: 'Tamil008' }]}>Sort Options</Text>
+            <MixedText style={[styles.modalHeaderTitle, { color: colors.text, fontSize: typography.h1.fontSize, fontFamily: 'Tamil008' }]}>Sort Options</MixedText>
             <ScalePressable onPress={selectNumberOrder}>
               <View style={[styles.sortBtn, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
                 <MaterialCommunityIcons name="sort-numeric-ascending" size={28} color={sortOrder === 'number' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15, includeFontPadding: false }}>🔢 எண் வரிசை (Number Order)</Text>
+                <MixedText style={{ color: sortOrder === 'number' ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginLeft: 15, includeFontPadding: false }}>🔢 எண் வரிசை (Number Order)</MixedText>
               </View>
             </ScalePressable>
             <ScalePressable onPress={selectAlphabetOrder}>
               <View style={styles.sortBtn}>
                 <MaterialCommunityIcons name="sort-alphabetical-ascending" size={28} color={sortOrder === 'alpha' ? colors.primary : colors.text} />
-                <Text style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil003', marginLeft: 15, includeFontPadding: false }}>🔠 அகர வரிசை (Alphabetical)</Text>
+                <MixedText style={{ color: sortOrder === 'alpha' ? colors.primary : colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginLeft: 15, includeFontPadding: false }}>🔠 அகர வரிசை (Alphabetical)</MixedText>
               </View>
             </ScalePressable>
             <TouchableOpacity onPress={() => setShowSortMenu(false)} style={{ padding: 20, alignItems: 'center', borderTopWidth: 1, borderColor: colors.border }}>
-              <Text style={{ color: '#FF3B30', fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Cancel</Text>
+              <MixedText style={{ color: '#FF3B30', fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Cancel</MixedText>
             </TouchableOpacity>
           </View>
         </BlurView>
@@ -605,7 +606,7 @@ export default function ThirumaraiHopeScreen() {
               </ScalePressable>
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
                  {/* FULLY LOCKED HEADER TITLE FONT */}
-                 <Text 
+                 <MixedText 
                     style={{ 
                       color: colors.primary, 
                       fontFamily: 'Tamil008', 
@@ -618,7 +619,7 @@ export default function ThirumaraiHopeScreen() {
                     numberOfLines={1}
                  >
                    {activeSong?.song_number || activeSong?.id} - {activeSong?.title}
-                 </Text>
+                 </MixedText>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 
@@ -631,7 +632,7 @@ export default function ThirumaraiHopeScreen() {
 
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <Text style={{ color: BRIGHT_YELLOW, marginRight: 4, fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Aa</Text>
+                    <MixedText style={{ color: BRIGHT_YELLOW, marginRight: 4, fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Aa</MixedText>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeSong)}>
@@ -647,15 +648,15 @@ export default function ThirumaraiHopeScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <Text style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
-                      </Text>
+                      </MixedText>
                     )}
                   </View>
                   <View style={{ flex: 1 }}>
                     {stanza.lines.map((line, lineIdx) => (
                       // FULLY LOCKED LYRICS FONT
-                      <Text
+                      <MixedText
                         key={lineIdx}
                         style={{
                           color: line.isRefrain ? NEON_BLUE : colors.text,
@@ -670,18 +671,18 @@ export default function ThirumaraiHopeScreen() {
                           (showCombinedLyrics ? 
                             line.content.split(/([a-zA-Z]+)/).map((part, i) => 
                               /^[a-zA-Z]+$/.test(part) ? (
-                                <Text key={i} style={{ color: colors.subtext, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
+                                <MixedText key={i} style={{ color: colors.subtext, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
                                   {part}
-                                </Text>
+                                </MixedText>
                               ) : (
-                                <Text key={i} style={{ color: line.isRefrain ? NEON_BLUE : colors.text, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
+                                <MixedText key={i} style={{ color: line.isRefrain ? NEON_BLUE : colors.text, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
                                   {part}
-                                </Text>
+                                </MixedText>
                               )
                             ) 
                           : line.content)
                         }
-                      </Text>
+                      </MixedText>
                     ))}
                   </View>
                 </View>
@@ -727,26 +728,26 @@ export default function ThirumaraiHopeScreen() {
               </Animated.View>
               <Animated.View style={[styles.settingsCard, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border, borderWidth: 1, transform: [{ translateY: settingsSlideAnim }] }]}>
                 <View style={styles.settingsHeader}>
-                  <Text style={{ color: colors.text, fontSize: appFontSize + 2, fontFamily: 'Tamil008', includeFontPadding: false }}>Reading Preferences</Text>
+                  <MixedText style={{ color: colors.text, fontSize: typography.h1.fontSize, fontFamily: 'Tamil008', includeFontPadding: false }}>Reading Preferences</MixedText>
                   <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(false); }}>
                     <Ionicons name="close" size={28} color={colors.text} />
                   </ScalePressable>
                 </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
-                  <Text style={[styles.settingLabel, { color: colors.primary, fontSize: appFontSize - 2, fontFamily: 'Tamil008' }]}>Title Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Font Size: {titleSize}</Text>
+                  <MixedText style={[styles.settingLabel, { color: colors.primary, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil008' }]}>Title Settings</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Font Size: {titleSize}</MixedText>
                   <Slider minimumValue={16} maximumValue={30} step={1} value={titleSize} onValueChange={setTitleSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: appFontSize - 2, fontFamily: 'Tamil008' }]}>Lyrics Settings</Text>
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Font Size: {lyricsSize}</Text>
+                  <MixedText style={[styles.settingLabel, { color: colors.primary, marginTop: 25, fontSize: typography.subtext.fontSize, fontFamily: 'Tamil008' }]}>Lyrics Settings</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Font Size: {lyricsSize}</MixedText>
                   <Slider minimumValue={12} maximumValue={35} step={1} value={lyricsSize} onValueChange={setLyricsSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Line Spacing: {lyricsLineHeight}</Text>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Line Spacing: {lyricsLineHeight}</MixedText>
                   <Slider minimumValue={20} maximumValue={60} step={1} value={lyricsLineHeight} onValueChange={setLyricsLineHeight} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
-                  <Text style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Letter Spacing: {lyricsSpacing}</Text>
+                  <MixedText style={{ color: colors.subtext, fontSize: appFontSize, fontFamily: 'Tamil003' }}>Letter Spacing: {lyricsSpacing}</MixedText>
                   <Slider minimumValue={0} maximumValue={5} step={0.5} value={lyricsSpacing} onValueChange={setLyricsSpacing} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
                   <ScalePressable onPress={() => { triggerHaptic(Haptics.ImpactFeedbackStyle.Success); restoreDefaultTextSettings(); }}>
                     <View style={[styles.restoreBtn, { backgroundColor: colors.glow, borderColor: colors.primary, borderWidth: 1 }]}>
                       <Ionicons name="refresh" size={20} color={colors.primary} />
-                      <Text style={{ color: colors.primary, marginLeft: 8, fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Restore Defaults</Text>
+                      <MixedText style={{ color: colors.primary, marginLeft: 8, fontSize: appFontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Restore Defaults</MixedText>
                     </View>
                   </ScalePressable>
                 </ScrollView>
