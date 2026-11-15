@@ -231,7 +231,7 @@ export default function AboutScreen({ navigation }) {
             
             <View style={styles.contributorBox}>
               <MixedText style={[styles.contributorRole, { color: colors.subtext, fontSize: typography.subtext.fontSize }]}>{text.dev}</MixedText>
-              <MixedText style={[styles.contributorName, { color: colors.text, fontSize: typography.title.fontSize }]}>Pr. KSM</MixedText>
+              <MixedText style={[styles.contributorName, { color: colors.text, fontSize: typography.title.fontSize }]}>Pr. Kedwik S Majith</MixedText>
               <ScalePressable onPress={() => openWebLink('mailto:adventisttamiltool@gmail.com', 'Contact Us')}>
                 <View style={[styles.contactBtn, { backgroundColor: 'rgba(0, 240, 255, 0.1)' }]}>
                   <Ionicons name="mail" size={16} color={colors.primary} />

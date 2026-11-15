@@ -34,8 +34,8 @@ const MAPS_FOLDER = 'BibleMaps';
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
-  // Added typography here!
-  const { colors, isDark, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion, typography } = useSettings();
+  // Added typography and restoreDefaultTextSettings here!
+  const { colors, isDark, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion, typography, restoreDefaultTextSettings } = useSettings();
 
   const [showStorageModal, setShowStorageModal] = useState(false);
   const [downloadedBibles, setDownloadedBibles] = useState([]);
@@ -255,7 +255,29 @@ export default function SettingsScreen() {
 
           <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>GLOBAL APP TEXT SIZE</MixedText>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, paddingVertical: 20 }]}>
-            <MixedText style={{ color: colors.subtext, marginBottom: 10, fontSize: typography.body.fontSize, includeFontPadding: false }}>App Font Size: {appFontSize}</MixedText>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, includeFontPadding: false }}>App Font Size: {appFontSize}</MixedText>
+              
+              <TouchableOpacity
+                onPress={() => {
+                  if (hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  restoreDefaultTextSettings();
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: colors.glow,
+                  borderColor: colors.primary,
+                  borderWidth: 1,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                }}
+              >
+                <Ionicons name="refresh" size={14} color={colors.primary} />
+                <MixedText style={{ color: colors.primary, fontSize: typography.subtext.fontSize, fontWeight: 'bold', marginLeft: 5, includeFontPadding: false }}>Reset</MixedText>
+              </TouchableOpacity>
+            </View>
             <Slider minimumValue={12} maximumValue={24} step={1} value={appFontSize} onValueChange={setAppFontSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
           </View>
 

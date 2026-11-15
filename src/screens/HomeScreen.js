@@ -1,6 +1,6 @@
 import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Image, ScrollView, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Image, ScrollView, Linking, Share } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,6 +48,7 @@ export default function HomeScreen() {
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false); 
+  const [menuRendered, setMenuRendered] = useState(false);
   const [showMeetingMenu, setShowMeetingMenu] = useState(false);
   const [showSabbathOptions, setShowSabbathOptions] = useState(false);
   const [sabbathSheetRendered, setSabbathSheetRendered] = useState(false);
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const [tempName, setTempName] = useState('');
   const [tempCountry, setTempCountry] = useState({ name: 'India', flag: '🇮🇳' });
   const [todayVerse, setTodayVerse] = useState('');
+  const [nameInputFocused, setNameInputFocused] = useState(false);
 
   const [hasReadToday, setHasReadToday] = useState(false);
 
@@ -84,6 +86,13 @@ export default function HomeScreen() {
   const cardScales = useRef([...Array(3)].map(() => new Animated.Value(0.8))).current; 
   const cardOpacities = useRef([...Array(3)].map(() => new Animated.Value(0))).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  // --- Onboarding welcome animation values (new) ---
+  const onboardIconAnim = useRef(new Animated.Value(0)).current;
+  const onboardTitleAnim = useRef(new Animated.Value(0)).current;
+  const onboardFormAnim = useRef(new Animated.Value(0)).current;
+  const onboardButtonAnim = useRef(new Animated.Value(0)).current;
+  const nameInputGlow = useRef(new Animated.Value(0)).current;
 
   const lastNotificationResponse = Notifications.useLastNotificationResponse();
 
@@ -171,10 +180,43 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(menuSlideAnim, { toValue: isMenuOpen ? 0 : width, duration: 300, useNativeDriver: true, easing: Easing.out(Easing.ease) }),
-      Animated.timing(menuFadeAnim, { toValue: isMenuOpen ? 1 : 0, duration: 300, useNativeDriver: true })
-    ]).start();
+    if (isMenuOpen) {
+      setMenuRendered(true);
+      menuSlideAnim.setValue(width * 0.75); // Start right at the drawer's actual width, not full screen width!
+      menuFadeAnim.setValue(0);
+      Animated.parallel([
+        Animated.spring(menuSlideAnim, {
+          toValue: 0,
+          damping: 24,
+          stiffness: 220,
+          mass: 0.8,
+          useNativeDriver: true,
+        }),
+        Animated.timing(menuFadeAnim, {
+          toValue: 1,
+          duration: 250,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (menuRendered) {
+      Animated.parallel([
+        Animated.timing(menuSlideAnim, {
+          toValue: width * 0.75,
+          duration: 240,
+          easing: Easing.bezier(0.4, 0, 0.2, 1),
+          useNativeDriver: true,
+        }),
+        Animated.timing(menuFadeAnim, {
+          toValue: 0,
+          duration: 220,
+          easing: Easing.in(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setMenuRendered(false);
+      });
+    }
   }, [isMenuOpen]);
 
   useEffect(() => {
@@ -213,6 +255,28 @@ export default function HomeScreen() {
       });
     }
   }, [showSabbathOptions]);
+
+  // Play a nice staggered welcome animation when the onboarding screen appears
+  useEffect(() => {
+    if (showOnboarding) {
+      onboardIconAnim.setValue(0);
+      onboardTitleAnim.setValue(0);
+      onboardFormAnim.setValue(0);
+      onboardButtonAnim.setValue(0);
+
+      Animated.stagger(150, [
+        Animated.spring(onboardIconAnim, { toValue: 1, friction: 6, tension: 45, useNativeDriver: true }),
+        Animated.timing(onboardTitleAnim, { toValue: 1, duration: 550, easing: Easing.out(Easing.exp), useNativeDriver: true }),
+        Animated.timing(onboardFormAnim, { toValue: 1, duration: 550, easing: Easing.out(Easing.exp), useNativeDriver: true }),
+        Animated.timing(onboardButtonAnim, { toValue: 1, duration: 550, easing: Easing.out(Easing.exp), useNativeDriver: true }),
+      ]).start();
+    }
+  }, [showOnboarding]);
+
+  // Smoothly highlight the Name input border/glow when it is focused
+  useEffect(() => {
+    Animated.timing(nameInputGlow, { toValue: nameInputFocused ? 1 : 0, duration: 200, useNativeDriver: false }).start();
+  }, [nameInputFocused]);
 
   const checkReadStatus = async () => {
     const today = new Date().toLocaleDateString('en-US');
@@ -373,6 +437,17 @@ export default function HomeScreen() {
     setShowStorePopup(false);
   };
 
+  const handleShareApp = async () => {
+    if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      await Share.share({
+        message: "🙏 Check out the *Adventist Tamil Tool* app! Read the Tamil & English Bible, Songs, Daily Manna, Sabbath School lessons, and more completely offline.\n\n📲 Download now on Google Play:\nhttps://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool",
+      });
+    } catch (error) {
+      console.warn("Share App Error:", error);
+    }
+  };
+
   const latestUpdateId = updates.length > 0 ? String(updates[0].id) : null;
   const safeLastSeenId = lastSeenUpdateId ? String(lastSeenUpdateId) : null;
   const hasNewUpdates = latestUpdateId && latestUpdateId !== safeLastSeenId;
@@ -423,7 +498,7 @@ export default function HomeScreen() {
   const navigateFromMenu = (screenName) => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsMenuOpen(false);
-    setTimeout(() => { navigation.navigate(screenName); }, 200);
+    setTimeout(() => { navigation.navigate(screenName); }, 250);
   };
 
   const openSabbathSchoolLink = () => {
@@ -795,12 +870,17 @@ export default function HomeScreen() {
         onClose={() => setBrowserVisible(false)}
       />
 
-      <Modal visible={isMenuOpen} transparent animationType="none" onRequestClose={() => setIsMenuOpen(false)}>
+      <Modal visible={menuRendered} transparent animationType="none" statusBarTranslucent={true} onRequestClose={() => setIsMenuOpen(false)}>
         <View style={{ flex: 1, flexDirection: 'row' }}>
-          <Animated.View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', opacity: menuFadeAnim }}>
-            <TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setIsMenuOpen(false)} />
+          <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.6)', opacity: menuFadeAnim }]}>
+            <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setIsMenuOpen(false)} />
           </Animated.View>
-          <Animated.View style={[styles.drawerMenu, { backgroundColor: isDark ? '#0A1929' : '#FFFFFF', transform: [{ translateX: menuSlideAnim }] }]}>
+          <View style={{ flex: 1 }} pointerEvents="none" />
+          <Animated.View 
+            renderToHardwareTextureAndroid={true}
+            shouldRasterizeIOS={true}
+            style={[styles.drawerMenu, { backgroundColor: isDark ? '#0A1929' : '#FFFFFF', transform: [{ translateX: menuSlideAnim }] }]}
+          >
             <SafeAreaView edges={['top']} style={{ flex: 1 }}>
               <View style={styles.drawerHeader}>
                 <MixedText style={{ fontSize: typography.h1.fontSize, fontWeight: 'bold', color: colors.primary }}>Menu</MixedText>
@@ -840,6 +920,39 @@ export default function HomeScreen() {
                   <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>SDA Hymn</MixedText>
                 </TouchableOpacity>
               </ScrollView>
+
+              {Platform.OS === 'android' && (
+                <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={handleShareApp}
+                    style={{
+                      borderRadius: 16,
+                      overflow: 'hidden',
+                      borderWidth: 1,
+                      borderColor: colors.primary,
+                    }}
+                  >
+                    <LinearGradient
+                      colors={['#00F0FF', '#0080FF']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        paddingVertical: 14,
+                        paddingHorizontal: 16,
+                      }}
+                    >
+                      <Ionicons name="share-social" size={22} color="#000000" style={{ marginRight: 10 }} />
+                      <MixedText style={{ color: '#000000', fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }}>
+                        Bless Others • Share App
+                      </MixedText>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+              )}
             </SafeAreaView>
           </Animated.View>
         </View>
@@ -850,27 +963,110 @@ export default function HomeScreen() {
           {showOnboarding && (
             <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.onboardingContainer}>
               <View style={styles.onboardingHeader}>
-                <View style={[styles.iconContainerBig, { backgroundColor: 'transparent' }]}><Image source={require('../../assets/icon.png')} style={{ width: 100, height: 100, borderRadius: 25 }} resizeMode="cover" /></View>
-                <MixedText style={[styles.welcomeText, { color: colors.text, fontSize: typography.h2.fontSize }]}>Welcome to</MixedText>
-                <MixedText style={[styles.appNameText, { color: colors.primary, fontSize: typography.h1.fontSize + 8 }]}>Adventist Tamil Tool</MixedText>
-                <MixedText style={[styles.onboardingSub, { color: colors.subtext, fontSize: typography.body.fontSize }]}>Please personalize your experience</MixedText>
+                <Animated.View
+                  style={{
+                    width: 140,
+                    height: 140,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginBottom: 15,
+                    opacity: onboardIconAnim,
+                    transform: [{ scale: Animated.multiply(onboardIconAnim.interpolate({ inputRange: [0, 1], outputRange: [0.4, 1] }), pulseAnim) }],
+                  }}
+                >
+                  <Svg width={140} height={140} style={{ position: 'absolute' }}>
+                    <Defs>
+                      <RadialGradient id="onboardGlow" cx="50%" cy="50%" r="50%">
+                        <Stop offset="0%" stopColor={colors.primary} stopOpacity="0.35" />
+                        <Stop offset="60%" stopColor={colors.primary} stopOpacity="0.12" />
+                        <Stop offset="100%" stopColor={colors.primary} stopOpacity="0" />
+                      </RadialGradient>
+                    </Defs>
+                    <Circle cx="50%" cy="50%" r="50%" fill="url(#onboardGlow)" />
+                  </Svg>
+                  <View style={[styles.iconContainerBig, { backgroundColor: 'transparent', marginBottom: 0 }]}>
+                    <Image source={require('../../assets/icon.png')} style={{ width: 100, height: 100, borderRadius: 25 }} resizeMode="cover" />
+                  </View>
+                </Animated.View>
+
+                <Animated.View
+                  style={{
+                    alignItems: 'center',
+                    opacity: onboardTitleAnim,
+                    transform: [{ translateY: onboardTitleAnim.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
+                  }}
+                >
+                  <MixedText style={[styles.welcomeText, { color: colors.text, fontSize: typography.h2.fontSize }]}>Welcome to</MixedText>
+                  <MixedText style={[styles.appNameText, { color: colors.primary, fontSize: typography.h1.fontSize + 8 }]}>Adventist Tamil Tool</MixedText>
+                  <MixedText style={[styles.onboardingSub, { color: colors.subtext, fontSize: typography.body.fontSize }]}>Developed by Pr. Kedwik S Majith for Tamil Seventh-Day Adventist community</MixedText>
+                </Animated.View>
               </View>
-              <View style={styles.onboardingForm}>
-                <MixedText style={[styles.inputLabel, { color: colors.subtext, fontSize: typography.body.fontSize }]}>Your Name (English or Tamil)</MixedText>
-                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.card, fontSize: typography.body.fontSize }]} placeholder="e.g. David / தாவீது" placeholderTextColor={colors.subtext} value={tempName} onChangeText={setTempName} autoCorrect={false} />
+
+              <Animated.View
+                style={[
+                  styles.onboardingForm,
+                  {
+                    opacity: onboardFormAnim,
+                    transform: [{ translateY: onboardFormAnim.interpolate({ inputRange: [0, 1], outputRange: [22, 0] }) }],
+                  },
+                ]}
+              >
+                <MixedText style={[styles.inputLabel, { color: colors.primary, fontSize: typography.body.fontSize, fontWeight: 'bold' }]}>Enter Your Name</MixedText>
+                <Animated.View
+                  style={[
+                    styles.inputWrapper,
+                    {
+                      backgroundColor: colors.card,
+                      borderColor: nameInputGlow.interpolate({ inputRange: [0, 1], outputRange: [colors.border, colors.primary] }),
+                      borderWidth: nameInputGlow.interpolate({ inputRange: [0, 1], outputRange: [1.5, 2] }),
+                    },
+                  ]}
+                >
+                  <Ionicons name="person" size={20} color={nameInputFocused ? colors.primary : colors.subtext} style={{ marginRight: 10 }} />
+                  <TextInput
+                    style={[styles.inputField, { color: colors.text, fontSize: typography.body.fontSize }]}
+                    placeholder="Type Here (e.g. David / தாவீது)"
+                    placeholderTextColor={colors.subtext}
+                    value={tempName}
+                    onChangeText={setTempName}
+                    autoCorrect={false}
+                    onFocus={() => setNameInputFocused(true)}
+                    onBlur={() => setNameInputFocused(false)}
+                    returnKeyType="done"
+                    onSubmitEditing={saveUserData}
+                    blurOnSubmit={true}
+                  />
+                  <TouchableOpacity
+                    style={[styles.inlineSubmitBtn, { backgroundColor: tempName.trim() ? colors.primary : colors.border, opacity: tempName.trim() ? 1 : 0.5 }]}
+                    onPress={saveUserData}
+                    disabled={!tempName.trim()}
+                  >
+                    <Ionicons name="arrow-forward" size={16} color={isDark ? "#000" : "#FFF"} />
+                  </TouchableOpacity>
+                </Animated.View>
+
                 <MixedText style={[styles.inputLabel, { color: colors.subtext, marginTop: 15, fontSize: typography.body.fontSize }]}>Your Country</MixedText>
                 <TouchableOpacity style={[styles.input, styles.countrySelector, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={() => setShowCountryPicker(true)}>
                   <MixedText style={{ fontSize: typography.title.fontSize, color: colors.text }}>{tempCountry.flag}  {tempCountry.name}</MixedText>
                   <Ionicons name="chevron-down" size={20} color={colors.subtext} />
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
+
               <View style={{ flex: 1 }} />
-              <TouchableOpacity style={[styles.saveBtn, { opacity: tempName.trim() ? 1 : 0.5 }]} onPress={saveUserData} disabled={!tempName.trim()}>
-                <LinearGradient colors={['#00F0FF', '#0080FF']} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                  <MixedText style={[styles.saveBtnText, { fontSize: typography.body.fontSize }]}>Let's Begin</MixedText>
-                  <Ionicons name="arrow-forward" size={20} color="#000" style={{ marginLeft: 10 }} />
-                </LinearGradient>
-              </TouchableOpacity>
+
+              <Animated.View
+                style={{
+                  opacity: onboardButtonAnim,
+                  transform: [{ translateY: onboardButtonAnim.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }],
+                }}
+              >
+                <TouchableOpacity style={[styles.saveBtn, { opacity: tempName.trim() ? 1 : 0.5 }]} onPress={saveUserData} disabled={!tempName.trim()}>
+                  <LinearGradient colors={['#00F0FF', '#0080FF']} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                    <MixedText style={[styles.saveBtnText, { fontSize: typography.body.fontSize }]}>Let's Begin</MixedText>
+                    <Ionicons name="arrow-forward" size={20} color="#000" style={{ marginLeft: 10 }} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
             </KeyboardAvoidingView>
           )}
 
@@ -925,6 +1121,9 @@ const styles = StyleSheet.create({
   onboardingForm: { marginTop: 40 },
   inputLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 8, marginLeft: 5 },
   input: { borderWidth: 1, borderRadius: 15, padding: 18, fontSize: 16 },
+  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderRadius: 15, paddingHorizontal: 15, paddingVertical: Platform.OS === 'ios' ? 6 : 2, marginBottom: 4 },
+  inputField: { flex: 1, paddingVertical: 12 },
+  inlineSubmitBtn: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginLeft: 8 },
   countrySelector: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   saveBtn: { borderRadius: 15, overflow: 'hidden', marginBottom: 20 },
   gradientBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 18 },
