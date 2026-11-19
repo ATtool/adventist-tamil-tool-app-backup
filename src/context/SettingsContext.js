@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const SettingsContext = createContext();
 
 export const SettingsProvider = ({ children }) => {
-  const isDark = true; 
+  const [isDark, setIsDark] = useState(true); 
   
   const [timeZone, setTimeZone] = useState('India (IST)');
   
@@ -31,6 +31,11 @@ export const SettingsProvider = ({ children }) => {
   useEffect(() => {
     const loadSettings = async () => {
       try {
+        const savedTheme = await AsyncStorage.getItem('@app_theme');
+        if (savedTheme !== null) {
+          setIsDark(savedTheme === 'dark');
+        }
+
         const savedLang = await AsyncStorage.getItem('@bible_language');
         if (savedLang !== null) _setBibleLanguage(savedLang);
 
@@ -113,18 +118,55 @@ export const SettingsProvider = ({ children }) => {
     setBibleLetterSpacing(0);
   };
 
-  const colors = {
-    background: '#05070A',               
-    card: 'rgba(255, 255, 255, 0.04)',   
-    text: '#FFFFFF',                     
-    subtext: '#8E94A3',                  
-    primary: '#00F0FF',                  
-    border: 'rgba(255, 255, 255, 0.08)', 
-    glow: 'rgba(0, 240, 255, 0.15)',
-    accent: '#FFD700',
-    danger: '#FF3B30',
-    success: '#30D158'
+  const setTheme = async (themeMode) => {
+    const dark = themeMode === 'dark';
+    setIsDark(dark);
+    await AsyncStorage.setItem('@app_theme', dark ? 'dark' : 'light');
   };
+
+  const toggleTheme = async () => {
+    const dark = !isDark;
+    setIsDark(dark);
+    await AsyncStorage.setItem('@app_theme', dark ? 'dark' : 'light');
+  };
+
+  const colors = useMemo(() => {
+    if (isDark) {
+      return {
+        background: '#05070A',               
+        card: 'rgba(255, 255, 255, 0.04)',   
+        cardSolid: '#12161E',
+        text: '#FFFFFF',                     
+        subtext: '#8E94A3',                  
+        primary: '#00F0FF',                  
+        border: 'rgba(255, 255, 255, 0.08)', 
+        glow: 'rgba(0, 240, 255, 0.15)',
+        accent: '#FFD700',
+        danger: '#FF3B30',
+        success: '#30D158',
+        tabBar: '#0A1929',
+        tabActive: '#FFD700',
+        tabInactive: '#00F0FF',
+      };
+    } else {
+      return {
+        background: '#F4F7FB',               
+        card: '#FFFFFF',   
+        cardSolid: '#FFFFFF',
+        text: '#0F172A',                     
+        subtext: '#5B677B',                  
+        primary: '#0077E6',                  
+        border: '#E2E8F0', 
+        glow: 'rgba(0, 119, 230, 0.12)',
+        accent: '#D97706',
+        danger: '#EF4444',
+        success: '#10B981',
+        tabBar: '#FFFFFF',
+        tabActive: '#0077E6',
+        tabInactive: '#64748B',
+      };
+    }
+  }, [isDark]);
 
   // Uniform Typography System (Sizes & Spacing Only)
   // We leave fontFamily out so individual screens can keep their exact fonts!
@@ -164,7 +206,7 @@ export const SettingsProvider = ({ children }) => {
 
   return (
     <SettingsContext.Provider value={{ 
-      timeZone, setTimeZone, colors, typography, isDark,
+      timeZone, setTimeZone, colors, typography, isDark, setIsDark, setTheme, toggleTheme,
       appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled,
       titleSize, setTitleSize, titleSpacing, setTitleSpacing,
       lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight,

@@ -1,13 +1,13 @@
 import MixedText from '../MixedText.js';
 import React, { useEffect, useRef } from 'react';
-import { TouchableOpacity, StyleSheet, Platform, Text, Animated } from 'react-native';
+import { TouchableOpacity, StyleSheet, Platform, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useSettings } from '../../context/SettingsContext';
 
 export default function BibleActionBar({
-  colors,
-  isDark,
+  colors: propColors,
+  isDark: propDark,
   selectedVerses,
   userFavorites,
   onCancel,
@@ -17,7 +17,10 @@ export default function BibleActionBar({
   onConcordance,
   onExplanations
 }) {
-  const { typography } = useSettings();
+  const settings = useSettings();
+  const colors = propColors || settings.colors;
+  const isDark = propDark !== undefined ? propDark : settings.isDark;
+  const typography = settings.typography;
   const slideAnim = useRef(new Animated.Value(100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -39,18 +42,24 @@ export default function BibleActionBar({
   const safeFavorites = userFavorites || [];
   const allFavorited = selectedVerses.every(v => safeFavorites.includes(v.verse));
 
-  const ActionBtn = ({ icon, text, onPress, highlight }) => (
-    <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
-      <Ionicons name={icon} size={24} color={highlight ? "#FF3B30" : "#FFD700"} />
-      <MixedText style={{ color: highlight ? "#FF3B30" : "#FFD700", fontSize: typography.caption.fontSize, fontWeight: 'bold', marginTop: 6 }}>{text}</MixedText>
-    </TouchableOpacity>
-  );
+  const ActionBtn = ({ icon, text, onPress, highlight }) => {
+    const btnColor = highlight ? "#FF3B30" : (isDark ? "#FFD700" : colors.primary);
+    return (
+      <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
+        <Ionicons name={icon} size={24} color={btnColor} />
+        <MixedText style={{ color: btnColor, fontSize: typography.caption.fontSize, fontWeight: 'bold', marginTop: 6 }}>{text}</MixedText>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <Animated.View style={[
       styles.floatingActionBar, 
       { 
         borderColor: colors.border,
+        backgroundColor: Platform.OS === 'android' ? (isDark ? 'rgba(10, 25, 41, 0.85)' : 'rgba(255, 255, 255, 0.95)') : 'transparent',
+        shadowColor: isDark ? '#000' : '#888',
+        shadowOpacity: isDark ? 0.3 : 0.1,
         opacity: fadeAnim,
         transform: [{ translateY: slideAnim }]
       }
@@ -86,8 +95,7 @@ const styles = StyleSheet.create({
     left: 20, right: 20, borderRadius: 25, borderWidth: 1, 
     flexDirection: 'row', justifyContent: 'space-around', 
     paddingVertical: 15, overflow: 'hidden', 
-    backgroundColor: Platform.OS === 'android' ? 'rgba(10, 25, 41, 0.85)' : 'transparent', 
-    shadowColor: '#000', shadowOffset: {width: 0, height: 4}, shadowOpacity: 0.3, shadowRadius: 5, elevation: 10,
+    shadowOffset: {width: 0, height: 4}, shadowRadius: 5, elevation: 10,
     zIndex: 100
   },
   actionBtn: { alignItems: 'center', flex: 1, zIndex: 1, paddingHorizontal: 2 },

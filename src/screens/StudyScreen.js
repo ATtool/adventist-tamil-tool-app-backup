@@ -7,7 +7,6 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
 
 // --- ACCENT PALETTE FOR THE 3 STUDY TOOL CARDS ---
-const ACCENT_DICT = '#00F0FF';
 const ACCENT_CONC = '#FF3B30';
 const ACCENT_VERSE = '#2ECC71';
 
@@ -15,6 +14,7 @@ export default function StudyScreen() {
   const navigation = useNavigation();
   // Added typography here!
   const { colors, typography } = useSettings();
+  const ACCENT_DICT = colors.primary;
 
   // --- ANIMATION VALUES ---
   const headerOpacity = useRef(new Animated.Value(0)).current;

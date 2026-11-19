@@ -189,17 +189,17 @@ export default function TodaysMannaScreen() {
             style={styles.iconBtn}
             disabled={isLoading}
           >
-            <Ionicons name="sync" size={22} color={isLoading ? colors.subtext : "#00F0FF"} />
+            <Ionicons name="sync" size={22} color={isLoading ? colors.subtext : colors.primary} />
           </TouchableOpacity>
 
           {todayDevotion && (
             <>
               <TouchableOpacity onPress={() => setShowFontSettings(true)} style={styles.iconBtn}>
-                <MixedText style={{ color: "#00F0FF", fontWeight: 'bold', fontSize: typography.body.fontSize }}>Aa</MixedText>
+                <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize }}>Aa</MixedText>
               </TouchableOpacity>
 
               <TouchableOpacity onPress={shareDevotion} style={styles.iconBtn}>
-                <Ionicons name="share-social-outline" size={22} color="#00F0FF" />
+                <Ionicons name="share-social-outline" size={22} color={colors.primary} />
               </TouchableOpacity>
             </>
           )}
@@ -230,14 +230,14 @@ export default function TodaysMannaScreen() {
                 value={readerFontSize}
                 onValueChange={setReaderFontSize}
                 maximumTrackTintColor={colors.border}
-                thumbTintColor="#00F0FF"
-                minimumTrackTintColor="#00F0FF"
+                thumbTintColor={colors.primary}
+                minimumTrackTintColor={colors.primary}
               />
               <MixedText style={{ color: colors.text, fontSize: typography.h2.fontSize, fontWeight: 'bold' }}>A</MixedText>
             </View>
 
             <TouchableOpacity style={{ marginTop: 25, padding: 10 }} onPress={() => setShowFontSettings(false)}>
-              <MixedText style={{ color: '#00F0FF', fontWeight: 'bold', fontSize: typography.body.fontSize }}>Close</MixedText>
+              <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize }}>Close</MixedText>
             </TouchableOpacity>
           </TouchableOpacity>
 
@@ -247,7 +247,7 @@ export default function TodaysMannaScreen() {
       {/* MAIN CONTENT AREA */}
       {isLoading ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#00F0FF" />
+          <ActivityIndicator size="large" color={colors.primary} />
           <MixedText style={{ color: colors.subtext, marginTop: 15, fontFamily: 'Tamil003' }}>மன்னா தயாராகிறது...</MixedText>
         </View>
       ) : errorMsg ? (
@@ -261,11 +261,11 @@ export default function TodaysMannaScreen() {
             disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator size="small" color="#00F0FF" />
+              <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Ionicons name="reload" size={18} color="#00F0FF" />
+              <Ionicons name="reload" size={18} color={colors.primary} />
             )}
-            <MixedText style={{ color: '#00F0FF', marginLeft: 8, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>
+            <MixedText style={{ color: colors.primary, marginLeft: 8, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>
               மீண்டும் முயற்சிக்க
             </MixedText>
           </TouchableOpacity>
@@ -294,12 +294,12 @@ export default function TodaysMannaScreen() {
       ) : todayDevotion ? (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           
-          <MixedText style={[styles.title, { color: '#FFD700', fontSize: readerFontSize + 12 }]}>
+          <MixedText style={[styles.title, { color: colors.accent, fontSize: readerFontSize + 12 }]}>
             {todayDevotion.title}
           </MixedText>
           
-          <View style={[styles.verseBox, { backgroundColor: colors.card, borderColor: 'rgba(0, 240, 255, 0.2)' }]}>
-            <MixedText style={[styles.verseText, { color: '#00F0FF', fontSize: readerFontSize + 6 }]}>
+          <View style={[styles.verseBox, { backgroundColor: colors.card, borderColor: isDark ? 'rgba(0, 240, 255, 0.2)' : 'rgba(0, 119, 230, 0.2)' }]}>
+            <MixedText style={[styles.verseText, { color: colors.primary, fontSize: readerFontSize + 6 }]}>
               {todayDevotion.verse}
             </MixedText>          
           </View>

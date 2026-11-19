@@ -682,7 +682,7 @@ export default function DictionaryScreen({ onClose }) {
                     </View>
                   )}
                 </View>
-                <View style={[styles.statusBadge, { backgroundColor: downloadStatus[dict.id] ? colors.accent : colors.border }]}>
+                <View style={[styles.statusBadge, { backgroundColor: downloadStatus[dict.id] ? (isDark ? 'rgba(0, 240, 255, 0.12)' : 'rgba(0, 119, 230, 0.1)') : colors.border }]}>
                   <Ionicons
                     name={downloadStatus[dict.id] ? 'checkmark-circle' : 'cloud-download-outline'}
                     size={16}
@@ -833,14 +833,14 @@ export default function DictionaryScreen({ onClose }) {
                 style={[
                   selectedLetter === letter ? styles.letterActive : styles.letterInactive,
                   {
-                    backgroundColor: selectedLetter === letter ? '#FFD700' : 'transparent',
+                    backgroundColor: selectedLetter === letter ? (isDark ? '#FFD700' : colors.primary) : 'transparent',
                     borderColor: colors.border,
                   }
                 ]}
               >
                 <MixedText
                   style={{
-                    color: selectedLetter === letter ? '#000' : colors.text,
+                    color: selectedLetter === letter ? (isDark ? '#000' : '#FFF') : colors.text,
                     fontSize: typography.h2.fontSize,
                     fontWeight: '700',
                     letterSpacing: 0.5

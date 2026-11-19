@@ -44,6 +44,9 @@ export default function SongsScreen() {
   // ADDED typography to our settings import
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
 
+  const songAccent = isDark ? BRIGHT_YELLOW : colors.accent;
+  const refrainColor = isDark ? NEON_BLUE : colors.primary;
+
   // --- LANGUAGE TOGGLE STATE & ANIMATION ---
   const [isThanglish, setIsThanglish] = useState(false);
   const toggleSlideAnim = useRef(new Animated.Value(0)).current; 
@@ -395,7 +398,7 @@ export default function SongsScreen() {
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilText, { color: colors.text, fontSize: isThanglish ? typography.h2.fontSize : typography.h2.fontSize + 2 }]}>
                 {isThanglish ? 'Thirumarai Thirupaadalgal' : 'திருமறைத்திருப் பாடல்கள்'}
               </MixedText>
-              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: typography.body.fontSize }]}>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilSubText, { color: songAccent, fontSize: typography.body.fontSize }]}>
                 {isThanglish ? '( Songs of Hope )' : '( நம்பிக்கையின் கீதங்கள் புத்தக வரிசை )'}
               </MixedText>
             </View>
@@ -411,7 +414,7 @@ export default function SongsScreen() {
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilText, { color: colors.text, fontSize: isThanglish ? typography.h2.fontSize : typography.h2.fontSize + 2 }]}>
                 {isThanglish ? 'Thirumarai Thirupaadalgal' : 'திருமறைத்திருப் பாடல்கள்'}
               </MixedText>
-              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: typography.body.fontSize }]}>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilSubText, { color: songAccent, fontSize: typography.body.fontSize }]}>
                 {isThanglish ? '( Old Song Book )' : '( பழைய புத்தக வரிசை )'}
               </MixedText>
             </View>
@@ -440,7 +443,7 @@ export default function SongsScreen() {
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilText, { color: colors.text, fontSize: isThanglish ? typography.h2.fontSize : typography.h2.fontSize + 2 }]}>
                 {isThanglish ? 'Enathu Paadalgal' : 'எனது பாடல்கள்'}
               </MixedText>
-              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilSubText, { color: BRIGHT_YELLOW, fontSize: typography.body.fontSize }]}>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.tamilSubText, { color: songAccent, fontSize: typography.body.fontSize }]}>
                 ( Custom Songs )
               </MixedText>
             </View>
@@ -580,7 +583,7 @@ export default function SongsScreen() {
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <ScalePressable onPress={closeGlobalReadingModal}>
                 <View style={{ padding: 10, width: 50 }}>
-                  <Ionicons name="chevron-down" size={32} color={activeGlobalSong?.sourceColor || BRIGHT_YELLOW} />
+                  <Ionicons name="chevron-down" size={32} color={activeGlobalSong?.sourceColor || songAccent} />
                 </View>
               </ScalePressable>
               
@@ -595,19 +598,19 @@ export default function SongsScreen() {
 
               <View style={{ flexDirection: 'row', alignItems: 'center', width: 120, justifyContent: 'flex-end' }}>
                 <ScalePressable onPress={() => { triggerHaptic(); setShowCombinedLyrics(!showCombinedLyrics); }}>
-                  <View style={[styles.textSettingsBtn, showCombinedLyrics && { backgroundColor: BRIGHT_YELLOW }]}>
-                    <Ionicons name="language" size={20} color={showCombinedLyrics ? '#000' : (activeGlobalSong?.sourceColor || BRIGHT_YELLOW)} />
+                  <View style={[styles.textSettingsBtn, showCombinedLyrics && { backgroundColor: songAccent }]}>
+                    <Ionicons name="language" size={20} color={showCombinedLyrics ? (isDark ? '#000' : '#FFF') : (activeGlobalSong?.sourceColor || songAccent)} />
                   </View>
                 </ScalePressable>
 
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <MixedText style={{ color: activeGlobalSong?.sourceColor || BRIGHT_YELLOW, marginRight: 4, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Aa</MixedText>
+                    <MixedText style={{ color: activeGlobalSong?.sourceColor || songAccent, marginRight: 4, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>Aa</MixedText>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeGlobalSong)}>
                   <View style={{ padding: 8 }}>
-                    <Ionicons name="share-outline" size={24} color={activeGlobalSong?.sourceColor || BRIGHT_YELLOW} />
+                    <Ionicons name="share-outline" size={24} color={activeGlobalSong?.sourceColor || songAccent} />
                   </View>
                 </ScalePressable>
               </View>
@@ -618,7 +621,7 @@ export default function SongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
                       </MixedText>
                     )}
@@ -628,7 +631,7 @@ export default function SongsScreen() {
                       <MixedText
                         key={lineIdx}
                         style={{
-                          color: line.isRefrain ? NEON_BLUE : colors.text,
+                          color: line.isRefrain ? refrainColor : colors.text,
                           fontSize: lyricsSize,
                           fontFamily: 'Tamil003',
                           lineHeight: lyricsLineHeight,
@@ -644,7 +647,7 @@ export default function SongsScreen() {
                                   {part}
                                 </MixedText>
                               ) : (
-                                <MixedText key={i} style={{ color: line.isRefrain ? NEON_BLUE : colors.text, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
+                                <MixedText key={i} style={{ color: line.isRefrain ? refrainColor : colors.text, fontFamily: 'Tamil003', fontSize: lyricsSize, lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
                                   {part}
                                 </MixedText>
                               )

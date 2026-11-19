@@ -99,6 +99,9 @@ export default function OtherSongsScreen() {
 
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
 
+  const songAccent = isDark ? BRIGHT_YELLOW : colors.accent;
+  const refrainColor = isDark ? NEON_BLUE : colors.primary;
+
   const [isLoading, setIsLoading] = useState(true); // <--- ADDED PROPER LOADING STATE
   const [songs, setSongs] = useState([]);
   const [isLive, setIsLive] = useState(true);
@@ -641,7 +644,7 @@ export default function OtherSongsScreen() {
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <ScalePressable onPress={() => { triggerHaptic(); closeReadingScreen(); }}>
                 <View style={{ padding: 10 }}>
-                  <Ionicons name="chevron-down" size={32} color={BRIGHT_YELLOW} />
+                  <Ionicons name="chevron-down" size={32} color={songAccent} />
                 </View>
               </ScalePressable>
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
@@ -652,12 +655,12 @@ export default function OtherSongsScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <MixedText style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</MixedText>
+                    <MixedText style={{ color: songAccent, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</MixedText>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeSong)}>
                   <View style={{ padding: 8 }}>
-                    <Ionicons name="share-outline" size={24} color={BRIGHT_YELLOW} />
+                    <Ionicons name="share-outline" size={24} color={songAccent} />
                   </View>
                 </ScalePressable>
               </View>
@@ -668,7 +671,7 @@ export default function OtherSongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
                       </MixedText>
                     )}
@@ -678,7 +681,7 @@ export default function OtherSongsScreen() {
                       <MixedText
                         key={lineIdx}
                         style={{
-                          color: line.isRefrain ? NEON_BLUE : colors.text,
+                          color: line.isRefrain ? refrainColor : colors.text,
                           fontSize: lyricsSize,
                           fontFamily: 'Tamil003',
                           lineHeight: lyricsLineHeight,
@@ -698,28 +701,28 @@ export default function OtherSongsScreen() {
               <View style={styles.floatCenterClear}>
                 <ScalePressable onPress={() => { triggerHaptic(); closeReadingScreen(); }}>
                   <View style={{ padding: 10, marginRight: 5 }}>
-                    <Ionicons name="chevron-down-circle" size={40} color={BRIGHT_YELLOW} />
+                    <Ionicons name="chevron-down-circle" size={40} color={songAccent} />
                   </View>
                 </ScalePressable>
-                <AnimatedHeart isFavorite={favorites.has(activeSong.id)} onPress={() => toggleFavorite(activeSong.id)} inactiveColor={BRIGHT_YELLOW} activeColor={BRIGHT_YELLOW} size={40} />
+                <AnimatedHeart isFavorite={favorites.has(activeSong.id)} onPress={() => toggleFavorite(activeSong.id)} inactiveColor={songAccent} activeColor={songAccent} size={40} />
               </View>
             )}
 
             {selectedSongIndex > 0 && (
-              <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.floatLeft, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)', borderColor: colors.border }]}>
+              <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.floatLeft, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)', borderColor: colors.border }]}>
                 <ScalePressable onPress={() => changeSong(-1)}>
                   <View style={styles.blurBtnContent}>
-                    <Ionicons name="arrow-back" size={28} color={BRIGHT_YELLOW} />
+                    <Ionicons name="arrow-back" size={28} color={songAccent} />
                   </View>
                 </ScalePressable>
               </BlurView>
             )}
 
             {selectedSongIndex < filteredSongs.length - 1 && (
-              <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.floatRight, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)', borderColor: colors.border }]}>
+              <BlurView intensity={80} tint={isDark ? "dark" : "light"} style={[styles.floatRight, { backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)', borderColor: colors.border }]}>
                 <ScalePressable onPress={() => changeSong(1)}>
                   <View style={styles.blurBtnContent}>
-                    <Ionicons name="arrow-forward" size={28} color={BRIGHT_YELLOW} />
+                    <Ionicons name="arrow-forward" size={28} color={songAccent} />
                   </View>
                 </ScalePressable>
               </BlurView>

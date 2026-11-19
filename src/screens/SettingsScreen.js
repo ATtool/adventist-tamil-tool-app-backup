@@ -35,7 +35,7 @@ const MAPS_FOLDER = 'BibleMaps';
 export default function SettingsScreen() {
   const navigation = useNavigation();
   // Added typography and restoreDefaultTextSettings here!
-  const { colors, isDark, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion, typography, restoreDefaultTextSettings } = useSettings();
+  const { colors, isDark, setTheme, toggleTheme, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion, typography, restoreDefaultTextSettings } = useSettings();
 
   const [showStorageModal, setShowStorageModal] = useState(false);
   const [downloadedBibles, setDownloadedBibles] = useState([]);
@@ -230,7 +230,7 @@ export default function SettingsScreen() {
       
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
-        <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
+        <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5, width: 40 }}>
             <Ionicons name="arrow-back" size={26} color={colors.text} />
           </TouchableOpacity>
@@ -244,12 +244,77 @@ export default function SettingsScreen() {
           
           <MixedText style={[styles.sectionTitle, { color: colors.primary, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>APPEARANCE & FEEL</MixedText>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            
+            {/* Theme Mode Row */}
+            <View style={[styles.cardRow, { borderBottomWidth: 1, borderBottomColor: colors.border, paddingVertical: 14 }]}>
+              <View style={styles.rowLeft}>
+                <View style={[styles.themeIconCircle, { backgroundColor: isDark ? 'rgba(255, 215, 0, 0.12)' : 'rgba(217, 119, 6, 0.12)' }]}>
+                  <Ionicons name={isDark ? "moon" : "sunny"} size={22} color={isDark ? "#FFD700" : "#D97706"} />
+                </View>
+                <View style={{ marginLeft: 14 }}>
+                  <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, marginLeft: 0, fontWeight: '700', includeFontPadding: false }]}>
+                    {isDark ? 'Dark Mode' : 'Day Mode'}
+                  </MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, marginTop: 2, fontFamily: 'Tamil003', includeFontPadding: false }}>
+                    {isDark ? 'இருண்ட பயன்முறை' : 'பகல் பயன்முறை'}
+                  </MixedText>
+                </View>
+              </View>
+
+              {/* Day / Dark Switcher Controls */}
+              <View style={[styles.themeSegmentContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : '#E2E8F0', borderColor: colors.border }]}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (isDark) {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setTheme('light');
+                    }
+                  }}
+                  style={[
+                    styles.themeSegmentBtn,
+                    !isDark && [styles.themeSegmentActive, { backgroundColor: colors.primary }]
+                  ]}
+                >
+                  <Ionicons name="sunny" size={15} color={!isDark ? '#FFFFFF' : colors.subtext} style={{ marginRight: 4 }} />
+                  <MixedText style={{ color: !isDark ? '#FFFFFF' : colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', includeFontPadding: false }}>
+                    Day
+                  </MixedText>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    if (!isDark) {
+                      if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      setTheme('dark');
+                    }
+                  }}
+                  style={[
+                    styles.themeSegmentBtn,
+                    isDark && [styles.themeSegmentActive, { backgroundColor: colors.primary }]
+                  ]}
+                >
+                  <Ionicons name="moon" size={15} color={isDark ? '#000000' : colors.subtext} style={{ marginRight: 4 }} />
+                  <MixedText style={{ color: isDark ? '#000000' : colors.subtext, fontSize: typography.subtext.fontSize, fontWeight: 'bold', includeFontPadding: false }}>
+                    Dark
+                  </MixedText>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Haptic Feedback Row */}
             <View style={styles.cardRow}>
               <View style={styles.rowLeft}>
-                <Ionicons name="phone-portrait-outline" size={24} color={colors.text} />
-                <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, includeFontPadding: false }]}>Haptic Feedback</MixedText>
+                <View style={[styles.themeIconCircle, { backgroundColor: colors.glow }]}>
+                  <Ionicons name="phone-portrait-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={{ marginLeft: 14 }}>
+                  <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, marginLeft: 0, fontWeight: '500', includeFontPadding: false }]}>Haptic Feedback</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, marginTop: 2, includeFontPadding: false }}>Touch vibrations</MixedText>
+                </View>
               </View>
-              <Switch value={hapticsEnabled} onValueChange={toggleHaptics} trackColor={{ false: '#ccc', true: colors.primary }} thumbColor={'#fff'} />
+              <Switch value={hapticsEnabled} onValueChange={toggleHaptics} trackColor={{ false: isDark ? '#3A3D45' : '#CBD5E1', true: colors.primary }} thumbColor={'#fff'} />
             </View>
           </View>
 
@@ -458,6 +523,10 @@ const styles = StyleSheet.create({
   cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 15 },
   rowLeft: { flexDirection: 'row', alignItems: 'center' },
   rowText: { marginLeft: 15, fontWeight: '500' },
+  themeIconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  themeSegmentContainer: { flexDirection: 'row', borderRadius: 14, padding: 3, borderWidth: 1 },
+  themeSegmentBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 6, paddingHorizontal: 12, borderRadius: 11 },
+  themeSegmentActive: { elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.2, shadowRadius: 2 },
   modalSheet: { width: '100%', height: '70%', borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, overflow: 'hidden' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1 },
   

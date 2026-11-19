@@ -412,13 +412,13 @@ export default function SabbathSchoolScreen() {
           </TouchableOpacity>
         )}
 
-        <MixedText style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 10, textAlign: 'center' }}>
+        <MixedText style={{ color: colors.accent, fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 10, textAlign: 'center' }}>
           {isInsideStory ? rawTitle : `பாடம் ${parseInt(dayKey)} : ${rawTitle}`}
         </MixedText>
         
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingBottom: 10, borderBottomWidth: 1, borderColor: colors.border }}>
           <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{DAY_NAMES[dayKey]}</MixedText>
-          {!!rawDate && <MixedText style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{rawDate}</MixedText>}
+          {!!rawDate && <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: readerFontSize - 2 }}>{rawDate}</MixedText>}
         </View>
 
         {renderBookText(dataToRender)}
@@ -509,7 +509,7 @@ export default function SabbathSchoolScreen() {
             <Ionicons name="arrow-back" size={20} color={colors.subtext} />
             <MixedText style={{ color: colors.subtext, marginLeft: 5, fontFamily: 'Tamil003' }}>காலாண்டுக்கு திரும்பு</MixedText>
           </TouchableOpacity>
-          <MixedText style={{ color: '#FFD700', fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 15, lineHeight: 30, textAlign: 'center' }}>
+          <MixedText style={{ color: colors.accent, fontSize: readerFontSize + 4, fontFamily: 'Tamil003', marginBottom: 15, lineHeight: 30, textAlign: 'center' }}>
             அறிமுகம் (Introduction)
           </MixedText>
           {renderBookText(quarterData.quarter_info.introduction)}
@@ -566,11 +566,11 @@ export default function SabbathSchoolScreen() {
 
         <View style={[styles.headerTools, { width: 80, justifyContent: 'flex-end' }]}>
           <TouchableOpacity onPress={() => fetchData(true)} style={styles.iconBtn}>
-            <Ionicons name="sync" size={22} color={isLoading ? colors.subtext : "#00F0FF"} />
+            <Ionicons name="sync" size={22} color={isLoading ? colors.subtext : colors.primary} />
           </TouchableOpacity>
           {!isExpired && (
             <TouchableOpacity onPress={() => setShowFontSettings(true)} style={styles.iconBtn}>
-              <MixedText style={{ color: "#00F0FF", fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>Aa</MixedText>
+              <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>Aa</MixedText>
             </TouchableOpacity>
           )}
         </View>
@@ -630,13 +630,13 @@ export default function SabbathSchoolScreen() {
                 style={{ width: 180, height: 40, marginHorizontal: 10 }}
                 minimumValue={14} maximumValue={36} step={2}
                 value={readerFontSize} onValueChange={setReaderFontSize}
-                maximumTrackTintColor={colors.border} thumbTintColor="#00F0FF" minimumTrackTintColor="#00F0FF"
+                maximumTrackTintColor={colors.border} thumbTintColor={colors.primary} minimumTrackTintColor={colors.primary}
               />
               <MixedText style={{ color: colors.text, fontSize: typography.h2.fontSize, fontFamily: 'Tamil003' }}>A</MixedText>
             </View>
             <MixedText style={{ color: colors.subtext, fontSize: typography.subtext.fontSize, marginTop: 15, fontFamily: 'Tamil003', textAlign: 'center' }}>Double tap or long press paragraphs to highlight.</MixedText>
             <TouchableOpacity style={{ marginTop: 25, padding: 10 }} onPress={() => setShowFontSettings(false)}>
-              <MixedText style={{ color: '#00F0FF', fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>Close</MixedText>
+              <MixedText style={{ color: colors.primary, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }}>Close</MixedText>
             </TouchableOpacity>
           </TouchableOpacity>
         </TouchableOpacity>

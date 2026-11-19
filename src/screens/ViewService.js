@@ -342,18 +342,17 @@ export default function ViewService() {
                             <View key={sIdx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                               <View style={{ width: 34 }}>
                                 {stanza.number && (
-                                  <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                                  <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                                     {stanza.number}
                                   </MixedText>
                                 )}
                               </View>
                               <View style={{ flex: 1 }}>
                                 {stanza.lines.map((line, lineIdx) => (
-                                  // Pure white text for both Tamil and Thanglish, locked to Tamil003
                                   <MixedText
                                     key={lineIdx}
                                     style={{
-                                      color: line.isRefrain ? NEON_BLUE : colors.text,
+                                      color: line.isRefrain ? (isDark ? NEON_BLUE : colors.primary) : colors.text,
                                       fontSize: lyricsSize,
                                       fontFamily: 'Tamil003',
                                       lineHeight: lyricsLineHeight,

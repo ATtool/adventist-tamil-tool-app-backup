@@ -1,6 +1,6 @@
 import MixedText from '../components/MixedText.js';
 import React, { useRef, useEffect } from 'react';
-import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions } from 'react-native';
+import { View, Text, Platform, TouchableOpacity, Animated, useWindowDimensions, StatusBar } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack'; 
 import { NavigationContainer, createNavigationContainerRef, DefaultTheme } from '@react-navigation/native';
@@ -56,12 +56,12 @@ const linking = {
 
 // --- CUSTOM TAB BAR ---
 function CustomTabBar({ state, descriptors, navigation, insets }) {
-  const { colors, hapticsEnabled, typography } = useSettings();
+  const { colors, hapticsEnabled, typography, isDark } = useSettings();
   const { width } = useWindowDimensions();
   
-  const PRIME_YELLOW = '#FFD700';
-  const TAB_BG = '#0A1929'; 
-  const NEON_BLUE = colors.primary; 
+  const activeColor = colors.tabActive || (isDark ? '#FFD700' : colors.primary);
+  const inactiveColor = colors.tabInactive || (isDark ? colors.primary : '#64748B');
+  const tabBg = colors.tabBar || (isDark ? '#0A1929' : '#FFFFFF'); 
 
   const visibleRoutes = state.routes; 
   const TAB_WIDTH = width / visibleRoutes.length;
@@ -79,15 +79,15 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
   return (
     <View style={{
       flexDirection: 'row',
-      backgroundColor: TAB_BG,
+      backgroundColor: tabBg,
       height: Platform.OS === 'ios' ? 85 : 65 + insets.bottom,
       paddingBottom: Platform.OS === 'ios' ? 20 : (insets.bottom > 0 ? insets.bottom : 8),
       borderTopWidth: 1,
       borderTopColor: colors.border,
       elevation: 15,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -5 },
-      shadowOpacity: 0.3,
+      shadowColor: isDark ? '#000' : '#888',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: isDark ? 0.3 : 0.08,
       shadowRadius: 5,
     }}>
       
@@ -97,12 +97,12 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
         left: (TAB_WIDTH / 2) - 25, 
         width: 50,
         height: 4,
-        backgroundColor: PRIME_YELLOW,
+        backgroundColor: activeColor,
         borderBottomLeftRadius: 5,
         borderBottomRightRadius: 5,
-        shadowColor: PRIME_YELLOW,
+        shadowColor: activeColor,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 1,
+        shadowOpacity: isDark ? 1 : 0.4,
         shadowRadius: 10,
         elevation: 10,
         transform: [{ translateX: slideAnim }],
@@ -129,11 +129,11 @@ function CustomTabBar({ state, descriptors, navigation, insets }) {
             }}
             style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 12 }}
           >
-            <Ionicons name={iconName} size={isFocused ? 26 : 24} color={isFocused ? PRIME_YELLOW : NEON_BLUE} />
+            <Ionicons name={iconName} size={isFocused ? 26 : 24} color={isFocused ? activeColor : inactiveColor} />
             <MixedText 
               numberOfLines={1} 
               adjustsFontSizeToFit 
-              style={{ color: isFocused ? PRIME_YELLOW : NEON_BLUE, fontSize: typography.caption.fontSize - 1, fontWeight: isFocused ? 'bold' : '600', marginTop: 5, includeFontPadding: false }}
+              style={{ color: isFocused ? activeColor : inactiveColor, fontSize: typography.caption.fontSize - 1, fontWeight: isFocused ? 'bold' : '600', marginTop: 5, includeFontPadding: false }}
             >
               {route.name}
             </MixedText>
@@ -165,20 +165,24 @@ function TabNavigator() {
 }
 
 export default function MainNavigation() {
-  const { colors } = useSettings(); 
+  const { colors, isDark } = useSettings(); 
 
-  // Overriding the global React Navigation theme to kill the white floor!
+  // Overriding the global React Navigation theme to match app theme
   const navTheme = {
     ...DefaultTheme,
     colors: {
       ...DefaultTheme.colors,
-      background: colors.background, // Forces the deepest background to match your app theme
+      background: colors.background,
+      card: colors.card,
+      text: colors.text,
+      border: colors.border,
+      primary: colors.primary,
     },
   };
 
   return (
-    // Wrap the entire app in a dark container so the Android system window never bleeds through
     <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
       <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme}>
          <Stack.Navigator screenOptions={{ 
              headerShown: false, 

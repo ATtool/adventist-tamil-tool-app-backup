@@ -93,6 +93,9 @@ export default function CustomSongsScreen() {
 
   const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
   
+  const songAccent = isDark ? BRIGHT_YELLOW : colors.accent;
+  const refrainColor = isDark ? NEON_BLUE : colors.primary;
+  
   // State for Data
   const [songs, setSongs] = useState([]);
   const [search, setSearch] = useState('');
@@ -500,7 +503,7 @@ export default function CustomSongsScreen() {
             <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
               <ScalePressable onPress={() => setActiveSong(null)}>
                 <View style={{ padding: 10 }}>
-                  <Ionicons name="chevron-down" size={32} color={BRIGHT_YELLOW} />
+                  <Ionicons name="chevron-down" size={32} color={songAccent} />
                 </View>
               </ScalePressable>
               
@@ -513,17 +516,17 @@ export default function CustomSongsScreen() {
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <ScalePressable onPress={() => { triggerHaptic(); setShowTextSettings(true); }}>
                   <View style={styles.textSettingsBtn}>
-                    <MixedText style={{ color: BRIGHT_YELLOW, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</MixedText>
+                    <MixedText style={{ color: songAccent, fontWeight: 'bold', marginRight: 4, fontSize: appFontSize }}>Aa</MixedText>
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={() => handleShare(activeSong)}>
                   <View style={{ padding: 8 }}>
-                    <Ionicons name="share-outline" size={24} color={BRIGHT_YELLOW} />
+                    <Ionicons name="share-outline" size={24} color={songAccent} />
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={openEditForm}>
                   <View style={{ padding: 8 }}>
-                    <Ionicons name="pencil" size={22} color={BRIGHT_YELLOW} />
+                    <Ionicons name="pencil" size={22} color={songAccent} />
                   </View>
                 </ScalePressable>
                 <ScalePressable onPress={confirmDelete}>
@@ -539,7 +542,7 @@ export default function CustomSongsScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <MixedText style={{ color: '#FFFFFF', fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
                       </MixedText>
                     )}
@@ -549,7 +552,7 @@ export default function CustomSongsScreen() {
                       <MixedText
                         key={lineIdx}
                         style={{
-                          color: line.isRefrain ? NEON_BLUE : colors.text,
+                          color: line.isRefrain ? refrainColor : colors.text,
                           fontSize: lyricsSize,
                           fontFamily: 'Tamil003',
                           lineHeight: lyricsLineHeight,

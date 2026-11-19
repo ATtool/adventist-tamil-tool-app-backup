@@ -298,7 +298,7 @@ export default function StudyExplanationsScreen({ navigation, route }) {
     // 3. Render the correctly colored & clickable links
     return parts.map((part, i) => {
       if (part.type === 'verse') {
-        return <MixedText key={i} style={{ color: '#FFD700', fontWeight: 'bold' }} onPress={() => handleVerseJump(part.value)}>{part.value}</MixedText>;
+        return <MixedText key={i} style={{ color: isDark ? '#FFD700' : colors.primary, fontWeight: 'bold' }} onPress={() => handleVerseJump(part.value)}>{part.value}</MixedText>;
       }
       if (part.type === 'egw') {
         return <MixedText key={i} style={{ color: '#4A90E2', fontWeight: 'bold', textDecorationLine: 'underline' }} onPress={() => handleEgwJump(part.value)}>{part.value}</MixedText>;
@@ -322,7 +322,7 @@ export default function StudyExplanationsScreen({ navigation, route }) {
         // It is a Verse - Render Yellow with double spaces
         return (
           <MixedText key={index}>
-            <MixedText style={{ color: '#FFD700', fontWeight: 'bold' }} onPress={() => handleVerseJump(part)}>
+            <MixedText style={{ color: isDark ? '#FFD700' : colors.primary, fontWeight: 'bold' }} onPress={() => handleVerseJump(part)}>
               {part}
             </MixedText>
             {"   "}

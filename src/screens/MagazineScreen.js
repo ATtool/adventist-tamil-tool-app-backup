@@ -14,9 +14,9 @@ import { useSettings } from '../context/SettingsContext';
 const MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Slim animated progress bar shown while a magazine is downloading
-const ProgressBar = ({ progress = 0, color = '#00F0FF', trackColor = 'rgba(255,255,255,0.1)' }) => (
-  <View style={[styles.progressTrack, { backgroundColor: trackColor }]}>
-    <View style={[styles.progressFill, { width: `${Math.max(4, progress)}%`, backgroundColor: color }]} />
+const ProgressBar = ({ progress = 0, color, trackColor }) => (
+  <View style={[styles.progressTrack, { backgroundColor: trackColor || 'rgba(128,128,128,0.2)' }]}>
+    <View style={[styles.progressFill, { width: `${Math.max(4, progress)}%`, backgroundColor: color || '#0077E6' }]} />
   </View>
 );
 
@@ -254,7 +254,7 @@ export default function MagazineScreen() {
           <View style={{ flex: 1 }}>
             <MixedText style={{ fontFamily: 'Tamil008', fontSize: typography.display.fontSize, color: colors.primary }}>சிட்டுக்குருவி</MixedText>
             <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, marginTop: 2, letterSpacing: 1 }}>( மாத இதழ் )</MixedText>
-            <MixedText style={{ fontFamily: 'Tamil003', fontSize: typography.body.fontSize, color: '#FFD700', marginTop: 6 }}>இது பரலோகம் செல்ல வழி</MixedText>
+            <MixedText style={{ fontFamily: 'Tamil003', fontSize: typography.body.fontSize, color: isDark ? '#FFD700' : colors.accent, marginTop: 6 }}>இது பரலோகம் செல்ல வழி</MixedText>
             {totalIssueCount > 0 && (
               <View style={styles.issueCountPill}>
                 <Ionicons name="library-outline" size={12} color={colors.primary} />

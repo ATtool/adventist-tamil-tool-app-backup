@@ -575,12 +575,12 @@ export default function HomeScreen() {
                 }}
                 style={{ marginRight: 20, position: 'relative' }}
               >
-                <Ionicons name="notifications-outline" size={28} color="#FFD700" />
-                {hasNewUpdates && <View style={styles.redDot} />}
+                <Ionicons name="notifications-outline" size={28} color={isDark ? "#FFD700" : colors.accent} />
+                {hasNewUpdates && <View style={[styles.redDot, { borderColor: colors.background }]} />}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={() => { if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsMenuOpen(true); }}>
-                <Ionicons name="menu" size={32} color="#FFD700" />
+                <Ionicons name="menu" size={32} color={isDark ? "#FFD700" : colors.accent} />
               </TouchableOpacity>
             </View>
           </View>
@@ -618,7 +618,7 @@ export default function HomeScreen() {
             {!!todayVerse && (
               <View style={{ marginTop: 2, paddingTop: 12, borderTopWidth: 1, borderTopColor: colors.border }}>
                 <MixedText 
-                  style={{ color: '#00F0FF', fontSize: typography.body.fontSize, fontFamily: 'Tamil003', lineHeight: 22, textAlign: 'center' }} 
+                  style={{ color: colors.primary, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', lineHeight: 22, textAlign: 'center' }} 
                   numberOfLines={3}
                   allowFontScaling={false}
                 >
@@ -740,7 +740,7 @@ export default function HomeScreen() {
               <TouchableOpacity onPress={() => setShowMeetingMenu(false)}><Ionicons name="close-circle" size={32} color={colors.subtext} /></TouchableOpacity>
             </View>
             <TouchableOpacity style={[styles.meetingOption, { borderBottomColor: colors.border }]} onPress={() => { setShowMeetingMenu(false); navigation.navigate('CreateService'); }}>
-              <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(0, 240, 255, 0.1)', marginRight: 15 }]}><Ionicons name="add" size={24} color={colors.primary} /></View>
+              <View style={[styles.iconContainerSmall, { backgroundColor: colors.glow, marginRight: 15 }]}><Ionicons name="add" size={24} color={colors.primary} /></View>
               <View style={{ flex: 1 }}>
                 <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold' }}>Create Service</MixedText>
                 <MixedText style={{ color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }}>புதிய ஆராதனை</MixedText>
@@ -786,7 +786,7 @@ export default function HomeScreen() {
               <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 15, marginBottom: 10, fontSize: typography.caption.fontSize }]}>IN-APP READER (OFFLINE)</MixedText>
 
               <TouchableOpacity
-                style={[styles.sabbathPrimaryCard, { borderColor: '#00F0FF' }]}
+                style={[styles.sabbathPrimaryCard, { borderColor: colors.primary }]}
                 activeOpacity={0.85}
                 onPress={() => {
                   if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -934,7 +934,7 @@ export default function HomeScreen() {
                     }}
                   >
                     <LinearGradient
-                      colors={['#00F0FF', '#0080FF']}
+                      colors={isDark ? ['#00F0FF', '#0080FF'] : ['#0077E6', '#0055B3']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={{
@@ -945,8 +945,8 @@ export default function HomeScreen() {
                         paddingHorizontal: 16,
                       }}
                     >
-                      <Ionicons name="share-social" size={22} color="#000000" style={{ marginRight: 10 }} />
-                      <MixedText style={{ color: '#000000', fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }}>
+                      <Ionicons name="share-social" size={22} color={isDark ? "#000000" : "#FFFFFF"} style={{ marginRight: 10 }} />
+                      <MixedText style={{ color: isDark ? '#000000' : '#FFFFFF', fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }}>
                         Bless Others • Share App
                       </MixedText>
                     </LinearGradient>
@@ -1061,9 +1061,9 @@ export default function HomeScreen() {
                 }}
               >
                 <TouchableOpacity style={[styles.saveBtn, { opacity: tempName.trim() ? 1 : 0.5 }]} onPress={saveUserData} disabled={!tempName.trim()}>
-                  <LinearGradient colors={['#00F0FF', '#0080FF']} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-                    <MixedText style={[styles.saveBtnText, { fontSize: typography.body.fontSize }]}>Let's Begin</MixedText>
-                    <Ionicons name="arrow-forward" size={20} color="#000" style={{ marginLeft: 10 }} />
+                  <LinearGradient colors={isDark ? ['#00F0FF', '#0080FF'] : ['#0077E6', '#0055B3']} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                    <MixedText style={[styles.saveBtnText, { color: isDark ? '#000' : '#FFF', fontSize: typography.body.fontSize }]}>Let's Begin</MixedText>
+                    <Ionicons name="arrow-forward" size={20} color={isDark ? '#000' : '#FFF'} style={{ marginLeft: 10 }} />
                   </LinearGradient>
                 </TouchableOpacity>
               </Animated.View>
