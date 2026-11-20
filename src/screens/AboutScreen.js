@@ -181,8 +181,8 @@ export default function AboutScreen({ navigation }) {
       {/* HEADER */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <ScalePressable onPress={() => navigation.goBack()}>
-          <View style={{ padding: 5 }}>
-            <Ionicons name="arrow-back" size={26} color={colors.text} />
+          <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </View>
         </ScalePressable>
         <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>{text.header}</MixedText>

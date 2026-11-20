@@ -707,7 +707,7 @@ export default function ZionScreen() {
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                   <View style={{ width: 34 }}>
                     {stanza.number && (
-                      <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
+                      <MixedText style={{ color: colors.text, fontSize:  lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, includeFontPadding: false }}>
                         {stanza.number}
                       </MixedText>
                     )}

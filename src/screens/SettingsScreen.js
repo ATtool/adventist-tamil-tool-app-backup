@@ -231,13 +231,15 @@ export default function SettingsScreen() {
       <SafeAreaView style={{ flex: 1 }} edges={['top']}>
         
         <View style={[styles.header, { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomColor: colors.border }]}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5, width: 40 }}>
-            <Ionicons name="arrow-back" size={26} color={colors.text} />
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={28} color={colors.primary} />
+            </View>
           </TouchableOpacity>
           <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
             <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize, includeFontPadding: false }]}>Settings</MixedText>
           </View>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 50 }} />
         </View>
 
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>

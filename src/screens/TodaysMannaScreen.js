@@ -174,12 +174,14 @@ export default function TodaysMannaScreen() {
       
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         
-        <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
-          <Ionicons name="arrow-back" size={26} color={colors.text} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
+          <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
+          </View>
         </TouchableOpacity>
         
         <TouchableOpacity onPress={() => setShowDatePicker(true)} style={styles.datePickerBtn}>
-          <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>{displayDate}</MixedText>
+          <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize - 6.5 }]}>{displayDate}</MixedText>
           <Ionicons name="calendar-outline" size={16} color={colors.text} style={{ marginLeft: 6 }} />
         </TouchableOpacity>
 

@@ -630,8 +630,10 @@ export default function DictionaryScreen({ onClose }) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
-          <TouchableOpacity onPress={handleBack} style={styles.headerIconBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <TouchableOpacity onPress={handleBack} style={{ marginRight: 10 }}>
+            <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={28} color={colors.primary} />
+            </View>
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>
@@ -710,8 +712,10 @@ export default function DictionaryScreen({ onClose }) {
         >
           <SafeAreaView edges={Platform.OS === 'ios' ? ["bottom","left","right"] : ["top","bottom","left","right"]} style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card, paddingTop: Platform.OS === 'ios' ? 12 : 0 }]}>
-              <TouchableOpacity onPress={() => setHistoryModalVisible(false)} style={styles.headerIconBtn}>
-                <Ionicons name="chevron-back" size={24} color={colors.primary} />
+              <TouchableOpacity onPress={() => setHistoryModalVisible(false)} style={{ marginRight: 10 }}>
+                <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={28} color={colors.primary} />
+            </View>
               </TouchableOpacity>
               <View style={styles.headerCenter}>
                 <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>
@@ -778,8 +782,10 @@ export default function DictionaryScreen({ onClose }) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
-          <TouchableOpacity onPress={handleBack} style={styles.headerIconBtn}>
-            <Ionicons name="chevron-back" size={24} color={colors.primary} />
+          <TouchableOpacity onPress={handleBack} style={{ marginRight: 10 }}>
+            <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={28} color={colors.primary} />
+            </View>
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>
@@ -912,11 +918,10 @@ export default function DictionaryScreen({ onClose }) {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.readToolbar, { borderBottomColor: colors.border, backgroundColor: colors.card }]}>
-        <TouchableOpacity onPress={handleBack} style={styles.readBackBtn}>
-          <Ionicons name="chevron-back" size={24} color={colors.primary} />
-          <MixedText style={[styles.readBackText, { color: colors.primary, fontSize: typography.body.fontSize }]}>
-            Back
-          </MixedText>
+        <TouchableOpacity onPress={handleBack} style={{ marginRight: 10 }}>
+          <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
+          </View>
         </TouchableOpacity>
 
         <View style={styles.readToolGroup}>

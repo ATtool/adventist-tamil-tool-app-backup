@@ -226,8 +226,10 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
           <SafeAreaView style={{ flex: 1 }}>
             
             <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.background }]}>
-              <TouchableOpacity onPress={handleClose} style={styles.iconBtn}>
-                <Ionicons name="arrow-back" size={28} color={colors.text} />
+              <TouchableOpacity onPress={() => { triggerHaptic(); handleClose(); }} style={{ marginRight: 10 }}>
+                <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+                  <Ionicons name="chevron-back" size={28} color={colors.primary} />
+                </View>
               </TouchableOpacity>
               
               <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>

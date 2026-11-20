@@ -54,14 +54,14 @@ const VerseRenderer = React.memo(({
       <View style={{ flex: 1 }}>
         {(bibleLanguage === 'tamil' || bibleLanguage === 'both') && item.text_ta ? (
           // Fixed! Now dynamically responding to bibleFontSize and bibleLineHeight
-          <MixedText style={{ color: colors.text, fontSize: bibleFontSize, lineHeight: bibleLineHeight, letterSpacing: bibleLetterSpacing, fontFamily: 'Tamil003', marginBottom: bibleLanguage === 'both' ? 10 : 0 }}>
+          <MixedText style={{ color: colors.text, fontSize: bibleFontSize + 2, lineHeight: bibleLineHeight, letterSpacing: bibleLetterSpacing, fontFamily: 'Tamil003', marginBottom: bibleLanguage === 'both' ? 10 : 0 }}>
             {renderHighlightedText(item.text_ta, highlightedWord)}
           </MixedText>
         ) : null}
         
         {(bibleLanguage === 'english' || bibleLanguage === 'both') && item.text_en ? (
           // English font dynamically scales at -2px so it matches the visual weight of Tamil text
-          <MixedText style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: Math.max(12, bibleFontSize - 2), lineHeight: bibleLineHeight - 4, letterSpacing: bibleLetterSpacing }}>
+          <MixedText style={{ color: bibleLanguage === 'both' ? colors.subtext : colors.text, fontSize: Math.max(12, bibleFontSize + 2), lineHeight: bibleLineHeight - 4, letterSpacing: bibleLetterSpacing }}>
             {renderHighlightedText(item.text_en, highlightedWord)}
           </MixedText>
         ) : null}

@@ -49,7 +49,7 @@ export default function StudyScreen() {
       
       {/* HEADER */}
       <Animated.View style={[styles.header, { borderBottomColor: colors.border, opacity: headerOpacity }]}>
-        <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerTitle, { color: colors.text, fontSize: typography.display.fontSize - 4 }]} allowFontScaling={false}>Bible Tool & Study notes</MixedText>
+        <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.headerTitle, { color: colors.text, fontSize: typography.display.fontSize - 7.5 }]} allowFontScaling={false}>Bible Tool & Study notes</MixedText>
       </Animated.View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -65,7 +65,7 @@ export default function StudyScreen() {
               <Ionicons name="book" size={22} color={colors.primary} />
             </View>
             <View style={styles.textContainer}>
-              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Bible Dictionary</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize - 3.5 }]} allowFontScaling={false}>Bible Dictionary</MixedText>
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வேதாகம அகராதி</MixedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
@@ -83,7 +83,7 @@ export default function StudyScreen() {
               <Ionicons name="search" size={22} color={ACCENT_CONC} />
             </View>
             <View style={styles.textContainer}>
-              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Concordance</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize - 3.5 }]} allowFontScaling={false}>Concordance</MixedText>
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வார்த்தை விளக்கம்</MixedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
@@ -101,7 +101,7 @@ export default function StudyScreen() {
               <Ionicons name="library" size={22} color={ACCENT_VERSE} />
             </View>
             <View style={styles.textContainer}>
-              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Verse Explanations</MixedText>
+              <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardTitle, { color: colors.text, fontSize: typography.h2.fontSize - 3.5 }]} allowFontScaling={false}>Verse Explanations</MixedText>
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.cardSub, { color: colors.subtext, fontSize: typography.body.fontSize, fontFamily: 'Tamil003' }]} allowFontScaling={false}>வசன விளக்கம்</MixedText>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.subtext} />

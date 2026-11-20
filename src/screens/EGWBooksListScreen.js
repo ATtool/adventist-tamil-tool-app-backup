@@ -432,10 +432,9 @@ export default function EGWBooksListScreen({ navigation }) {
         opacity: topEnter,
         transform: [{ translateY: topEnter.interpolate({ inputRange: [0, 1], outputRange: [-40, 0] }) }]
       }]}>
-        <ScalePressable onPress={() => navigation.goBack()}>
-          <View style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color={colors.primary} />
-            <MixedText style={[styles.backText, { color: colors.primary, fontSize: typography.body.fontSize }]}>Back</MixedText>
+        <ScalePressable onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
+          <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
           </View>
         </ScalePressable>
 

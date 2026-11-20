@@ -15,7 +15,7 @@ export const SettingsProvider = ({ children }) => {
   // --- SONG READING PREFERENCES ---
   const [titleSize, setTitleSize] = useState(20);
   const [titleSpacing, setTitleSpacing] = useState(0);
-  const [lyricsSize, setLyricsSize] = useState(18); 
+  const [lyricsSize, setLyricsSize] = useState(21); 
   const [lyricsSpacing, setLyricsSpacing] = useState(0);
   const [lyricsLineHeight, setLyricsLineHeight] = useState(32);
 
@@ -110,7 +110,7 @@ export const SettingsProvider = ({ children }) => {
     await setAppFontSize(15);
     setTitleSize(20); 
     setTitleSpacing(0);
-    setLyricsSize(18); 
+    setLyricsSize(21); 
     setLyricsSpacing(0); 
     setLyricsLineHeight(32);
     setBibleFontSize(18); 

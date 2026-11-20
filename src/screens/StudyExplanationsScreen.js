@@ -468,7 +468,11 @@ export default function StudyExplanationsScreen({ navigation, route }) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconBtn}><Ionicons name="arrow-back" size={28} color={colors.text} /></TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
+            <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={28} color={colors.primary} />
+            </View>
+          </TouchableOpacity>
           <MixedText style={[styles.headerTitle, { color: colors.text, fontSize: typography.h1.fontSize }]}>Verse Explanations</MixedText>
           <View style={{ width: 40 }} />
         </View>
@@ -516,8 +520,10 @@ export default function StudyExplanationsScreen({ navigation, route }) {
       
       {/* HEADER SECTION */}
       <View style={[styles.actionHeader, { borderColor: colors.border, backgroundColor: colors.card }]}>
-        <TouchableOpacity onPress={() => { Speech.stop(); navigation.goBack(); }} style={styles.iconBtn}>
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        <TouchableOpacity onPress={() => { Speech.stop(); navigation.goBack(); }} style={{ marginRight: 10 }}>
+          <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+            <Ionicons name="chevron-back" size={28} color={colors.primary} />
+          </View>
         </TouchableOpacity>
 
         <View style={{ flex: 1, alignItems: 'center' }}>

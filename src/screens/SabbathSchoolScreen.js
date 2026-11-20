@@ -553,8 +553,10 @@ export default function SabbathSchoolScreen() {
       {/* HEADER: Perfectly Centered */}
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={{ width: 80, alignItems: 'flex-start' }}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={{ padding: 5 }}>
-            <Ionicons name="arrow-back" size={26} color={colors.text} />
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+              <Ionicons name="chevron-back" size={28} color={colors.primary} />
+            </View>
           </TouchableOpacity>
         </View>
         

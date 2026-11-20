@@ -498,8 +498,10 @@ export default function SongsScreen() {
         <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Math.max(insets.top, 20) }]}>
             
             <View style={[styles.globalSearchHeader, { borderBottomColor: colors.border }]}>
-              <ScalePressable onPress={() => { triggerHaptic(); setIsSearchOpen(false); setSearchQuery(''); }}>
-                <Ionicons name="arrow-back" size={28} color={colors.text} style={{ padding: 5 }} />
+              <ScalePressable onPress={() => { triggerHaptic(); setIsSearchOpen(false); setSearchQuery(''); }} style={{ marginRight: 10 }}>
+                <View style={{ height: 50, width: 50, borderRadius: 25, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' }}>
+                  <Ionicons name="chevron-back" size={28} color={colors.primary} />
+                </View>
               </ScalePressable>
               
               <View style={[styles.globalSearchInputBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
