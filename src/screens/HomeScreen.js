@@ -41,7 +41,7 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function HomeScreen() {
   const navigation = useNavigation();
   // We added `typography` here to pull in our global sizes!
-  const { isDark, colors, hapticsEnabled, typography } = useSettings();
+  const { isDark, colors, hapticsEnabled, typography, toggleTheme } = useSettings();
   
   const [isChecking, setIsChecking] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -182,7 +182,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (isMenuOpen) {
       setMenuRendered(true);
-      menuSlideAnim.setValue(width * 0.75); // Start right at the drawer's actual width, not full screen width!
+      menuSlideAnim.setValue(-width * 0.75);
       menuFadeAnim.setValue(0);
       Animated.parallel([
         Animated.spring(menuSlideAnim, {
@@ -202,7 +202,7 @@ export default function HomeScreen() {
     } else if (menuRendered) {
       Animated.parallel([
         Animated.timing(menuSlideAnim, {
-          toValue: width * 0.75,
+          toValue: -width * 0.75,
           duration: 240,
           easing: Easing.bezier(0.4, 0, 0.2, 1),
           useNativeDriver: true,
@@ -441,7 +441,7 @@ export default function HomeScreen() {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       await Share.share({
-        message: "🙏 Check out the *Adventist Tamil Tool* app! Read the Tamil & English Bible, Songs, Daily Manna, Sabbath School lessons, and more completely offline.\n\n📲 Download now on Google Play:\nhttps://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool",
+        message: "🙏 Check out the Adventist Tamil Tool app! Read the Tamil & English Bible, Songs, Daily Manna, Sabbath School lessons, and more completely offline.\n\n📲 Android : Download now on Google Play\nhttps://play.google.com/store/apps/details?id=com.adventisttamiltool.adventisttamiltool\n\n📲 iPhone : Offline Web-App\nhttps://attool.github.io/ATT-WEB/\nclick this website and click Install button.",
       });
     } catch (error) {
       console.warn("Share App Error:", error);
@@ -549,6 +549,10 @@ export default function HomeScreen() {
         
         <Animated.View style={[styles.header, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <TouchableOpacity onPress={() => { if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsMenuOpen(true); }} style={{ marginRight: 8 }}>
+              <Ionicons name="menu" size={32} color={isDark ? "#FFFFFF" : "#000000"} />
+            </TouchableOpacity>
+            <Image source={require('../../assets/logo-256.png')} style={{ width: 32, height: 32, marginRight: 10, borderRadius: 8 }} resizeMode="contain" />
             <View style={{ flex: 1, paddingRight: 15 }}>
               <MixedText numberOfLines={1} adjustsFontSizeToFit style={[styles.greeting, { color: colors.subtext, fontSize: typography.body.fontSize }]} allowFontScaling={false}>
                 {greeting}{userName ? ', ' : ''}
@@ -564,23 +568,8 @@ export default function HomeScreen() {
             </View>
             
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity 
-                onPress={async () => { 
-                  if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); 
-                  setShowAllUpdates(true); 
-                  if (latestUpdateId) {
-                    await AsyncStorage.setItem('@last_seen_update_id', latestUpdateId);
-                    setLastSeenUpdateId(latestUpdateId);
-                  }
-                }}
-                style={{ marginRight: 20, position: 'relative' }}
-              >
-                <Ionicons name="notifications-outline" size={28} color={isDark ? "#FFD700" : colors.accent} />
-                {hasNewUpdates && <View style={[styles.redDot, { borderColor: colors.background }]} />}
-              </TouchableOpacity>
-
-              <TouchableOpacity onPress={() => { if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setIsMenuOpen(true); }}>
-                <Ionicons name="menu" size={32} color={isDark ? "#FFD700" : colors.accent} />
+              <TouchableOpacity onPress={() => { if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); navigation.navigate('Settings'); }}>
+                <Ionicons name="settings-outline" size={28} color={isDark ? "#FFFFFF" : "#000000"} />
               </TouchableOpacity>
             </View>
           </View>
@@ -721,7 +710,7 @@ export default function HomeScreen() {
               >
                 <MixedText style={{ color: colors.text, fontWeight: 'bold' }}>Later / பிறகு</MixedText>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.primary }]} onPress={openAppStore}>
+              <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.card }]} onPress={openAppStore}>
                 <MixedText style={{ color: isDark ? '#000' : '#FFF', fontWeight: 'bold' }}>Update Now</MixedText>
               </TouchableOpacity>
             </View>
@@ -794,15 +783,15 @@ export default function HomeScreen() {
                   setTimeout(() => navigation.navigate('SabbathSchool'), 200);
                 }}
               >
-                <LinearGradient colors={['#004d66', '#0099cc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sabbathPrimaryGradient}>
+                <View colors={['#004d66', '#0099cc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sabbathPrimaryGradient}>
                   <View style={styles.sabbathPrimaryTopRow}>
                     <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                      <Ionicons name="today" size={22} color="#FFFFFF" />
+                      <Ionicons name="today" size={22} color={isDark ? "#FFFFFF" : "#000000"} />
                     </View>
                   </View>
                   <MixedText style={[styles.sabbathPrimaryTitle, { fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Today's Sabbath School Lesson</MixedText>
                   <MixedText style={[styles.sabbathPrimaryTamil, { fontSize: typography.body.fontSize }]} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம்</MixedText>
-                </LinearGradient>
+                </View>
               </TouchableOpacity>
 
               <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: typography.caption.fontSize }]}>OTHER WEB SOURCES ( Internet Requied )</MixedText>
@@ -875,42 +864,38 @@ export default function HomeScreen() {
           <Animated.View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.6)', opacity: menuFadeAnim }]}>
             <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setIsMenuOpen(false)} />
           </Animated.View>
-          <View style={{ flex: 1 }} pointerEvents="none" />
           <Animated.View 
             renderToHardwareTextureAndroid={true}
             shouldRasterizeIOS={true}
-            style={[styles.drawerMenu, { backgroundColor: isDark ? '#0A1929' : '#FFFFFF', transform: [{ translateX: menuSlideAnim }] }]}
+            style={[styles.drawerMenu, { backgroundColor: colors.background, transform: [{ translateX: menuSlideAnim }] }]}
           >
             <SafeAreaView edges={['top']} style={{ flex: 1 }}>
               <View style={styles.drawerHeader}>
-                <MixedText style={{ fontSize: typography.h1.fontSize, fontWeight: 'bold', color: colors.primary }}>Menu</MixedText>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}><Image source={require('../../assets/logo-256.png')} style={{ width: 32, height: 32, marginRight: 10, borderRadius: 8 }} resizeMode="contain" /><View><MixedText style={{ fontSize: typography.h2.fontSize, fontWeight: 'bold', color: colors.text }}>Adventist Tamil Tool</MixedText><MixedText style={{ fontSize: typography.caption.fontSize, color: colors.subtext }}>Scripture, Song, Spirit</MixedText></View></View>
                 <TouchableOpacity onPress={() => setIsMenuOpen(false)}><Ionicons name="close" size={28} color={colors.text} /></TouchableOpacity>
               </View>
               <ScrollView style={{ padding: 20 }}>
                 
-                <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('Settings')}>
-                  <Ionicons name="settings" size={24} color={colors.text} style={{ marginRight: 15 }} />
-                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Settings</MixedText>
-                </TouchableOpacity>
+
                 <TouchableOpacity style={styles.drawerItem} onPress={() => navigateFromMenu('About')}>
                   <Ionicons name="information-circle" size={24} color={colors.text} style={{ marginRight: 15 }} />
                   <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>About the App</MixedText>
                 </TouchableOpacity>
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
                 
-                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://adventisttamiltool.great-site.net/'); }}>
+                <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://attool.github.io/ATT-WEB/'); }}>
                   <Image source={require('../../assets/WWW.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
                   <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Our Website</MixedText>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('mailto:adventisttamiltool@gmail.com'); }}>
                   <Image source={require('../../assets/Gmail.png')} style={{ width: 24, height: 24, marginRight: 15 }} resizeMode="contain" />
-                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize - 2 }}>adventisttamiltool@gmail.com</MixedText>
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Contact Us</MixedText>
                 </TouchableOpacity>
                 
                 <TouchableOpacity style={styles.drawerItem} onPress={() => { setIsMenuOpen(false); Linking.openURL('https://whatsapp.com/channel/0029Vb6Pu8FLI8YfM5H49e0p'); }}>
-                  <Image source={require('../../assets/whatsapp.png')} style={{ width: 48, height: 48, marginRight: 15 }} resizeMode="contain" />
-                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>Join our WhatsApp Channel</MixedText>
+                  <Image source={require('../../assets/whatsapp.png')} style={{ width: 36, height: 36, marginRight: 15 }} resizeMode="contain" />
+                  <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize }}>WhatsApp Channel</MixedText>
                 </TouchableOpacity>
 
                 <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 15 }} />
@@ -921,38 +906,136 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </ScrollView>
 
-              {Platform.OS === 'android' && (
-                <View style={{ padding: 20, borderTopWidth: 1, borderTopColor: colors.border }}>
-                  <TouchableOpacity
-                    activeOpacity={0.85}
-                    onPress={handleShareApp}
+              <View style={{
+                paddingHorizontal: 20,
+                paddingVertical: 18,
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                backgroundColor: isDark ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.015)',
+              }}>
+
+                {/* NOTIFICATIONS BUTTON */}
+                <TouchableOpacity
+                  activeOpacity={0.78}
+                  onPress={() => { setIsMenuOpen(false); setShowAllUpdates(true); }}
+                  style={{
+                    flex: 1,
+                    marginRight: 9,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 6,
+                  }}
+                >
+                  <View
                     style={{
-                      borderRadius: 16,
-                      overflow: 'hidden',
-                      borderWidth: 1,
-                      borderColor: colors.primary,
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                   >
-                    <LinearGradient
-                      colors={isDark ? ['#00F0FF', '#0080FF'] : ['#0077E6', '#0055B3']}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 1 }}
+                    <View style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 4,
+                    }}>
+                      <Ionicons name="notifications-outline" size={18} color={colors.primary} />
+                    </View>
+                    <MixedText style={{
+                      color: colors.text,
+                      fontSize: 10,
+                      fontWeight: 'bold',
+                      letterSpacing: 0.5,
+                    }}>UPDATES</MixedText>
+                  </View>
+                </TouchableOpacity>
+
+                {/* THEME BUTTON */}
+                <TouchableOpacity
+                  activeOpacity={0.78}
+                  onPress={toggleTheme}
+                  style={{
+                    flex: 1,
+                    marginRight: 9,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: 6,
+                  }}
+                >
+                  <View
+                    style={{
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <View style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 10,
+                      backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 4,
+                    }}>
+                      <Ionicons
+                        name={isDark ? 'sunny-outline' : 'moon-outline'}
+                        size={18}
+                        color={colors.primary}
+                      />
+                    </View>
+                    <MixedText style={{
+                      color: colors.text,
+                      fontSize: 10,
+                      fontWeight: 'bold',
+                      letterSpacing: 0.5,
+                    }}>{isDark ? 'LIGHT MODE' : 'DARK MODE'}</MixedText>
+                  </View>
+                </TouchableOpacity>
+
+                {/* SHARE BUTTON */}
+                {Platform.OS === 'android' && (
+                  <TouchableOpacity
+                    activeOpacity={0.78}
+                    onPress={handleShareApp}
+                    style={{
+                      flex: 1,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      paddingVertical: 6,
+                    }}
+                  >
+                    <View
                       style={{
-                        flexDirection: 'row',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        paddingVertical: 14,
-                        paddingHorizontal: 16,
                       }}
                     >
-                      <Ionicons name="share-social" size={22} color={isDark ? "#000000" : "#FFFFFF"} style={{ marginRight: 10 }} />
-                      <MixedText style={{ color: isDark ? '#000000' : '#FFFFFF', fontSize: typography.body.fontSize, fontWeight: 'bold', includeFontPadding: false }}>
-                        Bless Others • Share App
-                      </MixedText>
-                    </LinearGradient>
+                      <View style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 10,
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        marginBottom: 4,
+                      }}>
+                        <Ionicons name="share-social-outline" size={18} color={colors.primary} />
+                      </View>
+                      <MixedText style={{
+                        color: colors.text,
+                        fontSize: 10,
+                        fontWeight: 'bold',
+                        letterSpacing: 0.5,
+                      }}>SHARE</MixedText>
+                    </View>
                   </TouchableOpacity>
-                </View>
-              )}
+                )}
+              </View>
             </SafeAreaView>
           </Animated.View>
         </View>
@@ -1061,10 +1144,10 @@ export default function HomeScreen() {
                 }}
               >
                 <TouchableOpacity style={[styles.saveBtn, { opacity: tempName.trim() ? 1 : 0.5 }]} onPress={saveUserData} disabled={!tempName.trim()}>
-                  <LinearGradient colors={isDark ? ['#00F0FF', '#0080FF'] : ['#0077E6', '#0055B3']} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+                  <View colors={[colors.card, colors.card]} style={styles.gradientBtn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
                     <MixedText style={[styles.saveBtnText, { color: isDark ? '#000' : '#FFF', fontSize: typography.body.fontSize }]}>Let's Begin</MixedText>
                     <Ionicons name="arrow-forward" size={20} color={isDark ? '#000' : '#FFF'} style={{ marginLeft: 10 }} />
-                  </LinearGradient>
+                  </View>
                 </TouchableOpacity>
               </Animated.View>
             </KeyboardAvoidingView>
