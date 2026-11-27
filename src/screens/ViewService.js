@@ -16,6 +16,7 @@ import { ref, set } from "firebase/database";
 import { db } from "../../firebaseSetup"; 
 
 import booksData from '../data/books.json';
+import { dbDirectoryOption } from '../utils/dbPaths';
 
 const { height } = Dimensions.get('window');
 const NEWLINE = String.fromCharCode(10);
@@ -221,7 +222,7 @@ export default function ViewService() {
           content = block.data.lyrics;
         } else {
           let dbName = block.data.book === 'Zion' ? 'zion.db' : 'Thirumarai.db';
-          const sqliteDb = await SQLite.openDatabaseAsync(dbName);
+          const sqliteDb = await SQLite.openDatabaseAsync(dbName, undefined, dbDirectoryOption);
           
           const tableRes = await sqliteDb.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
           const tableName = tableRes && tableRes.length > 0 ? tableRes.find(t => t.name === 'songs' || t.name === 'SongListTable')?.name || tableRes[0].name : 'SongListTable';
@@ -242,7 +243,7 @@ export default function ViewService() {
 
         const bookObj = booksData.find(b => b.name_ta === block.data.book || b.name_en === block.data.book);
         if (bookObj) {
-          const sqliteDb = await SQLite.openDatabaseAsync(dbName);
+          const sqliteDb = await SQLite.openDatabaseAsync(dbName, undefined, dbDirectoryOption);
           const tableRes = await sqliteDb.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
           
           if (tableRes && tableRes.length > 0) {

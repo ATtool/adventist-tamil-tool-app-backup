@@ -1,8 +1,9 @@
 import * as SQLite from 'expo-sqlite';
+import { dbDirectoryOption } from './dbPaths';
 
 // 1. Open the database synchronously just like you were already doing.
 // We put it at the top so all functions below can use this same 'db' connection.
-const db = SQLite.openDatabaseSync('UserData.db');
+const db = SQLite.openDatabaseSync('UserData.db', undefined, dbDirectoryOption);
 
 export const initUserDataDB = () => {
   try {

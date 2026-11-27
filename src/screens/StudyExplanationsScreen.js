@@ -15,12 +15,13 @@ import BiblePickers from '../components/bible/BiblePickers';
 import InAppBrowser from '../components/InAppBrowser';
 import booksData from '../data/books.json';
 import { getSafeDb, getTableNameSync, querySync } from '../utils/DatabaseManager';
+import { dbPath, ensureDbDirectory } from '../utils/dbPaths';
 
 const { width, height } = Dimensions.get('window');
 
 // --- FILE PATHS & LINKS ---
 const DB_FILENAME = 'study_optimized.db';
-const DB_PATH = FileSystem.documentDirectory + 'SQLite/' + DB_FILENAME;
+const DB_PATH = dbPath(DB_FILENAME);
 const MAPS_FOLDER = FileSystem.documentDirectory + 'BibleMaps/';
 const DB_DIRECT_URL = 'https://www.dropbox.com/scl/fi/j5y9fu6d3hltt1cr8fu6g/study_optimized.db?rlkey=2or1yrh467qo0az6h0k73jvvo&st=gcedrhmp&dl=1';
 
@@ -195,7 +196,7 @@ export default function StudyExplanationsScreen({ navigation, route }) {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsDownloading(true); setDownloadProgress(0);
     try {
-      const sqliteDir = FileSystem.documentDirectory + 'SQLite';
+      const sqliteDir = await ensureDbDirectory();
       if (!(await FileSystem.getInfoAsync(sqliteDir)).exists) await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
       if (!(await FileSystem.getInfoAsync(MAPS_FOLDER)).exists) await FileSystem.makeDirectoryAsync(MAPS_FOLDER, { intermediates: true });
 

@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
 import { useNavigation } from '@react-navigation/native';
 import { EGW_BOOKS_DATA } from '../data/egwBooks'; 
+import { DB_DIRECTORY, dbPath, ensureDbDirectory } from '../utils/dbPaths';
 
 // Enable LayoutAnimation for Android
 // LayoutAnimation is enabled by default in the New Architecture.
@@ -50,16 +51,29 @@ export default function SettingsScreen() {
 
   const fetchDownloadedVersions = async () => {
     try {
-      const sqliteDirectory = FileSystem.documentDirectory + 'SQLite';
-      const dirInfo = await FileSystem.getInfoAsync(sqliteDirectory);
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(sqliteDirectory, { intermediates: true });
+      const pdfDirectory = FileSystem.documentDirectory + 'SQLite';
+      const pdfDirInfo = await FileSystem.getInfoAsync(pdfDirectory);
+      if (!pdfDirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(pdfDirectory, { intermediates: true });
       }
-      
-      const files = await FileSystem.readDirectoryAsync(sqliteDirectory);
+
+      await ensureDbDirectory();
+
+      const readDirectorySafe = async (dir) => {
+        try {
+          return await FileSystem.readDirectoryAsync(dir);
+        } catch (e) {
+          return [];
+        }
+      };
+
+      // Databases live in expo-sqlite's directory, PDFs live with the documents.
+      // In production builds these are the same folder; in Expo Go they differ.
+      const dbFiles = await readDirectorySafe(DB_DIRECTORY);
+      const pdfFiles = await readDirectorySafe(pdfDirectory);
       const dictFilesArray = Object.keys(DICTIONARY_FILES);
-      
-      const bibles = files.filter(f => 
+
+      const bibles = dbFiles.filter(f => 
         f.endsWith('.db') && 
         !PROTECTED_DBS.includes(f) && 
         !dictFilesArray.includes(f) && 
@@ -67,18 +81,18 @@ export default function SettingsScreen() {
         f.toLowerCase() !== STUDY_DB_FILE &&
         !f.toLowerCase().includes('concordance')
       );
-      const dicts = files.filter(f => dictFilesArray.includes(f));
-      const magazines = files.filter(f => f.startsWith('mag_') && f.endsWith('.pdf'));
+      const dicts = dbFiles.filter(f => dictFilesArray.includes(f));
+      const magazines = pdfFiles.filter(f => f.startsWith('mag_') && f.endsWith('.pdf'));
       
       setDownloadedBibles(bibles);
       setDownloadedDicts(dicts);
       setDownloadedMagazines(magazines);
       
-      const concPath = sqliteDirectory + '/' + CONCORDANCE_FILE;
+      const concPath = DB_DIRECTORY + CONCORDANCE_FILE;
       const concInfo = await FileSystem.getInfoAsync(concPath);
       setIsConcordanceDownloaded(concInfo.exists && concInfo.size > 100 * 1024);
 
-      const studyPath = sqliteDirectory + '/' + STUDY_DB_FILE;
+      const studyPath = DB_DIRECTORY + STUDY_DB_FILE;
       const studyInfo = await FileSystem.getInfoAsync(studyPath);
       setIsStudyDownloaded(studyInfo.exists && studyInfo.size > 100 * 1024);
 
@@ -173,7 +187,7 @@ export default function SettingsScreen() {
   const deleteStudyPackage = async () => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     try {
-      const dbUri = FileSystem.documentDirectory + 'SQLite/' + STUDY_DB_FILE;
+      const dbUri = dbPath(STUDY_DB_FILE);
       const mapsUri = FileSystem.documentDirectory + MAPS_FOLDER;
       
       await FileSystem.deleteAsync(dbUri, { idempotent: true });
@@ -187,7 +201,9 @@ export default function SettingsScreen() {
   const deleteVersion = async (fileName) => {
     if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     try {
-      const uri = FileSystem.documentDirectory + 'SQLite/' + fileName;
+      const uri = fileName.startsWith('mag_')
+        ? FileSystem.documentDirectory + 'SQLite/' + fileName
+        : dbPath(fileName);
       await FileSystem.deleteAsync(uri, { idempotent: true });
       
       if (fileName.toLowerCase() === CONCORDANCE_FILE) {

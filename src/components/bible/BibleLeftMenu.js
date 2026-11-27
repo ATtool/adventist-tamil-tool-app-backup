@@ -9,6 +9,7 @@ import * as Haptics from 'expo-haptics';
 import { useSettings } from '../../context/SettingsContext';
 import booksData from '../../data/books.json'; 
 import { querySync, executeRunSync } from '../../utils/DatabaseManager';
+import { dbPath, ensureDbDirectory } from '../../utils/dbPaths';
 
 const { width } = Dimensions.get('window');
 
@@ -71,7 +72,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
 
   async function checkDownloadedVersions() {
     try {
-      const sqliteDirectory = FileSystem.documentDirectory + 'SQLite';
+      const sqliteDirectory = await ensureDbDirectory();
       const files = await FileSystem.readDirectoryAsync(sqliteDirectory);
       const FILES_TO_HIDE = ['bible_concordance.db', 'easton_ebd2.db', 'smith_bibledict.db', 'hastings_dict_bible.db', 'hitchcock_bible_names.db'];
       const filteredFiles = files.filter(f => !FILES_TO_HIDE.includes(f));
@@ -100,7 +101,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
   async function downloadVersion(version) {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     setDownloadingId(version.id); setDownloadProgress(0);
-    const uri = FileSystem.documentDirectory + 'SQLite/' + version.id + '.db';
+    const uri = dbPath(version.id + '.db');
     try {
       const resumable = FileSystem.createDownloadResumable(version.url, uri, {}, (p) => setDownloadProgress(p.totalBytesWritten / p.totalBytesExpectedToWrite));
       await resumable.downloadAsync();
@@ -113,7 +114,7 @@ export default function BibleLeftMenu({ visible, onClose, onJumpToVerse, onDataC
   async function deleteVersion(versionId) {
     triggerHaptic(Haptics.ImpactFeedbackStyle.Heavy);
     try {
-      const uri = FileSystem.documentDirectory + 'SQLite/' + versionId + '.db';
+      const uri = dbPath(versionId + '.db');
       await FileSystem.deleteAsync(uri, { idempotent: true });
       if (activeEnglishVersion === versionId) setActiveEnglishVersion('KJV'); 
       await checkDownloadedVersions();

@@ -182,7 +182,7 @@ export default function MainNavigation() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background} />
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
       <NavigationContainer ref={navigationRef} linking={linking} theme={navTheme}>
          <Stack.Navigator screenOptions={{ 
              headerShown: false, 

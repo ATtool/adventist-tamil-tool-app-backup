@@ -1,6 +1,6 @@
 import MixedText from '../components/MixedText.js';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Image, ScrollView, Linking, Share } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Dimensions, TextInput, KeyboardAvoidingView, Platform, FlatList, Modal, Image, ScrollView, Linking, Share, AppState } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,11 +11,17 @@ import { useSettings } from '../context/SettingsContext';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import * as Notifications from 'expo-notifications';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import InAppBrowser from '../components/InAppBrowser';
 
 import appConfig from '../../app.json'; 
 
 const { width, height } = Dimensions.get('window');
+
+// Expo Go's notification channel module currently throws a native
+// NullPointerException. Notifications still work through Android's fallback
+// channel, so skip channel setup there and keep it for real builds.
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
 const FAB_SIZE = Math.round(Math.min(74, Math.max(52, width * 0.145)));
 const FAB_ICON_SIZE = Math.round(FAB_SIZE * 0.46);
@@ -26,15 +32,6 @@ const COUNTRIES = [
   { name: 'Singapore', flag: '🇸🇬' }, { name: 'Sri Lanka', flag: '🇱🇰' }, { name: 'United Arab Emirates', flag: '🇦🇪' },
   { name: 'United Kingdom', flag: '🇬🇧' }, { name: 'United States', flag: '🇺🇸' }
 ];
-
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -109,7 +106,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     checkUserData();
-    setGreetingTime();
     fetchUpdates(); 
     checkReadStatus();
     setupDailyNotification();
@@ -177,6 +173,22 @@ export default function HomeScreen() {
         Animated.timing(pulseAnim, { toValue: 1, duration: 1200, easing: Easing.inOut(Easing.ease), useNativeDriver: true })
       ])
     ).start();
+  }, []);
+
+  // Keep the greeting correct when the time of day changes, when returning to
+  // the screen, and when the app comes back from the background.
+  useEffect(() => {
+    setGreetingTime();
+
+    const interval = setInterval(setGreetingTime, 60 * 1000);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') setGreetingTime();
+    });
+
+    return () => {
+      clearInterval(interval);
+      subscription.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -285,41 +297,48 @@ export default function HomeScreen() {
   };
 
   const setupDailyNotification = async () => {
-    const { status: existingStatus } = await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
-    
-    if (existingStatus !== 'granted') {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-    }
-    
-    if (finalStatus !== 'granted') return;
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
 
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync('daily-manna', {
-        name: 'Daily Devotion',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: true,
-      });
-    }
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
 
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    const hasDaily = scheduled.some(n => n.content.data?.type === 'daily_manna');
+      if (finalStatus !== 'granted') return;
 
-    if (!hasDaily) {
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "இன்றைய மன்னா",
-          body: "இன்றைய தேவ செய்தியை வாசிக்க நேரம் ஒதுக்குங்கள்.",
-          data: { screen: 'TodaysManna', type: 'daily_manna' },
-          sound: true,
-        },
-        trigger: {
-          hour: 5,
-          minute: 0,
-          repeats: true,
-        },
-      });
+      if (Platform.OS === 'android' && !IS_EXPO_GO) {
+        try {
+          await Notifications.setNotificationChannelAsync('daily-manna', {
+            name: 'Daily Devotion',
+            importance: Notifications.AndroidImportance.HIGH,
+          });
+        } catch (channelError) {
+          console.warn('Could not create daily notification channel:', channelError);
+        }
+      }
+
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      const hasDaily = scheduled.some(n => n.content.data?.type === 'daily_manna');
+
+      if (!hasDaily) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "இன்றைய மன்னா",
+            body: "இன்றைய தேவ செய்தியை வாசிக்க நேரம் ஒதுக்குங்கள்.",
+            data: { screen: 'TodaysManna', type: 'daily_manna' },
+            sound: true,
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour: 5,
+            minute: 0,
+          },
+        });
+      }
+    } catch (error) {
+      console.warn('Could not set up the daily notification:', error);
     }
   };
 
@@ -362,7 +381,8 @@ export default function HomeScreen() {
       const GIST_URL = 'https://gist.githubusercontent.com/ATtool/d2282fc4e40cab92304a6a3615561a34/raw/updates.json'; 
       const response = await fetch(GIST_URL);
       const data = await response.json();
-      setUpdates(data); 
+      const updateList = Array.isArray(data) ? data : [];
+      setUpdates(updateList); 
 
       const storedLastSeenId = await AsyncStorage.getItem('@last_seen_update_id');
       const storedNotifiedId = await AsyncStorage.getItem('@last_notified_update_id');
@@ -371,35 +391,43 @@ export default function HomeScreen() {
       setLastSeenUpdateId(storedLastSeenId);
       setDismissedForcedVersion(storedDismissedVersion);
 
-      if (data.length > 0) {
-        const latestId = String(data[0].id);
+      if (updateList.length > 0) {
+        const latestId = String(updateList[0].id);
         
         if (latestId !== storedNotifiedId) {
-          const updateTitle = isUpdatesTamil ? data[0].titleTa : data[0].titleEn;
-          
-          if (Platform.OS === 'android') {
-             await Notifications.setNotificationChannelAsync('updates', {
-               name: 'App Updates',
-               importance: Notifications.AndroidImportance.DEFAULT,
-               sound: true,
-             });
-          }
+          const updateTitle = isUpdatesTamil ? updateList[0].titleTa : updateList[0].titleEn;
 
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: "New Update / புதிய அறிவிப்பு",
-              body: updateTitle,
-              data: { screen: 'Updates' },
-              sound: true,
-            },
-            trigger: null, 
-          });
-          await AsyncStorage.setItem('@last_notified_update_id', latestId);
+          // A failing notification must never stop the rest of the update check.
+          try {
+            if (Platform.OS === 'android' && !IS_EXPO_GO) {
+              try {
+                await Notifications.setNotificationChannelAsync('updates', {
+                  name: 'App Updates',
+                  importance: Notifications.AndroidImportance.DEFAULT,
+                });
+              } catch (channelError) {
+                console.warn('Could not create updates notification channel:', channelError);
+              }
+            }
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: "New Update / புதிய அறிவிப்பு",
+                body: updateTitle,
+                data: { screen: 'Updates' },
+                sound: true,
+              },
+              trigger: null, 
+            });
+            await AsyncStorage.setItem('@last_notified_update_id', latestId);
+          } catch (notifyError) {
+            console.warn('Could not show the update notification:', notifyError);
+          }
         }
 
-        const forcedUpdate = data.find(item => 
+        const forcedUpdate = updateList.find(item => 
           item.actionType === 'store_update' && 
-          item.isForced === true && 
+          item.isForced === true &&
           isUpdateRequired(item.versionRequired)
         );
 
@@ -783,15 +811,15 @@ export default function HomeScreen() {
                   setTimeout(() => navigation.navigate('SabbathSchool'), 200);
                 }}
               >
-                <View colors={['#004d66', '#0099cc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sabbathPrimaryGradient}>
+                <LinearGradient colors={['#004d66', '#0099cc']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.sabbathPrimaryGradient}>
                   <View style={styles.sabbathPrimaryTopRow}>
                     <View style={[styles.iconContainerSmall, { backgroundColor: 'rgba(255,255,255,0.15)' }]}>
-                      <Ionicons name="today" size={22} color={isDark ? "#FFFFFF" : "#000000"} />
+                      <Ionicons name="today" size={22} color="#FFFFFF" />
                     </View>
                   </View>
                   <MixedText style={[styles.sabbathPrimaryTitle, { fontSize: typography.h2.fontSize }]} allowFontScaling={false}>Today's Sabbath School Lesson</MixedText>
                   <MixedText style={[styles.sabbathPrimaryTamil, { fontSize: typography.body.fontSize }]} allowFontScaling={false}>இன்றைய ஒய்வுநாள் பள்ளி பாடம்</MixedText>
-                </View>
+                </LinearGradient>
               </TouchableOpacity>
 
               <MixedText style={[styles.sectionTitle, { color: colors.subtext, marginTop: 15, marginBottom: 10, fontSize: typography.caption.fontSize }]}>OTHER WEB SOURCES ( Internet Requied )</MixedText>

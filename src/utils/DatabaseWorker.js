@@ -1,4 +1,5 @@
 import { querySync, getTableNameSync } from './DatabaseManager';
+import { dbPath } from './dbPaths';
 import * as FileSystem from 'expo-file-system/legacy';
 
 let currentTicket = 0;
@@ -22,7 +23,7 @@ export function requestChapter(bookId, chapter, bibleLanguage, englishVersion, o
       if (bibleLanguage === 'english' || bibleLanguage === 'both') {
         let enDbName = englishVersion ? `${englishVersion}.db` : 'KJV.db';
         try {
-          const fileInfo = await FileSystem.getInfoAsync(FileSystem.documentDirectory + 'SQLite/' + enDbName);
+          const fileInfo = await FileSystem.getInfoAsync(dbPath(enDbName));
           if (!fileInfo.exists || fileInfo.size < 5000) enDbName = 'KJV.db';
         } catch (e) { enDbName = 'KJV.db'; }
 

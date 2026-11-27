@@ -16,6 +16,7 @@ import { getSafeDb, querySync, getTableNameSync } from '../utils/DatabaseManager
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import InAppBrowser from '../components/InAppBrowser';
 import booksData from '../data/books.json';
+import { dbPath, ensureDbDirectory } from '../utils/dbPaths';
 
 const { width } = Dimensions.get('window');
 const HISTORY_FILE = FileSystem.documentDirectory + 'dictionary_history.json';
@@ -454,8 +455,8 @@ export default function DictionaryScreen({ onClose }) {
     for (let dict of DICTIONARIES) {
       if (dict.isOnline) { status[dict.id] = true; continue; }
       try {
-        const dbPath = FileSystem.documentDirectory + 'SQLite/' + dict.dbName;
-        const info = await FileSystem.getInfoAsync(dbPath);
+        const dbPathForDict = dbPath(dict.dbName);
+        const info = await FileSystem.getInfoAsync(dbPathForDict);
         status[dict.id] = info.exists && info.size > 50000;
       } catch (e) { status[dict.id] = false; }
     }
@@ -476,11 +477,8 @@ export default function DictionaryScreen({ onClose }) {
     setDownloadingId(dict.id);
     setDownloadProgress(0);
     try {
-      const sqliteDir = FileSystem.documentDirectory + 'SQLite';
-      const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
-      if (!dirInfo.exists) await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
-
-      const uri = sqliteDir + '/' + dict.dbName;
+      await ensureDbDirectory();
+      const uri = dbPath(dict.dbName);
 
       // Resolve Google Drive direct download URL
       const resolvedUrl = await resolveGoogleDriveUrl(dict.downloadUrl);

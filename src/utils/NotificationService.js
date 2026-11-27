@@ -2,7 +2,8 @@ import * as Notifications from 'expo-notifications';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -21,14 +22,21 @@ export async function requestNotificationPermissions() {
 }
 
 export async function scheduleMannaNotifications(mannaData) {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  // Only replace the devotion alarms. Keep unrelated notifications such as the
+  // daily 5:00 AM reminder that HomeScreen manages.
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((n) => n?.content?.data?.type !== 'daily_manna')
+      .map((n) => Notifications.cancelScheduledNotificationAsync(n.identifier))
+  );
 
   const hasPermission = await requestNotificationPermissions();
   if (!hasPermission) {
     console.log("⚠️ Notifications: User denied permission.");
     return;
   }
-  
+
   console.log("✅ Notifications: Permission granted. Scheduling alarms...");
 
   const today = new Date();

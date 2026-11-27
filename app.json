@@ -7,19 +7,27 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#05070A"
-    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#05070A"
       },
-      "package": "com.adventisttamiltool.adventisttamiltool"
+      "package": "com.adventisttamiltool.adventisttamiltool",
+      "allowBackup": true,
+      "blockedPermissions": [
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ]
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash.png",
+          "imageWidth": 300,
+          "resizeMode": "contain",
+          "backgroundColor": "#05070A"
+        }
+      ],
       "expo-sqlite",
       "expo-asset",
       "expo-font",
@@ -28,13 +36,15 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Adventist Tamil Tool to access your camera to scan QR codes for joining services."
+          "cameraPermission": "Allow Adventist Tamil Tool to access your camera to scan QR codes for joining services.",
+          "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow Adventist Tamil Tool to access your photos so you can select a QR code image to join a service."
+          "photosPermission": "Allow Adventist Tamil Tool to access your photos so you can select a QR code image to join a service.",
+          "microphonePermission": false
         }
       ]
     ],

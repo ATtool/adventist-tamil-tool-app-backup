@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import booksData from '../data/books.json';
 import { getCustomSongs } from '../utils/UserDataDB';
+import { dbDirectoryOption } from '../utils/dbPaths';
 
 const { height } = Dimensions.get('window');
 
@@ -191,7 +192,7 @@ export default function CreateService() {
     let db = null;
     try {
       let dbName = bookId === 'Zion' ? 'zion.db' : 'Thirumarai.db';
-      db = await SQLite.openDatabaseAsync(dbName);
+      db = await SQLite.openDatabaseAsync(dbName, undefined, dbDirectoryOption);
       
       // Dynamic table detector to prevent crash!
       const tableRes = await db.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
@@ -249,7 +250,7 @@ export default function CreateService() {
       if (!bookObj) return;
 
       const dbName = isEnglish ? 'KJV.db' : 'TAMIL.db';
-      db = await SQLite.openDatabaseAsync(dbName);
+      db = await SQLite.openDatabaseAsync(dbName, undefined, dbDirectoryOption);
       
       const tableRes = await db.getAllAsync("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_metadata'");
       if (!tableRes || tableRes.length === 0) return;

@@ -6,9 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import Slider from '@react-native-community/slider';
-import * as SQLite from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '../context/SettingsContext';
+import { querySync } from '../utils/DatabaseManager';
 
 const GIST_URL = 'https://gist.githubusercontent.com/ATtool/515dee23d057c967636146fded6645f4/raw/SSl-Ta';
 const CACHE_KEY = '@sabbath_quarterly_data';
@@ -237,12 +237,12 @@ export default function SabbathSchoolScreen() {
     setShowVersePopup(true);
 
     try {
-      const db = await SQLite.openDatabaseAsync('TAMIL.db');
-      const result = await db.getFirstAsync(
+      const rows = querySync(
+        'TAMIL.db',
         'SELECT text FROM amp WHERE book_id = ? AND chapter = ? AND verse = ?',
         [bookId, chapter, verse]
       );
-      if (result) setPopupVerseText(result.text);
+      if (rows && rows.length > 0) setPopupVerseText(rows[0].text);
       else setPopupVerseText("மன்னிக்கவும், வசனம் கிடைக்கவில்லை.");
     } catch (error) {
       setPopupVerseText("Error loading verse.");
@@ -281,12 +281,12 @@ export default function SabbathSchoolScreen() {
       setCurrentDbVerse(nextVerse);
       
       try {
-        const db = await SQLite.openDatabaseAsync('TAMIL.db');
-        const result = await db.getFirstAsync(
+        const rows = querySync(
+          'TAMIL.db',
           'SELECT text FROM amp WHERE book_id = ? AND chapter = ? AND verse = ?',
           [currentDbBook, currentDbChapter, nextVerse]
         );
-        if (result) setPopupVerseText(result.text);
+        if (rows && rows.length > 0) setPopupVerseText(rows[0].text);
         else setPopupVerseText("மன்னிக்கவும், வசனம் கிடைக்கவில்லை.");
       } catch (error) {
         setPopupVerseText("Error loading verse.");

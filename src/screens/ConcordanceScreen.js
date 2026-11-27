@@ -15,9 +15,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
 import booksData from '../data/books.json';
 import BiblePickers from '../components/bible/BiblePickers';
+import { dbPath, ensureDbDirectory, dbDirectoryOption } from '../utils/dbPaths';
 
 const DB_FILENAME = 'bible_concordance_final.db';
-const DB_PATH = FileSystem.documentDirectory + 'SQLite/' + DB_FILENAME;
+const DB_PATH = dbPath(DB_FILENAME);
 const DOWNLOAD_URL = 'https://drive.google.com/uc?export=download&id=1mdYSmnLkdSg7izEKDlfGLc25FZOLRJmx';
 
 const STRONGS_TAG_REGEX = /<([HG]\d+)>/g;
@@ -195,7 +196,7 @@ export default function ConcordanceScreen({ navigation, route }) {
         if (!dbRef.current && !isOpeningDbRef.current) {
           isOpeningDbRef.current = true;
           try {
-            const newConnection = await SQLite.openDatabaseAsync(DB_FILENAME);
+            const newConnection = await SQLite.openDatabaseAsync(DB_FILENAME, undefined, dbDirectoryOption);
             if (!isMountedRef.current) {
               newConnection.closeAsync().catch(() => {});
               return;
@@ -249,7 +250,7 @@ export default function ConcordanceScreen({ navigation, route }) {
       setIsDownloading(true);
       setDownloadProgress(0);
 
-      const sqliteDir = FileSystem.documentDirectory + 'SQLite';
+      const sqliteDir = await ensureDbDirectory();
       const dirInfo = await FileSystem.getInfoAsync(sqliteDir);
       if (!dirInfo.exists) await FileSystem.makeDirectoryAsync(sqliteDir, { intermediates: true });
 
@@ -267,7 +268,7 @@ export default function ConcordanceScreen({ navigation, route }) {
         setIsDownloading(false);
         setIsEngineDownloaded(true);
         // Using the ref lock here too!
-        const newConnection = await SQLite.openDatabaseAsync(DB_FILENAME);
+        const newConnection = await SQLite.openDatabaseAsync(DB_FILENAME, undefined, dbDirectoryOption);
         if (!isMountedRef.current) {
           newConnection.closeAsync().catch(() => {});
           return;
@@ -370,7 +371,7 @@ export default function ConcordanceScreen({ navigation, route }) {
         try { await dbRef.current.closeAsync(); } catch (e) {}
       }
       dbRef.current = null;
-      dbRef.current = await SQLite.openDatabaseAsync(DB_FILENAME);
+      dbRef.current = await SQLite.openDatabaseAsync(DB_FILENAME, undefined, dbDirectoryOption);
       setDb(dbRef.current);
       return true;
     } catch (e) {
