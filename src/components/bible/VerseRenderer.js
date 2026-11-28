@@ -3,6 +3,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSettings } from '../../context/SettingsContext';
+import { FontRoleProvider } from '../../theme/FontRoleContext';
 
 const VerseRenderer = React.memo(({
   item, 
@@ -51,6 +52,7 @@ const VerseRenderer = React.memo(({
         {isFavorite && <Ionicons name="heart" size={16} color="#FF3B30" style={{ marginTop: 6 }} />}
       </View>
 
+      <FontRoleProvider role="bible">
       <View style={{ flex: 1 }}>
         {(bibleLanguage === 'tamil' || bibleLanguage === 'both') && item.text_ta ? (
           // Fixed! Now dynamically responding to bibleFontSize and bibleLineHeight
@@ -66,6 +68,7 @@ const VerseRenderer = React.memo(({
           </MixedText>
         ) : null}
       </View>
+      </FontRoleProvider>
     </TouchableOpacity>
   );
 });

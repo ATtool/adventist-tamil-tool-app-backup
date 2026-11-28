@@ -10,6 +10,8 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
+import { FontRoleProvider } from '../theme/FontRoleContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'; 
 
 const GIST_RAW_URL = 'https://gist.githubusercontent.com/ATtool/cf27796976a73404f254b4bc81240f5f/raw/other_songs.json';
@@ -97,7 +99,7 @@ export default function OtherSongsScreen() {
   
   const isThanglish = route.params?.isThanglish || false;
 
-  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography, resolvedFonts } = useSettings();
 
   const songAccent = isDark ? BRIGHT_YELLOW : colors.accent;
   const refrainColor = isDark ? NEON_BLUE : colors.primary;
@@ -447,8 +449,8 @@ export default function OtherSongsScreen() {
 
             <View style={[styles.searchPill, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, marginBottom: 0 }]}>
               <View style={{ flex: 1 }}>
-                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="ஏசுவின் / Yesuvin" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
-                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: 'Tamil003', display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
+                <TextInput ref={textInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: getInputFontFamily(resolvedFonts), display: !isNumericKeyboard ? 'flex' : 'none' }]} placeholder="ஏசுவின் / Yesuvin" placeholderTextColor={colors.subtext} keyboardType="default" value={search} onChangeText={handleSearchTyping} autoCorrect={false} />
+                <TextInput ref={numericInputRef} style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: getInputFontFamily(resolvedFonts), display: isNumericKeyboard ? 'flex' : 'none' }]} placeholder="Search Number..." placeholderTextColor={colors.subtext} keyboardType="number-pad" value={search} onChangeText={handleSearchTyping} />
               </View>
 
               {search.length > 0 && (
@@ -648,7 +650,7 @@ export default function OtherSongsScreen() {
                 </View>
               </ScalePressable>
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
-                <MixedText style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
+                <MixedText fontRole="songTitle" style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                   {activeSong?.song_number || activeSong?.id}{' - '}{activeSong?.title_tamil}
                 </MixedText>
               </View>
@@ -666,6 +668,7 @@ export default function OtherSongsScreen() {
               </View>
             </View>
 
+            <FontRoleProvider role="lyrics">
             <ScrollView ref={lyricsScrollRef} contentContainerStyle={{ padding: 30, paddingBottom: 150 }} keyboardDismissMode="on-drag">
               {lyricStanzas.map((stanza, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
@@ -696,6 +699,7 @@ export default function OtherSongsScreen() {
                 </View>
               ))}
             </ScrollView>
+            </FontRoleProvider>
 
             {activeSong && (
               <View style={styles.floatCenterClear}>

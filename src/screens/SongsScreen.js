@@ -6,6 +6,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
+import { FontRoleProvider } from '../theme/FontRoleContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Slider from '@react-native-community/slider';
@@ -42,7 +44,7 @@ export default function SongsScreen() {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets(); 
   // ADDED typography to our settings import
-  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography, resolvedFonts } = useSettings();
 
   const songAccent = isDark ? BRIGHT_YELLOW : colors.accent;
   const refrainColor = isDark ? NEON_BLUE : colors.primary;
@@ -507,7 +509,7 @@ export default function SongsScreen() {
               <View style={[styles.globalSearchInputBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <Ionicons name="search" size={20} color={colors.subtext} style={{ marginRight: 8 }} />
                 <TextInput 
-                  style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}
+                  style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts), includeFontPadding: false }}
                   placeholder="Search number, Tamil or Thanglish..."
                   placeholderTextColor={colors.subtext}
                   value={searchQuery}
@@ -590,7 +592,7 @@ export default function SongsScreen() {
               </ScalePressable>
               
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
-                 <MixedText numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: isThanglish ? titleSize + 2 : titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10, includeFontPadding: false }}>
+                 <MixedText fontRole="songTitle" numberOfLines={1} adjustsFontSizeToFit style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: isThanglish ? titleSize + 2 : titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10, includeFontPadding: false }}>
                    {activeGlobalSong?.num} - {isThanglish ? (activeGlobalSong?.title_english || activeGlobalSong?.title_tamil) : activeGlobalSong?.title_tamil}
                  </MixedText>
                  <MixedText numberOfLines={1} adjustsFontSizeToFit style={{ color: activeGlobalSong?.sourceColor, fontSize: typography.caption.fontSize, fontFamily: 'Tamil003', includeFontPadding: false }}>
@@ -618,6 +620,7 @@ export default function SongsScreen() {
               </View>
             </View>
 
+            <FontRoleProvider role="lyrics">
             <ScrollView contentContainerStyle={{ padding: 30, paddingBottom: 150 }}>
               {lyricStanzas.map((stanza, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
@@ -662,6 +665,7 @@ export default function SongsScreen() {
                 </View>
               ))}
             </ScrollView>
+            </FontRoleProvider>
 
           {/* STANDALONE TEXT SETTINGS */}
           {showTextSettings && (

@@ -8,6 +8,8 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
 import { useSettings } from '../../context/SettingsContext';
+import { FontRoleProvider } from '../../theme/FontRoleContext';
+import { getInputFontFamily } from '../../theme/fontUtils';
 import booksData from '../../data/books.json';
 // Import your centralized database manager instead of raw SQLite
 import { getSafeDb, getTableNameSync } from '../../utils/DatabaseManager';
@@ -15,7 +17,7 @@ import { getSafeDb, getTableNameSync } from '../../utils/DatabaseManager';
 const { width } = Dimensions.get('window');
 
 export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
-  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion, typography } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, bibleLanguage, activeEnglishVersion, typography, resolvedFonts } = useSettings();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -199,6 +201,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
         <MixedText style={{ color: colors.primary, fontWeight: 'bold', fontSize: typography.body.fontSize, marginBottom: 5 }}>
           {getBookName(item.book_id)} {item.chapter}:{item.verse}
         </MixedText>
+        <FontRoleProvider role="bible">
         {(bibleLanguage === 'tamil' || bibleLanguage === 'both') && item.text_ta ? (
           <MixedText style={{ color: colors.text, fontSize: typography.body.fontSize, fontFamily: 'Tamil003', marginBottom: 4 }} numberOfLines={3}>
             {highlightText(item.text_ta, searchQuery.trim())}
@@ -209,6 +212,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
             {highlightText(item.text_en, searchQuery.trim())}
           </MixedText>
         ) : null}
+        </FontRoleProvider>
       </TouchableOpacity>
     );
   }
@@ -234,7 +238,7 @@ export default function BibleSearch({ visible, onClose, onJumpToVerse }) {
               
               <View style={[styles.searchBox, { backgroundColor: colors.card, borderColor: colors.border }]}>
                 <TextInput 
-                  style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, paddingVertical: 10, paddingHorizontal: 15 }}
+                  style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts), paddingVertical: 10, paddingHorizontal: 15 }}
                   placeholder="Search Bible..."
                   placeholderTextColor={colors.subtext}
                   value={searchQuery}

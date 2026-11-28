@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import * as Speech from 'expo-speech';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSettings } from '../context/SettingsContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import { getSafeDb, querySync, getTableNameSync } from '../utils/DatabaseManager';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import InAppBrowser from '../components/InAppBrowser';
@@ -72,7 +73,7 @@ const DICTIONARIES = [
 ];
 
 export default function DictionaryScreen({ onClose }) {
-  const { colors, isDark, appFontSize, typography, hapticsEnabled } = useSettings();
+  const { colors, isDark, appFontSize, typography, hapticsEnabled, resolvedFonts } = useSettings();
   const navigation = useNavigation();
 
   const [activeDict, setActiveDict] = useState(null);
@@ -797,7 +798,7 @@ export default function DictionaryScreen({ onClose }) {
             <View style={[styles.searchPill, { borderColor: colors.border, backgroundColor: colors.card }]}>
               <Ionicons name="search-outline" size={18} color={colors.subtext} />
               <TextInput
-                style={[styles.searchInput, { color: colors.text, marginLeft: 8 }]}
+                style={[styles.searchInput, { color: colors.text, marginLeft: 8, fontFamily: getInputFontFamily(resolvedFonts) }]}
                 placeholder="Search word..."
                 placeholderTextColor={colors.subtext}
                 value={searchQuery}

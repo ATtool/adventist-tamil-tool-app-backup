@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -59,7 +60,7 @@ const SONGBOOKS = [
 export default function CreateService() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { colors, isDark, appFontSize, hapticsEnabled, typography } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, typography, resolvedFonts } = useSettings();
   const styles = createStyles(typography);
 
   const [serviceId, setServiceId] = useState(null); // Used for editing an existing service
@@ -468,7 +469,7 @@ export default function CreateService() {
             
             <View style={[styles.detailsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
               <MixedText style={[styles.label, { color: colors.subtext }]}>Service Name / ஆராதனை பெயர்</MixedText>
-              <TextInput style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]} placeholder="e.g. Sabbath Morning Worship" placeholderTextColor={colors.subtext} value={meetingName} onChangeText={setMeetingName} />
+              <TextInput style={[styles.input, { color: colors.text, borderBottomColor: colors.border, fontFamily: getInputFontFamily(resolvedFonts) }]} placeholder="e.g. Sabbath Morning Worship" placeholderTextColor={colors.subtext} value={meetingName} onChangeText={setMeetingName} />
               
               <MixedText style={[styles.label, { color: colors.subtext, marginTop: 15 }]}>Date / தேதி</MixedText>
               
@@ -675,11 +676,11 @@ export default function CreateService() {
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 }}>
                       <View style={{ flex: 1, marginRight: 10 }}>
                         <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Chp / அதிகாரம்</MixedText>
-                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.chapter} onChangeText={(text) => { setTempBibleData({...tempBibleData, chapter: text}); fetchBiblePreview(tempBibleData.book, text, tempBibleData.verse, isEnglishBible); }} />
+                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border, fontFamily: getInputFontFamily(resolvedFonts) }]} keyboardType="numeric" value={tempBibleData.chapter} onChangeText={(text) => { setTempBibleData({...tempBibleData, chapter: text}); fetchBiblePreview(tempBibleData.book, text, tempBibleData.verse, isEnglishBible); }} />
                       </View>
                       <View style={{ flex: 1 }}>
                         <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Ver / வசனம்</MixedText>
-                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} keyboardType="numeric" value={tempBibleData.verse} onChangeText={(text) => { setTempBibleData({...tempBibleData, verse: text}); fetchBiblePreview(tempBibleData.book, tempBibleData.chapter, text, isEnglishBible); }} />
+                        <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border, fontFamily: getInputFontFamily(resolvedFonts) }]} keyboardType="numeric" value={tempBibleData.verse} onChangeText={(text) => { setTempBibleData({...tempBibleData, verse: text}); fetchBiblePreview(tempBibleData.book, tempBibleData.chapter, text, isEnglishBible); }} />
                       </View>
                     </View>
                   </View>
@@ -729,7 +730,7 @@ export default function CreateService() {
 
                     <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Search by Number or Name</MixedText>
                     <TextInput 
-                      style={[styles.compactInput, { color: colors.text, borderColor: colors.border, marginBottom: 5 }]} 
+                      style={[styles.compactInput, { color: colors.text, borderColor: colors.border, marginBottom: 5, fontFamily: getInputFontFamily(resolvedFonts) }]}
                       placeholder="e.g. 45 or Guide me..." 
                       placeholderTextColor={colors.subtext} 
                       value={tempSongData.number} 
@@ -759,7 +760,7 @@ export default function CreateService() {
                 {(activeConfigType === 'person' || activeConfigType === 'song' || activeConfigType === 'bible' || activeConfigType === 'tithe') && (
                   <View style={{ marginTop: 5 }}>
                     <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Led By / யார் செய்வது? (Optional)</MixedText>
-                    <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border }]} placeholder="Type name..." placeholderTextColor={colors.subtext} value={tempPersonName} onChangeText={setTempPersonName} />
+                    <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border, fontFamily: getInputFontFamily(resolvedFonts) }]} placeholder="Type name..." placeholderTextColor={colors.subtext} value={tempPersonName} onChangeText={setTempPersonName} />
                   </View>
                 )}
 
@@ -767,7 +768,7 @@ export default function CreateService() {
                 {(activeConfigType === 'note' || activeConfigType === 'tithe') && (
                   <View style={{ marginTop: 10 }}>
                     <MixedText style={[styles.compactLabel, { color: colors.subtext }]}>Custom Text / குறிப்பு</MixedText>
-                    <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border, height: 80 }]} placeholder="Type your notes here..." placeholderTextColor={colors.subtext} value={tempNoteText} onChangeText={setTempNoteText} multiline />
+                    <TextInput style={[styles.compactInput, { color: colors.text, borderColor: colors.border, height: 80, fontFamily: getInputFontFamily(resolvedFonts) }]} placeholder="Type your notes here..." placeholderTextColor={colors.subtext} value={tempNoteText} onChangeText={setTempNoteText} multiline />
                   </View>
                 )}
 

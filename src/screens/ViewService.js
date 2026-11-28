@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useSettings } from '../context/SettingsContext';
+import { FontRoleProvider } from '../theme/FontRoleContext';
 import * as SQLite from 'expo-sqlite';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
@@ -339,7 +340,8 @@ export default function ViewService() {
                     <View style={[styles.expandedContent, { borderTopColor: colors.border, backgroundColor: isDark ? '#121212' : '#F9F9F9' }]}>
                       {isLoadingContent && (!fetchedContent[block.id]) ? <ActivityIndicator size="small" color={colors.primary} /> : (
                         block.category === 'song' ? (
-                          parseLyricStanzas(fetchedContent[block.id]).map((stanza, sIdx) => (
+                          <FontRoleProvider role="lyrics">
+                          {parseLyricStanzas(fetchedContent[block.id]).map((stanza, sIdx) => (
                             <View key={sIdx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
                               <View style={{ width: 34 }}>
                                 {stanza.number && (
@@ -366,12 +368,14 @@ export default function ViewService() {
                                 ))}
                               </View>
                             </View>
-                          ))
+                          ))}
+                          </FontRoleProvider>
                         ) : (
-                          // Bible verses (both Tamil and English) locked to Tamil003
+                          <FontRoleProvider role="bible">
                           <MixedText style={{ color: colors.text, fontSize: lyricsSize, fontFamily: 'Tamil003', lineHeight: lyricsLineHeight, letterSpacing: lyricsSpacing, includeFontPadding: false }}>
                             {fetchedContent[block.id]}
                           </MixedText>
+                          </FontRoleProvider>
                         )
                       )}
                     </View>

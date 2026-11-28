@@ -8,6 +8,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import * as Notifications from 'expo-notifications';
@@ -38,7 +39,7 @@ const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpaci
 export default function HomeScreen() {
   const navigation = useNavigation();
   // We added `typography` here to pull in our global sizes!
-  const { isDark, colors, hapticsEnabled, typography, toggleTheme } = useSettings();
+  const { isDark, colors, hapticsEnabled, typography, toggleTheme, resolvedFonts } = useSettings();
   
   const [isChecking, setIsChecking] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -1135,7 +1136,7 @@ export default function HomeScreen() {
                 >
                   <Ionicons name="person" size={20} color={nameInputFocused ? colors.primary : colors.subtext} style={{ marginRight: 10 }} />
                   <TextInput
-                    style={[styles.inputField, { color: colors.text, fontSize: typography.body.fontSize }]}
+                    style={[styles.inputField, { color: colors.text, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts) }]}
                     placeholder="Type Here (e.g. David / தாவீது)"
                     placeholderTextColor={colors.subtext}
                     value={tempName}

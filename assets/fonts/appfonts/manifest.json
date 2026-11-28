@@ -1,0 +1,679 @@
+{
+  "tamil": [
+    {
+      "id": "tamil003",
+      "name": "Tamil003 (Default Body)",
+      "language": "tamil",
+      "family": "Tamil003 (Default Body)",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "regular": "assets/fonts/Tamil003.ttf"
+      }
+    },
+    {
+      "id": "tamil008",
+      "name": "Tamil008 (Default Heading)",
+      "language": "tamil",
+      "family": "Tamil008 (Default Heading)",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "regular": "assets/fonts/Tamil008.ttf"
+      }
+    },
+    {
+      "id": "notoSansTamil",
+      "name": "Noto Sans Tamil",
+      "language": "tamil",
+      "family": "Noto Sans Tamil",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/notoSansTamil-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/notoSansTamil-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/notoSansTamil-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/notoSansTamil-Bold.ttf"
+      }
+    },
+    {
+      "id": "notoSerifTamil",
+      "name": "Noto Serif Tamil",
+      "language": "tamil",
+      "family": "Noto Serif Tamil",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/notoSerifTamil-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/notoSerifTamil-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/notoSerifTamil-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/notoSerifTamil-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/notoSerifTamil-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/notoSerifTamil-Bold.ttf"
+      }
+    },
+    {
+      "id": "muktaMalar",
+      "name": "Mukta Malar",
+      "language": "tamil",
+      "family": "Mukta Malar",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/muktaMalar-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/muktaMalar-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/muktaMalar-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/muktaMalar-Bold.ttf"
+      }
+    },
+    {
+      "id": "hindMadurai",
+      "name": "Hind Madurai",
+      "language": "tamil",
+      "family": "Hind Madurai",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/hindMadurai-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/hindMadurai-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/hindMadurai-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/hindMadurai-Bold.ttf"
+      }
+    },
+    {
+      "id": "catamaran",
+      "name": "Catamaran",
+      "language": "tamil",
+      "family": "Catamaran",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/catamaran-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/catamaran-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/catamaran-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/catamaran-Bold.ttf"
+      }
+    },
+    {
+      "id": "anekTamil",
+      "name": "Anek Tamil",
+      "language": "tamil",
+      "family": "Anek Tamil",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/anekTamil-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/anekTamil-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/anekTamil-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/anekTamil-Bold.ttf"
+      }
+    },
+    {
+      "id": "balooThambi2",
+      "name": "Baloo Thambi 2",
+      "language": "tamil",
+      "family": "Baloo Thambi 2",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/balooThambi2-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/balooThambi2-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/balooThambi2-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/balooThambi2-Bold.ttf"
+      }
+    },
+    {
+      "id": "meeraInimai",
+      "name": "Meera Inimai",
+      "language": "tamil",
+      "family": "Meera Inimai",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/meeraInimai-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/meeraInimai-Regular.ttf",
+        "Italic": "assets/fonts/appfonts/meeraInimai-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/meeraInimai-Regular.ttf"
+      }
+    },
+    {
+      "id": "pavanam",
+      "name": "Pavanam",
+      "language": "tamil",
+      "family": "Pavanam",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/pavanam-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/pavanam-Regular.ttf",
+        "Italic": "assets/fonts/appfonts/pavanam-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/pavanam-Regular.ttf"
+      }
+    },
+    {
+      "id": "kavivanar",
+      "name": "Kavivanar",
+      "language": "tamil",
+      "family": "Kavivanar",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/kavivanar-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/kavivanar-Regular.ttf",
+        "Italic": "assets/fonts/appfonts/kavivanar-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/kavivanar-Regular.ttf"
+      }
+    },
+    {
+      "id": "arimaMadurai",
+      "name": "Arima Madurai",
+      "language": "tamil",
+      "family": "Arima",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/arimaMadurai-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/arimaMadurai-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/arimaMadurai-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/arimaMadurai-Bold.ttf"
+      }
+    },
+    {
+      "id": "coiny",
+      "name": "Coiny",
+      "language": "tamil",
+      "family": "Coiny",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/coiny-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/coiny-Regular.ttf",
+        "Italic": "assets/fonts/appfonts/coiny-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/coiny-Regular.ttf"
+      }
+    },
+    {
+      "id": "oi",
+      "name": "Oi",
+      "language": "tamil",
+      "family": "Oi",
+      "weights": [
+        400
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/oi-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/oi-Regular.ttf",
+        "Italic": "assets/fonts/appfonts/oi-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/oi-Regular.ttf"
+      }
+    },
+    {
+      "id": "tiroTamil",
+      "name": "Tiro Tamil",
+      "language": "tamil",
+      "family": "Tiro Tamil",
+      "weights": [
+        400
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/tiroTamil-italicRegular.ttf",
+        "Regular": "assets/fonts/appfonts/tiroTamil-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/tiroTamil-Regular.ttf",
+        "Italic": "assets/fonts/appfonts/tiroTamil-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/tiroTamil-Regular.ttf"
+      }
+    },
+    {
+      "id": "karlaTamilInclined",
+      "name": "Karla Tamil Inclined",
+      "language": "tamil",
+      "family": "Karla Tamil Inclined",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/karlaTamilInclined-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/karlaTamilInclined-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/karlaTamilInclined-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/karlaTamilInclined-Bold.ttf"
+      }
+    },
+    {
+      "id": "karlaTamilUpright",
+      "name": "Karla Tamil Upright",
+      "language": "tamil",
+      "family": "Karla Tamil Upright",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": false,
+      "files": {
+        "Regular": "assets/fonts/appfonts/karlaTamilUpright-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/karlaTamilUpright-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/karlaTamilUpright-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/karlaTamilUpright-Bold.ttf"
+      }
+    }
+  ],
+  "english": [
+    {
+      "id": "tinos",
+      "name": "Tinos (Default)",
+      "language": "english",
+      "family": "Tinos (Default)",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "regular": "assets/fonts/Tinos-Regular.ttf",
+        "bold": "assets/fonts/Tinos-Bold.ttf",
+        "italic": "assets/fonts/Tinos-Italic.ttf",
+        "boldItalic": "assets/fonts/Tinos-BoldItalic.ttf"
+      }
+    },
+    {
+      "id": "ebGaramond",
+      "name": "EB Garamond",
+      "language": "english",
+      "family": "EB Garamond",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/ebGaramond-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/ebGaramond-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/ebGaramond-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/ebGaramond-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/ebGaramond-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/ebGaramond-Bold.ttf"
+      }
+    },
+    {
+      "id": "merriweather",
+      "name": "Merriweather",
+      "language": "english",
+      "family": "Merriweather",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/merriweather-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/merriweather-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/merriweather-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/merriweather-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/merriweather-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/merriweather-Bold.ttf"
+      }
+    },
+    {
+      "id": "lora",
+      "name": "Lora",
+      "language": "english",
+      "family": "Lora",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/lora-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/lora-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/lora-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/lora-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/lora-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/lora-Bold.ttf"
+      }
+    },
+    {
+      "id": "playfairDisplay",
+      "name": "Playfair Display",
+      "language": "english",
+      "family": "Playfair Display",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/playfairDisplay-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/playfairDisplay-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/playfairDisplay-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/playfairDisplay-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/playfairDisplay-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/playfairDisplay-Bold.ttf"
+      }
+    },
+    {
+      "id": "libreBaskerville",
+      "name": "Libre Baskerville",
+      "language": "english",
+      "family": "Libre Baskerville",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/libreBaskerville-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/libreBaskerville-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/libreBaskerville-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/libreBaskerville-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/libreBaskerville-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/libreBaskerville-Bold.ttf"
+      }
+    },
+    {
+      "id": "crimsonText",
+      "name": "Crimson Text",
+      "language": "english",
+      "family": "Crimson Text",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/crimsonText-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/crimsonText-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/crimsonText-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/crimsonText-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/crimsonText-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/crimsonText-Bold.ttf"
+      }
+    },
+    {
+      "id": "sourceSerif4",
+      "name": "Source Serif 4",
+      "language": "english",
+      "family": "Source Serif 4",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/sourceSerif4-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/sourceSerif4-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/sourceSerif4-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/sourceSerif4-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/sourceSerif4-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/sourceSerif4-Bold.ttf"
+      }
+    },
+    {
+      "id": "bitter",
+      "name": "Bitter",
+      "language": "english",
+      "family": "Bitter",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/bitter-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/bitter-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/bitter-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/bitter-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/bitter-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/bitter-Bold.ttf"
+      }
+    },
+    {
+      "id": "ptSerif",
+      "name": "PT Serif",
+      "language": "english",
+      "family": "PT Serif",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/ptSerif-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/ptSerif-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/ptSerif-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/ptSerif-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/ptSerif-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/ptSerif-Bold.ttf"
+      }
+    },
+    {
+      "id": "spectral",
+      "name": "Spectral",
+      "language": "english",
+      "family": "Spectral",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/spectral-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/spectral-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/spectral-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/spectral-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/spectral-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/spectral-Bold.ttf"
+      }
+    },
+    {
+      "id": "literata",
+      "name": "Literata",
+      "language": "english",
+      "family": "Literata",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/literata-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/literata-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/literata-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/literata-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/literata-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/literata-Bold.ttf"
+      }
+    },
+    {
+      "id": "inter",
+      "name": "Inter",
+      "language": "english",
+      "family": "Inter",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/inter-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/inter-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/inter-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/inter-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/inter-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/inter-Bold.ttf"
+      }
+    },
+    {
+      "id": "openSans",
+      "name": "Open Sans",
+      "language": "english",
+      "family": "Open Sans",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/openSans-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/openSans-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/openSans-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/openSans-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/openSans-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/openSans-Bold.ttf"
+      }
+    },
+    {
+      "id": "lato",
+      "name": "Lato",
+      "language": "english",
+      "family": "Lato",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/lato-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/lato-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/lato-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/lato-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/lato-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/lato-Bold.ttf"
+      }
+    },
+    {
+      "id": "montserrat",
+      "name": "Montserrat",
+      "language": "english",
+      "family": "Montserrat",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/montserrat-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/montserrat-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/montserrat-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/montserrat-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/montserrat-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/montserrat-Bold.ttf"
+      }
+    },
+    {
+      "id": "poppins",
+      "name": "Poppins",
+      "language": "english",
+      "family": "Poppins",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/poppins-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/poppins-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/poppins-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/poppins-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/poppins-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/poppins-Bold.ttf"
+      }
+    },
+    {
+      "id": "nunito",
+      "name": "Nunito",
+      "language": "english",
+      "family": "Nunito",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/nunito-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/nunito-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/nunito-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/nunito-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/nunito-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/nunito-Bold.ttf"
+      }
+    },
+    {
+      "id": "raleway",
+      "name": "Raleway",
+      "language": "english",
+      "family": "Raleway",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/raleway-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/raleway-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/raleway-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/raleway-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/raleway-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/raleway-Bold.ttf"
+      }
+    },
+    {
+      "id": "atkinsonHyperlegible",
+      "name": "Atkinson Hyperlegible",
+      "language": "english",
+      "family": "Atkinson Hyperlegible",
+      "weights": [
+        400,
+        700
+      ],
+      "hasItalic": true,
+      "files": {
+        "italicRegular": "assets/fonts/appfonts/atkinsonHyperlegible-italicRegular.ttf",
+        "italicBold": "assets/fonts/appfonts/atkinsonHyperlegible-italicBold.ttf",
+        "Regular": "assets/fonts/appfonts/atkinsonHyperlegible-Regular.ttf",
+        "Bold": "assets/fonts/appfonts/atkinsonHyperlegible-Bold.ttf",
+        "Italic": "assets/fonts/appfonts/atkinsonHyperlegible-Regular.ttf",
+        "BoldItalic": "assets/fonts/appfonts/atkinsonHyperlegible-Bold.ttf"
+      }
+    }
+  ]
+}

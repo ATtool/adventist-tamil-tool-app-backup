@@ -10,6 +10,8 @@ import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
+import FontSettingsModal from '../components/FontSettingsModal';
+import FontPickerModal from '../components/FontPickerModal';
 import { useNavigation } from '@react-navigation/native';
 import { EGW_BOOKS_DATA } from '../data/egwBooks'; 
 import { DB_DIRECTORY, dbPath, ensureDbDirectory } from '../utils/dbPaths';
@@ -36,9 +38,16 @@ const MAPS_FOLDER = 'BibleMaps';
 export default function SettingsScreen() {
   const navigation = useNavigation();
   // Added typography and restoreDefaultTextSettings here!
-  const { colors, isDark, setTheme, toggleTheme, appFontSize, setAppFontSize, hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion, typography, restoreDefaultTextSettings } = useSettings();
+  const {
+    colors, isDark, setTheme, toggleTheme, appFontSize, setAppFontSize,
+    hapticsEnabled, setHapticsEnabled, activeEnglishVersion, setActiveEnglishVersion,
+    typography, restoreDefaultTextSettings,
+    fontSettings, resolvedFonts, setMasterFont, resetFontSettings,
+  } = useSettings();
 
   const [showStorageModal, setShowStorageModal] = useState(false);
+  const [showFontSettings, setShowFontSettings] = useState(false);
+  const [fontPicker, setFontPicker] = useState(null);
   const [downloadedBibles, setDownloadedBibles] = useState([]);
   const [downloadedDicts, setDownloadedDicts] = useState([]);
   const [downloadedMagazines, setDownloadedMagazines] = useState([]);
@@ -364,6 +373,91 @@ export default function SettingsScreen() {
             <Slider minimumValue={12} maximumValue={24} step={1} value={appFontSize} onValueChange={setAppFontSize} minimumTrackTintColor={colors.primary} maximumTrackTintColor={colors.border} />
           </View>
 
+          <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>FONT & TYPOGRAPHY</MixedText>
+          <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, paddingHorizontal: 0 }]}>
+            <TouchableOpacity
+              style={[styles.cardRow, { paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.border }]}
+              onPress={() => {
+                if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setFontPicker({ language: 'tamil' });
+              }}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.themeIconCircle, { backgroundColor: colors.glow }]}>
+                  <Ionicons name="text" size={20} color={colors.primary} />
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
+                  <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, marginLeft: 0, fontWeight: '600', includeFontPadding: false }]}>Tamil App Font</MixedText>
+                  <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, marginTop: 2, includeFontPadding: false }} numberOfLines={1}>{resolvedFonts.masterTamil.name}</MixedText>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardRow, { paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.border }]}
+              onPress={() => {
+                if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setFontPicker({ language: 'english' });
+              }}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.themeIconCircle, { backgroundColor: colors.glow }]}>
+                  <Ionicons name="text-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
+                  <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, marginLeft: 0, fontWeight: '600', includeFontPadding: false }]}>English App Font</MixedText>
+                  <MixedText style={{ color: colors.primary, fontSize: typography.caption.fontSize, marginTop: 2, includeFontPadding: false }} numberOfLines={1}>{resolvedFonts.masterEnglish.name}</MixedText>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardRow, { paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.border }]}
+              onPress={() => {
+                if (hapticsEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowFontSettings(true);
+              }}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.themeIconCircle, { backgroundColor: colors.glow }]}>
+                  <Ionicons name="options-outline" size={20} color={colors.primary} />
+                </View>
+                <View style={{ marginLeft: 14, flex: 1 }}>
+                  <MixedText style={[styles.rowText, { color: colors.text, fontSize: typography.body.fontSize, marginLeft: 0, fontWeight: '600', includeFontPadding: false }]}>Customise Sections</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, marginTop: 2, includeFontPadding: false }}>Headings, lyrics, Bible verses & more</MixedText>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={colors.subtext} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.cardRow, { paddingHorizontal: 20 }]}
+              onPress={() => {
+                if (hapticsEnabled) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                Alert.alert(
+                  'Reset Fonts?',
+                  'Restore the original Tamil003 / Tamil008 / Tinos fonts and default section styles.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Reset', style: 'destructive', onPress: resetFontSettings },
+                  ]
+                );
+              }}
+            >
+              <View style={styles.rowLeft}>
+                <View style={[styles.themeIconCircle, { backgroundColor: 'rgba(255,59,48,0.12)' }]}>
+                  <Ionicons name="refresh" size={20} color="#FF3B30" />
+                </View>
+                <View style={{ marginLeft: 14 }}>
+                  <MixedText style={[styles.rowText, { color: '#FF3B30', fontSize: typography.body.fontSize, marginLeft: 0, fontWeight: '600', includeFontPadding: false }]}>Reset Fonts</MixedText>
+                  <MixedText style={{ color: colors.subtext, fontSize: typography.caption.fontSize, marginTop: 2, includeFontPadding: false }}>Back to the original app fonts</MixedText>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+
           <MixedText style={[styles.sectionTitle, { color: colors.primary, marginTop: 30, fontSize: typography.h2.fontSize, includeFontPadding: false }]}>MANAGE STORAGE</MixedText>
           <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border, paddingHorizontal: 0 }]}>
             <TouchableOpacity 
@@ -527,6 +621,32 @@ export default function SettingsScreen() {
           </View>
         </View>
       </Modal>
+
+      <FontSettingsModal
+        visible={showFontSettings}
+        onClose={() => setShowFontSettings(false)}
+      />
+
+      <FontPickerModal
+        visible={!!fontPicker}
+        language={fontPicker?.language || 'tamil'}
+        selectedId={
+          fontPicker?.language === 'english'
+            ? fontSettings.masterEnglish
+            : fontSettings.masterTamil
+        }
+        onSelect={(fontId) => {
+          if (fontId) setMasterFont(fontPicker?.language || 'tamil', fontId);
+          setFontPicker(null);
+        }}
+        onClose={() => setFontPicker(null)}
+        allowInherit={false}
+        title={
+          fontPicker?.language === 'english'
+            ? 'App English Font'
+            : 'App Tamil Font'
+        }
+      />
 
     </View>
   );

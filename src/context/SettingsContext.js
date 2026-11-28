@@ -1,7 +1,17 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  FONT_CATEGORIES,
+  getDefaultFontSettings,
+  normalizeFontSettings,
+  resolveCategoryFonts,
+  getFaceKeysForSettings,
+} from '../theme/fontUtils';
+import { TAMIL_FONTS, ENGLISH_FONTS } from '../theme/fontData';
+import { loadFontFaces } from '../theme/fontLoader';
 
 const SettingsContext = createContext();
+const FONT_SETTINGS_KEY = '@font_settings';
 
 export const SettingsProvider = ({ children }) => {
   const [isDark, setIsDark] = useState(true); 
@@ -26,6 +36,12 @@ export const SettingsProvider = ({ children }) => {
   const [bibleFontSize, setBibleFontSize] = useState(18);
   const [bibleLineHeight, setBibleLineHeight] = useState(32);
   const [bibleLetterSpacing, setBibleLetterSpacing] = useState(0);
+
+  // --- FONT / TYPOGRAPHY PREFERENCES ---
+  // `fontSettings` stores the user's choices; `resolvedFonts` is the
+  // ready-to-use mapping (master font + per-section overrides).
+  const [fontSettings, setFontSettings] = useState(getDefaultFontSettings);
+  const [fontLoadVersion, setFontLoadVersion] = useState(0);
 
   // Load saved preferences on startup
   useEffect(() => {
@@ -57,6 +73,24 @@ export const SettingsProvider = ({ children }) => {
           } else {
             _setActiveEnglishVersion(savedVersion);
           }
+        }
+
+        const savedFonts = await AsyncStorage.getItem(FONT_SETTINGS_KEY);
+        if (savedFonts) {
+          try {
+            const normalized = normalizeFontSettings(JSON.parse(savedFonts));
+            // Load the selected faces before switching settings so text never
+            // flashes in a fallback system font.
+            await loadFontFaces(getFaceKeysForSettings(normalized));
+            setFontSettings(normalized);
+            setFontLoadVersion((v) => v + 1);
+          } catch (fontError) {
+            console.warn('Failed to load font settings:', fontError);
+          }
+        } else {
+          // Make sure the default faces are available (they normally are
+          // already loaded by App.js, but the picker may ask for more).
+          await loadFontFaces(getFaceKeysForSettings(getDefaultFontSettings()));
         }
       } catch (e) { 
         console.error("Failed to load settings", e); 
@@ -117,6 +151,99 @@ export const SettingsProvider = ({ children }) => {
     setBibleLineHeight(32); 
     setBibleLetterSpacing(0);
   };
+
+  // --- FONT / TYPOGRAPHY ACTIONS ---
+
+  const persistFontSettings = async (next) => {
+    // Load first, then apply, so no text is painted with a face that has not
+    // been registered yet (which would briefly fall back to the system font).
+    try {
+      await loadFontFaces(getFaceKeysForSettings(next));
+    } catch (error) {
+      console.warn('Could not load selected fonts:', error);
+    }
+
+    setFontSettings(next);
+    try {
+      await AsyncStorage.setItem(FONT_SETTINGS_KEY, JSON.stringify(next));
+    } catch (error) {
+      console.warn('Could not save font settings:', error);
+    }
+
+    // Re-render so text picks up any newly loaded faces immediately.
+    setFontLoadVersion((v) => v + 1);
+  };
+
+  /**
+   * Change the app-wide Tamil or English font.  Sections the user has not
+   * customised follow the new app font; explicitly customised sections keep
+   * their own choice.
+   */
+  const setMasterFont = (language, fontId) => {
+    const masterKey = language === 'english' ? 'masterEnglish' : 'masterTamil';
+    const next = {
+      ...fontSettings,
+      [masterKey]: fontId,
+      categories: Object.keys(fontSettings.categories).reduce((acc, id) => {
+        const value = fontSettings.categories[id];
+        acc[id] = value.customized ? value : { ...value, [language]: null };
+        return acc;
+      }, {}),
+    };
+    persistFontSettings(next);
+  };
+
+  const setCategoryFont = (categoryId, language, fontId) => {
+    const current = fontSettings.categories[categoryId];
+    if (!current) return;
+    const next = {
+      ...fontSettings,
+      categories: {
+        ...fontSettings.categories,
+        [categoryId]: {
+          ...current,
+          [language]: fontId,
+          customized: true,
+        },
+      },
+    };
+    persistFontSettings(next);
+  };
+
+  const setCategoryTextStyle = (categoryId, textStyle) => {
+    const current = fontSettings.categories[categoryId];
+    if (!current) return;
+    const next = {
+      ...fontSettings,
+      categories: {
+        ...fontSettings.categories,
+        [categoryId]: { ...current, textStyle, customized: true },
+      },
+    };
+    persistFontSettings(next);
+  };
+
+  const resetCategoryFonts = (categoryId) => {
+    const category = FONT_CATEGORIES.find((item) => item.id === categoryId);
+    if (!category) return;
+    const next = {
+      ...fontSettings,
+      categories: {
+        ...fontSettings.categories,
+        [categoryId]: {
+          tamil: category.tamilDefault,
+          english: category.englishDefault,
+          textStyle: 'auto',
+          customized: false,
+        },
+      },
+    };
+    persistFontSettings(next);
+  };
+
+  const resetFontSettings = () => persistFontSettings(getDefaultFontSettings());
+
+  const resolvedFonts = useMemo(() => resolveCategoryFonts(fontSettings), [fontSettings]);
 
   const setTheme = async (themeMode) => {
     const dark = themeMode === 'dark';
@@ -215,7 +342,19 @@ export const SettingsProvider = ({ children }) => {
       bibleFontSize, setBibleFontSize,
       bibleLineHeight, setBibleLineHeight,
       bibleLetterSpacing, setBibleLetterSpacing,
-      restoreDefaultTextSettings
+      restoreDefaultTextSettings,
+      // Font & typography
+      fontSettings,
+      resolvedFonts,
+      fontCategories: FONT_CATEGORIES,
+      tamilFonts: TAMIL_FONTS,
+      englishFonts: ENGLISH_FONTS,
+      setMasterFont,
+      setCategoryFont,
+      setCategoryTextStyle,
+      resetCategoryFonts,
+      resetFontSettings,
+      fontLoadVersion,
     }}>
       {children}
     </SettingsContext.Provider>

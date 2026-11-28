@@ -13,6 +13,7 @@ import * as Haptics from 'expo-haptics';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSettings } from '../context/SettingsContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import booksData from '../data/books.json';
 import BiblePickers from '../components/bible/BiblePickers';
 import { dbPath, ensureDbDirectory, dbDirectoryOption } from '../utils/dbPaths';
@@ -42,7 +43,7 @@ export default function ConcordanceScreen({ navigation, route }) {
     bibleFontSize: globalBibleFontSize,
     bibleLineHeight: globalBibleLineHeight,
     bibleLetterSpacing: globalBibleLetterSpacing,
-    hapticsEnabled
+    hapticsEnabled, resolvedFonts
   } = useSettings();
 
   const [verseSize, setVerseSize] = useState(globalBibleFontSize || 20);
@@ -898,7 +899,7 @@ export default function ConcordanceScreen({ navigation, route }) {
             <View style={[styles.searchBox, { borderColor: colors.border, backgroundColor: colors.card }]}>
               <Ionicons name="search" size={17} color={colors.subtext} style={{ marginRight: 8 }} />
               <TextInput
-                style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize }}
+                style={{ flex: 1, color: colors.text, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts) }}
                 placeholder="Word or Strong's ID (e.g. G5485, H7225)"
                 placeholderTextColor={colors.subtext}
                 value={searchQuery}

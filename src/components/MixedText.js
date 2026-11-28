@@ -1,15 +1,22 @@
 import React, { createContext, forwardRef, useContext, useMemo } from 'react';
 import { StyleSheet, Text } from 'react-native';
+import { useSettings } from '../context/SettingsContext';
+import { useFontRole } from '../theme/FontRoleContext';
+import { getTamilFont, getEnglishFont, parseTextStyle, resolveFace } from '../theme/fontUtils';
 
 /**
  * MixedText — drop-in replacement for the react-native <Text> component.
  *
  * Typography rules for bilingual (Tamil + English) content:
- *   1. Tamil script  -> always regular/default font weight (never bold),
- *                       rendered at the component's own font size.
- *   2. English words -> always bold, rendered exactly 2px smaller than the
- *                       surrounding Tamil text at every level
- *                       (Title, H1, H2, Body, Subtext, Caption, ...).
+ *   1. Tamil script  -> rendered with the Tamil font the user selected for the
+ *                       current role (heading, lyrics, bible, ...). With the
+ *                       "Auto" text style it keeps the app's traditional
+ *                       regular-weight Tamil look.
+ *   2. English words -> rendered with the English font selected for the role,
+ *                       exactly 2px smaller than the surrounding Tamil text.
+ *                       With "Auto" the weight/style follows the surrounding
+ *                       style, so existing bold/italic areas keep their
+ *                       emphasis.
  *
  * The component splits any string it receives into Tamil/English runs using
  * the Unicode Tamil block (U+0B80-U+0BFF) and renders each run with its own
@@ -17,14 +24,30 @@ import { StyleSheet, Text } from 'react-native';
  * passed through untouched. The base font size is also provided to nested
  * MixedText components through context, so English runs nested inside a
  * MixedText that does not declare its own fontSize still scale correctly.
+ *
+ * A screen can set `fontRole="lyrics"` (or wrap a subtree in a
+ * FontRoleProvider) to make every nested MixedText use that section's font.
+ * Without an explicit role the role is inferred from the font/size the screen
+ * already uses (Tamil008 = heading, Tamil003 = body), so the feature works
+ * across the whole app without touching hundreds of call sites.
  */
 
 // English renders 2px smaller than the surrounding Tamil text.
 const ENGLISH_SIZE_DELTA = -2;
 const ENGLISH_MIN_SIZE = 9;
-// Tamil custom fonts usually ship a single weight, so English runs fall back
-// to the (bold-capable) system font to guarantee a visible bold weight.
-const ENGLISH_USES_SYSTEM_FONT = true;
+
+const inferRole = (flat, typography) => {
+  const size = typeof flat.fontSize === 'number' ? flat.fontSize : 0;
+  const h1 = typography?.h1?.fontSize ?? 25;
+  const h2 = typography?.h2?.fontSize ?? 21;
+  const family = flat.fontFamily;
+
+  if (family === 'Tamil008') return size >= h2 ? 'heading' : 'subheading';
+  if (family === 'Tamil003') return size >= h1 ? 'heading' : 'body';
+  if (size >= h1) return 'heading';
+  if (size >= h2) return 'subheading';
+  return 'body';
+};
 
 const TAMIL_RE = /[\u0B80-\u0BFF]/;
 const LATIN_RE = /[A-Za-z0-9]/;
@@ -97,8 +120,10 @@ const flattenChildren = (children, out = []) => {
   return out;
 };
 
-const MixedText = forwardRef(({ children, style, ...rest }, ref) => {
+const MixedText = forwardRef(({ children, style, fontRole, ...rest }, ref) => {
   const inheritedFontSize = useContext(BaseFontSizeContext);
+  const contextRole = useFontRole();
+  const settings = useSettings();
 
   const flat = useMemo(() => (style ? StyleSheet.flatten(style) || {} : {}), [style]);
   const parts = useMemo(() => flattenChildren(children), [children]);
@@ -110,6 +135,28 @@ const MixedText = forwardRef(({ children, style, ...rest }, ref) => {
   // Own fontSize wins; otherwise inherit from an enclosing MixedText.
   const baseFontSize =
     typeof flat.fontSize === 'number' ? flat.fontSize : inheritedFontSize;
+
+  // Explicit prop > surrounding FontRoleProvider > inferred from the screen's
+  // existing font/size. This keeps the app-wide default working everywhere.
+  const role = fontRole || contextRole || inferRole(flat, settings?.typography);
+  const resolved =
+    settings?.resolvedFonts?.categories?.[role] ||
+    settings?.resolvedFonts?.categories?.body;
+
+  const tamilFont = resolved?.tamil || getTamilFont('tamil003');
+  const englishFont = resolved?.english || getEnglishFont('tinos');
+  const parsedStyle = parseTextStyle(resolved?.textStyle || 'auto');
+
+  // With "Auto" we reproduce the app's original bilingual look: Tamil runs stay
+  // regular and English runs stay bold (the old MixedText hard-coded 400/700).
+  // Choosing Normal/Bold/Italic explicitly overrides both scripts.
+  const tamilBold = parsedStyle ? parsedStyle.bold : false;
+  const tamilItalic = parsedStyle ? parsedStyle.italic : false;
+  const englishBold = parsedStyle ? parsedStyle.bold : true;
+  const englishItalic = parsedStyle ? parsedStyle.italic : false;
+
+  const tamilFace = resolveFace(tamilFont, tamilBold, tamilItalic);
+  const englishFace = resolveFace(englishFont, englishBold, englishItalic);
 
   // Per-run props that only apply per <Text> node and are not inherited.
   const runProps = {};
@@ -123,8 +170,13 @@ const MixedText = forwardRef(({ children, style, ...rest }, ref) => {
 
     return runs.map((run, index) => {
       if (run.type === 'en') {
-        const runStyle = { fontWeight: '700' };
-        if (ENGLISH_USES_SYSTEM_FONT && flat.fontFamily) runStyle.fontFamily = undefined;
+        const runStyle = {
+          fontFamily: englishFace.family,
+          // A true bold/italic face is already the right shape; only ask the
+          // platform to synthesise when the family has no such face.
+          fontWeight: englishFace.syntheticBold ? 'bold' : 'normal',
+          fontStyle: englishFace.syntheticItalic ? 'italic' : 'normal',
+        };
         if (typeof baseFontSize === 'number') {
           runStyle.fontSize = Math.max(ENGLISH_MIN_SIZE, baseFontSize + ENGLISH_SIZE_DELTA);
         }
@@ -136,8 +188,12 @@ const MixedText = forwardRef(({ children, style, ...rest }, ref) => {
         );
       }
 
-      // Tamil (and neutral) runs: regular weight, base size, own font family.
-      const runStyle = { fontWeight: '400' };
+      // Tamil (and neutral) runs.
+      const runStyle = {
+        fontFamily: tamilFace.family,
+        fontWeight: tamilFace.syntheticBold ? 'bold' : 'normal',
+        fontStyle: tamilFace.syntheticItalic ? 'italic' : 'normal',
+      };
       if (flat.includeFontPadding === false) runStyle.includeFontPadding = false;
       return (
         <Text key={`${keyPrefix}ta${index}`} style={runStyle} {...runProps}>

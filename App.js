@@ -129,10 +129,23 @@ export default function App() {
         await Font.loadAsync({
           'Tamil003': require('./assets/fonts/Tamil003.ttf'),
           'Tamil008': require('./assets/fonts/Tamil008.ttf'),
+          // Times New Roman look for English runs (Tinos is metric-compatible
+          // with Times New Roman and ships under the Apache 2.0 license).
+          // Each face is registered separately so Android uses the real bold /
+          // italic files instead of synthesising them.
+          'Tinos': require('./assets/fonts/Tinos-Regular.ttf'),
+          'Tinos-Bold': require('./assets/fonts/Tinos-Bold.ttf'),
+          'Tinos-Italic': require('./assets/fonts/Tinos-Italic.ttf'),
+          'Tinos-BoldItalic': require('./assets/fonts/Tinos-BoldItalic.ttf'),
           ...require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf'),
           ...require('@expo/vector-icons/build/vendor/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf'),
         });
+      } catch (fontError) {
+        // Never let a font problem block the database install below.
+        console.warn('Could not load fonts:', fontError);
+      }
 
+      try {
         await ensureDbDirectory();
         resetDatabaseConnections();
         for (const dbName of Object.keys(DATABASE_ASSETS)) {

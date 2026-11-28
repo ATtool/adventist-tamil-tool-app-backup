@@ -4,9 +4,10 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, FlatList, K
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSettings } from '../../context/SettingsContext';
+import { getInputFontFamily } from '../../theme/fontUtils';
 
 export function NoteModal({ visible, colors, isDark, appFontSize, noteText, setNoteText, onSave, onClose }) {
-  const { typography } = useSettings();
+  const { typography, resolvedFonts } = useSettings();
   return (
     <Modal visible={visible} transparent animationType="fade">
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlayCenter}>
@@ -14,7 +15,7 @@ export function NoteModal({ visible, colors, isDark, appFontSize, noteText, setN
         <View style={[styles.noteCard, { backgroundColor: isDark ? '#12161E' : '#FFFFFF', borderColor: colors.border }]}>
           <MixedText style={{ color: colors.text, fontSize: typography.title.fontSize, fontWeight: 'bold', marginBottom: 15 }}>Add Note</MixedText>
           <TextInput 
-            style={[styles.noteInput, { color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize }]} 
+            style={[styles.noteInput, { color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts) }]}
             placeholderTextColor={colors.subtext} placeholder="Type your notes here..." 
             multiline autoFocus value={noteText} onChangeText={setNoteText} 
           />

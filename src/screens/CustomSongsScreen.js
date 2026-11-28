@@ -11,6 +11,8 @@ import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useSettings } from '../context/SettingsContext';
+import { FontRoleProvider } from '../theme/FontRoleContext';
+import { getInputFontFamily } from '../theme/fontUtils';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native'; // Added useRoute here
 
 // Database Functions
@@ -91,7 +93,7 @@ export default function CustomSongsScreen() {
   // Catching the Thanglish toggle state passed from the main SongsScreen
   const isThanglish = route.params?.isThanglish || false;
 
-  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography } = useSettings();
+  const { colors, isDark, appFontSize, hapticsEnabled, titleSize, setTitleSize, titleSpacing, setTitleSpacing, lyricsSize, setLyricsSize, lyricsSpacing, setLyricsSpacing, lyricsLineHeight, setLyricsLineHeight, restoreDefaultTextSettings, typography, resolvedFonts } = useSettings();
   
   const songAccent = isDark ? BRIGHT_YELLOW : colors.accent;
   const refrainColor = isDark ? NEON_BLUE : colors.primary;
@@ -339,7 +341,7 @@ export default function CustomSongsScreen() {
             <View style={[styles.searchPill, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}>
               <Ionicons name="search" size={20} color={colors.subtext} style={{ marginRight: 8 }} />
               <TextInput 
-                style={[styles.searchInput, { color: colors.text, fontSize: appFontSize }]} 
+                style={[styles.searchInput, { color: colors.text, fontSize: appFontSize, fontFamily: getInputFontFamily(resolvedFonts) }]}
                 placeholder="Search Title or Num..." 
                 placeholderTextColor={colors.subtext} 
                 value={search} 
@@ -461,7 +463,7 @@ export default function CustomSongsScreen() {
             <View style={{ flex: 1, padding: 20 }}>
               <MixedText style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Tamil (Required)</MixedText>
               <TextInput 
-                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontFamily: 'Tamil003', fontSize: typography.body.fontSize }]} 
+                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontFamily: getInputFontFamily(resolvedFonts), fontSize: typography.body.fontSize }]}
                 placeholder="எ.கா: தேவனுக்கு மகிமை" 
                 placeholderTextColor={colors.subtext}
                 value={formTamil}
@@ -470,7 +472,7 @@ export default function CustomSongsScreen() {
 
               <MixedText style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Name in Thanglish (Optional)</MixedText>
               <TextInput 
-                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize }]} 
+                style={[styles.inputBox, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts) }]}
                 placeholder="Ex: Devanukku magimai" 
                 placeholderTextColor={colors.subtext}
                 value={formThanglish}
@@ -479,7 +481,7 @@ export default function CustomSongsScreen() {
 
               <MixedText style={{ color: colors.primary, marginBottom: 5, fontWeight: 'bold' }}>Song Lyrics (Required)</MixedText>
               <TextInput 
-                style={[styles.inputBox, styles.textArea, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize }]} 
+                style={[styles.inputBox, styles.textArea, { backgroundColor: colors.card, color: colors.text, borderColor: colors.border, fontSize: typography.body.fontSize, fontFamily: getInputFontFamily(resolvedFonts) }]}
                 placeholder="Type your lyrics here..." 
                 placeholderTextColor={colors.subtext}
                 multiline
@@ -508,7 +510,7 @@ export default function CustomSongsScreen() {
               </ScalePressable>
               
               <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 10 }}>
-                 <MixedText style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
+                 <MixedText fontRole="songTitle" style={{ color: colors.primary, fontFamily: 'Tamil008', fontSize: titleSize, letterSpacing: titleSpacing, textShadowColor: isDark ? colors.glow : 'transparent', textShadowRadius: 10 }} numberOfLines={1}>
                    {activeSong?.id} - {activeSong?.title_tamil}
                  </MixedText>
               </View>
@@ -537,6 +539,7 @@ export default function CustomSongsScreen() {
               </View>
             </View>
 
+            <FontRoleProvider role="lyrics">
             <ScrollView contentContainerStyle={{ padding: 30, paddingBottom: 150 }}>
               {lyricStanzas.map((stanza, idx) => (
                 <View key={idx} style={{ flexDirection: 'row', marginBottom: stanza.number ? 22 : 18 }}>
@@ -567,6 +570,7 @@ export default function CustomSongsScreen() {
                 </View>
               ))}
             </ScrollView>
+            </FontRoleProvider>
           </SafeAreaView>
 
           {/* SETTINGS MODAL (Font size etc) */}
